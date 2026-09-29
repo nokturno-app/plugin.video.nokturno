@@ -2718,3 +2718,11 @@ msgstr "Adresa JSON súboru so zoznamom. Položka sa objaví v hlavnom menu. Za 
 msgctxt "#30988"
 msgid "Optional, in the form Name: value. Sent when the list is loaded."
 msgstr "Nepovinné, v tvare Názov: hodnota. Pošle sa pri načítaní zoznamu."
+
+msgctxt "#30989"
+msgid "Custom list 2"
+msgstr "Vlastný zoznam 2"
+
+msgctxt "#30990"
+msgid "Custom list 3"
+msgstr "Vlastný zoznam 3"

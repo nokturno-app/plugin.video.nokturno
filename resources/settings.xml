@@ -618,6 +618,66 @@
           </control>
         </setting>
       </group>
+      <group id="mylist2" label="30989">
+        <setting id="mylist2_url" type="string" label="30982" help="30987">
+          <level>0</level>
+          <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="mylist2_header1" type="string" label="30983" help="30988">
+          <level>0</level>
+          <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string">
+            <hidden>true</hidden>
+          </control>
+        </setting>
+        <setting id="mylist2_header2" type="string" label="30984" help="30988">
+          <level>0</level>
+          <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string">
+            <hidden>true</hidden>
+          </control>
+        </setting>
+      </group>
+      <group id="mylist3" label="30990">
+        <setting id="mylist3_url" type="string" label="30982" help="30987">
+          <level>0</level>
+          <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string"/>
+        </setting>
+        <setting id="mylist3_header1" type="string" label="30983" help="30988">
+          <level>0</level>
+          <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string">
+            <hidden>true</hidden>
+          </control>
+        </setting>
+        <setting id="mylist3_header2" type="string" label="30984" help="30988">
+          <level>0</level>
+          <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string">
+            <hidden>true</hidden>
+          </control>
+        </setting>
+      </group>
     </category>
     <category id="transfer" label="30724" help="30588">
       <group id="1" label="30447">

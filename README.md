@@ -41,6 +41,7 @@ Přihlašovací údaje zůstávají v Kodi – doplněk je posílá jen službě
 - **Pokračovat ve sledování**, Můj seznam, rozkoukané a zhlédnuté i bez Kodi knihovny; **Trakt.tv** a **Up Next**
 - **Hlídané** (od 8.4.0) – nový díl seriálu nebo titul, který zatím nemá stream, se ohlásí, jakmile se dá pustit; *Kontrolovat dál* hlídá, jestli u titulu nebo dílu nepřibude vhodnější stream (třeba s CZ titulky); sdílí se mezi Kodi i s Home Assistantem ([nápověda](https://nokturno-app.github.io/nokturno-napoveda/cs/hlidane))
 - **Vlastní katalogy** (od 8.4.0) – ve Filmech a Seriálech si poskládáš katalog podle žánrů, původního jazyka, let a řazení, bez vlastního klíče TMDB ([nápověda](https://nokturno-app.github.io/nokturno-napoveda/cs/vlastni-katalogy))
+- **Vlastní seznam** – až tři soubory JSON na tvých adresách (*Nastavení → Zdroje a účty → Vlastní seznam*); každý je v hlavním menu položka se složkami a videi, která se přehrají přes zdroje a účty doplňku. Za obsah seznamu odpovídáš ty. Tvar souboru a odkazy popisuje [nápověda](https://nokturno-app.github.io/nokturno-napoveda/cs/vlastni-seznam)
 - **SyncWatch** (od 8.2.0) – společné sledování až na pěti zařízeních: stejný stream, pauza a přetáčení platí pro všechny
 - **Synchronizace více Kodi** (od 6.6.0) – zhlédnuto, Můj seznam, historie, Hlídané, nastavení i přihlášení se sdílí mezi zařízeními **bez Home Assistanta**; server do dat nevidí
 - **Katalogy, žebříčky, TV program, Pro Tebe** a náhodný titul; **Stav zdrojů** v menu řekne, co nefunguje

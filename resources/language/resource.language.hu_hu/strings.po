@@ -2716,3 +2716,11 @@ msgstr "A listát tartalmazó JSON fájl címe. A főmenüben jelenik meg. A lis
 msgctxt "#30988"
 msgid "Optional, in the form Name: value. Sent when the list is loaded."
 msgstr "Nem kötelező, Név: érték formában. A lista betöltésekor kerül elküldésre."
+
+msgctxt "#30989"
+msgid "Custom list 2"
+msgstr "Saját lista 2"
+
+msgctxt "#30990"
+msgid "Custom list 3"
+msgstr "Saját lista 3"

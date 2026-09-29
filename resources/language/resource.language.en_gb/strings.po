@@ -2718,3 +2718,11 @@ msgstr ""
 msgctxt "#30988"
 msgid "Optional, in the form Name: value. Sent when the list is loaded."
 msgstr ""
+
+msgctxt "#30989"
+msgid "Custom list 2"
+msgstr ""
+
+msgctxt "#30990"
+msgid "Custom list 3"
+msgstr ""

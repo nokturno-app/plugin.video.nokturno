@@ -1062,38 +1062,62 @@ def episodes_context(series_id, season, alt=None):
             (L(30980, "Všechny série"), cmd(build_url(action="seasons", id=series_id, alt=alt)))]
 
 
-def mylist_source():
+# Až tři vlastní seznamy: slot 1 má původní id nastavení (`mylist_url`…) i odkazy bez
+# `slot`, ať oblíbené a widgety z doby jednoho seznamu vedou dál na něj.
+MYLIST_SLOTS = {1: (30981, "Vlastní seznam"), 2: (30989, "Vlastní seznam 2"), 3: (30990, "Vlastní seznam 3")}
+
+
+def mylist_slot(value):
+    """Číslo slotu z parametru adresy; chybějící nebo neplatné = 1."""
+    try:
+        slot = int(value)
+    except (TypeError, ValueError):
+        return 1
+    return slot if slot in MYLIST_SLOTS else 1
+
+
+def mylist_name(slot):
+    return L(*MYLIST_SLOTS[slot])
+
+
+def mylist_url(slot, **params):
+    return build_url(action="mylist", **({"slot": slot} if slot != 1 else {}), **params)
+
+
+def mylist_source(slot=1):
     """Adresa vlastního seznamu a hlavičky požadavku z nastavení."""
-    return (setting("mylist_url").strip(),
-            mylist.parse_headers([setting("mylist_header1"), setting("mylist_header2")]))
+    prefix = "mylist" if slot == 1 else f"mylist{slot}"
+    return (setting(f"{prefix}_url").strip(),
+            mylist.parse_headers([setting(f"{prefix}_header1"), setting(f"{prefix}_header2")]))
 
 
 def mylist_menu_item():
-    """Vlastní seznam v kořeni menu, jen s vyplněnou adresou. Název z poslední načtené
+    """Vlastní seznamy v kořeni menu, jen s vyplněnou adresou. Název z poslední načtené
     verze (bez dotazu na síť, menu se tím nezdrží), jinak obecný."""
-    url, _ = mylist_source()
-    if url:
-        folder_item(mylist.cached_title(STORE, url) or L(30981, "Vlastní seznam"),
-                    build_url(action="mylist"), icon="DefaultVideoPlaylists.png")
+    for slot in MYLIST_SLOTS:
+        url, _ = mylist_source(slot)
+        if url:
+            folder_item(mylist.cached_title(STORE, url) or mylist_name(slot),
+                        mylist_url(slot), icon="DefaultVideoPlaylists.png")
 
 
-def list_mylist(apis, path=""):
+def list_mylist(apis, path="", slot=1):
     """Skupiny jako složky, položky jako přehratelné řádky. `path` = indexy skupin."""
-    url, headers = mylist_source()
+    url, headers = mylist_source(slot)
     tree, error = mylist.load(STORE, url, headers) if url else (None, "")
     if error:
-        xbmc.log(f"[{ADDON_ID}] vlastní seznam nejde načíst: {error}", xbmc.LOGWARNING)
+        xbmc.log(f"[{ADDON_ID}] vlastní seznam {slot} nejde načíst: {error}", xbmc.LOGWARNING)
         notify(L(30985, "Vlastní seznam nejde načíst.") + (" " + L(30986, "Ukazuje se poslední známý stav.")
                if tree else ""), xbmcgui.NOTIFICATION_WARNING, 6000)
     here = mylist.node(tree, path) if tree else None
     if here is None:
         xbmcplugin.endOfDirectory(HANDLE, succeeded=False, cacheToDisc=False)
         return
-    xbmcplugin.setPluginCategory(HANDLE, here["title"] or L(30981, "Vlastní seznam"))
+    xbmcplugin.setPluginCategory(HANDLE, here["title"] or mylist_name(slot))
     for i, g in enumerate(here["groups"]):
         li = xbmcgui.ListItem(label=g["title"])
         li.setArt({"icon": "DefaultFolder.png", **({"thumb": g["thumb"]} if g["thumb"] else {})})
-        xbmcplugin.addDirectoryItem(HANDLE, build_url(action="mylist", path=f"{path}.{i}".strip(".")),
+        xbmcplugin.addDirectoryItem(HANDLE, mylist_url(slot, path=f"{path}.{i}".strip(".")),
                                     li, isFolder=True)
     for it in here["items"]:
         title = it["title"] + (f" ({it['year']})" if it["year"] else "")
@@ -7079,7 +7103,7 @@ def router(query):
             # Kodi položku rozklíčovává a čeká setResolvedUrl → dialog výběru streamu
             play(apis, p.get("type", "movie"), p["id"], p.get("series"), alt=p.get("alt"), ask="1")
         elif action == "mylist":
-            list_mylist(apis, p.get("path", ""))
+            list_mylist(apis, p.get("path", ""), mylist_slot(p.get("slot")))
         elif action == "mylist_play":
             mylist_play(apis, p.get("refs", ""), p.get("name", ""))
         elif action == "play":
