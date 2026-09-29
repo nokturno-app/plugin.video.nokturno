@@ -2726,3 +2726,75 @@ msgstr ""
 msgctxt "#30990"
 msgid "Custom list 3"
 msgstr ""
+
+msgctxt "#30864"
+msgid "Menu icon"
+msgstr ""
+
+msgctxt "#30865"
+msgid "Icon of the item in the main menu. The skin supplies the icons."
+msgstr ""
+
+msgctxt "#30866"
+msgid "Menu position"
+msgstr ""
+
+msgctxt "#30867"
+msgid "Where the item appears in the main menu. Lists in the same place follow their number."
+msgstr ""
+
+msgctxt "#30868"
+msgid "At the top"
+msgstr ""
+
+msgctxt "#30869"
+msgid "Below Watchlist"
+msgstr ""
+
+msgctxt "#30870"
+msgid "Below Movies and Series (default)"
+msgstr ""
+
+msgctxt "#30871"
+msgid "At the bottom"
+msgstr ""
+
+msgctxt "#30872"
+msgid "Video list (default)"
+msgstr ""
+
+msgctxt "#30873"
+msgid "Music videos"
+msgstr ""
+
+msgctxt "#30874"
+msgid "Music albums"
+msgstr ""
+
+msgctxt "#30875"
+msgid "Music"
+msgstr ""
+
+msgctxt "#30876"
+msgid "Favourites"
+msgstr ""
+
+msgctxt "#30877"
+msgid "Recently added"
+msgstr ""
+
+msgctxt "#30878"
+msgid "Genres"
+msgstr ""
+
+msgctxt "#30879"
+msgid "Year"
+msgstr ""
+
+msgctxt "#30880"
+msgid "Actors"
+msgstr ""
+
+msgctxt "#30881"
+msgid "Folder"
+msgstr ""

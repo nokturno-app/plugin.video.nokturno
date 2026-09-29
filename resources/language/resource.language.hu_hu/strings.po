@@ -2724,3 +2724,75 @@ msgstr "Saját lista 2"
 msgctxt "#30990"
 msgid "Custom list 3"
 msgstr "Saját lista 3"
+
+msgctxt "#30864"
+msgid "Menu icon"
+msgstr "Menü ikon"
+
+msgctxt "#30865"
+msgid "Icon of the item in the main menu. The skin supplies the icons."
+msgstr "A tétel ikonja a főmenüben. Az ikonokat a Kodi felülete adja."
+
+msgctxt "#30866"
+msgid "Menu position"
+msgstr "Hely a menüben"
+
+msgctxt "#30867"
+msgid "Where the item appears in the main menu. Lists in the same place follow their number."
+msgstr "Hol jelenjen meg a tétel a főmenüben. Az azonos helyen lévő listák a számuk szerint követik egymást."
+
+msgctxt "#30868"
+msgid "At the top"
+msgstr "Legfelül"
+
+msgctxt "#30869"
+msgid "Below Watchlist"
+msgstr "A Figyelőlista alatt"
+
+msgctxt "#30870"
+msgid "Below Movies and Series (default)"
+msgstr "A Filmek és Sorozatok alatt (alapértelmezett)"
+
+msgctxt "#30871"
+msgid "At the bottom"
+msgstr "Legalul"
+
+msgctxt "#30872"
+msgid "Video list (default)"
+msgstr "Videólista (alapértelmezett)"
+
+msgctxt "#30873"
+msgid "Music videos"
+msgstr "Zenei videók"
+
+msgctxt "#30874"
+msgid "Music albums"
+msgstr "Zenei albumok"
+
+msgctxt "#30875"
+msgid "Music"
+msgstr "Zene"
+
+msgctxt "#30876"
+msgid "Favourites"
+msgstr "Kedvencek"
+
+msgctxt "#30877"
+msgid "Recently added"
+msgstr "Nemrég hozzáadott"
+
+msgctxt "#30878"
+msgid "Genres"
+msgstr "Műfajok"
+
+msgctxt "#30879"
+msgid "Year"
+msgstr "Év"
+
+msgctxt "#30880"
+msgid "Actors"
+msgstr "Színészek"
+
+msgctxt "#30881"
+msgid "Folder"
+msgstr "Mappa"

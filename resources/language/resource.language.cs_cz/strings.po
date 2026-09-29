@@ -2726,3 +2726,75 @@ msgstr "Vlastní seznam 2"
 msgctxt "#30990"
 msgid "Custom list 3"
 msgstr "Vlastní seznam 3"
+
+msgctxt "#30864"
+msgid "Menu icon"
+msgstr "Ikona v menu"
+
+msgctxt "#30865"
+msgid "Icon of the item in the main menu. The skin supplies the icons."
+msgstr "Ikona položky v hlavním menu. Ikony dodává vzhled Kodi."
+
+msgctxt "#30866"
+msgid "Menu position"
+msgstr "Místo v menu"
+
+msgctxt "#30867"
+msgid "Where the item appears in the main menu. Lists in the same place follow their number."
+msgstr "Kde se položka ukáže v hlavním menu. Seznamy na stejném místě jdou podle svého čísla."
+
+msgctxt "#30868"
+msgid "At the top"
+msgstr "Nahoře"
+
+msgctxt "#30869"
+msgid "Below Watchlist"
+msgstr "Pod Hlídanými"
+
+msgctxt "#30870"
+msgid "Below Movies and Series (default)"
+msgstr "Pod Filmy a Seriály (výchozí)"
+
+msgctxt "#30871"
+msgid "At the bottom"
+msgstr "Dole"
+
+msgctxt "#30872"
+msgid "Video list (default)"
+msgstr "Seznam videí (výchozí)"
+
+msgctxt "#30873"
+msgid "Music videos"
+msgstr "Hudební videa"
+
+msgctxt "#30874"
+msgid "Music albums"
+msgstr "Hudební alba"
+
+msgctxt "#30875"
+msgid "Music"
+msgstr "Hudba"
+
+msgctxt "#30876"
+msgid "Favourites"
+msgstr "Oblíbené"
+
+msgctxt "#30877"
+msgid "Recently added"
+msgstr "Nově přidané"
+
+msgctxt "#30878"
+msgid "Genres"
+msgstr "Žánry"
+
+msgctxt "#30879"
+msgid "Year"
+msgstr "Rok"
+
+msgctxt "#30880"
+msgid "Actors"
+msgstr "Herci"
+
+msgctxt "#30881"
+msgid "Folder"
+msgstr "Složka"

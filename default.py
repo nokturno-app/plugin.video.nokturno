@@ -1084,21 +1084,45 @@ def mylist_url(slot, **params):
     return build_url(action="mylist", **({"slot": slot} if slot != 1 else {}), **params)
 
 
+# Ikona položky v menu (`mylistN_icon`, index do seznamu) – jen standardní sada skinu,
+# vlastní PNG ne. Index 0 = dřívější pevná ikona. Pořadí se nesmí měnit, nové jen na konec.
+MYLIST_ICONS = ("DefaultVideoPlaylists.png", "DefaultMovies.png", "DefaultTVShows.png",
+                "DefaultMusicVideos.png", "DefaultMusicAlbums.png", "DefaultAddonMusic.png",
+                "DefaultFavourites.png", "DefaultRecentlyAddedMovies.png", "DefaultGenre.png",
+                "DefaultYear.png", "DefaultActor.png", "DefaultFolder.png")
+# Místo v kořeni menu (`mylistN_pos`); 0 = dřívější místo pod Filmy, Seriály a katalogy
+MYLIST_POS_CATALOGS, MYLIST_POS_TOP, MYLIST_POS_WATCH, MYLIST_POS_BOTTOM = 0, 1, 2, 3
+
+
+def mylist_prefix(slot):
+    return "mylist" if slot == 1 else f"mylist{slot}"
+
+
+def mylist_choice(slot, key, count):
+    """Index volby spinneru; neplatná nebo chybějící hodnota = 0 (výchozí)."""
+    try:
+        value = int(setting(f"{mylist_prefix(slot)}_{key}", "0") or 0)
+    except ValueError:
+        return 0
+    return value if 0 <= value < count else 0
+
+
 def mylist_source(slot=1):
     """Adresa vlastního seznamu a hlavičky požadavku z nastavení."""
-    prefix = "mylist" if slot == 1 else f"mylist{slot}"
+    prefix = mylist_prefix(slot)
     return (setting(f"{prefix}_url").strip(),
             mylist.parse_headers([setting(f"{prefix}_header1"), setting(f"{prefix}_header2")]))
 
 
-def mylist_menu_item():
-    """Vlastní seznamy v kořeni menu, jen s vyplněnou adresou. Název z poslední načtené
-    verze (bez dotazu na síť, menu se tím nezdrží), jinak obecný."""
+def mylist_menu_item(position=MYLIST_POS_CATALOGS):
+    """Vlastní seznamy v kořeni menu na daném místě, jen s vyplněnou adresou; víc seznamů
+    na jednom místě jde podle čísla slotu. Název z poslední načtené verze (bez dotazu na
+    síť, menu se tím nezdrží), jinak obecný."""
     for slot in MYLIST_SLOTS:
         url, _ = mylist_source(slot)
-        if url:
-            folder_item(mylist.cached_title(STORE, url) or mylist_name(slot),
-                        mylist_url(slot), icon="DefaultVideoPlaylists.png")
+        if url and mylist_choice(slot, "pos", 4) == position:
+            folder_item(mylist.cached_title(STORE, url) or mylist_name(slot), mylist_url(slot),
+                        icon=MYLIST_ICONS[mylist_choice(slot, "icon", len(MYLIST_ICONS))])
 
 
 def list_mylist(apis, path="", slot=1):
@@ -4708,6 +4732,7 @@ def main_menu(apis):
     # Jedno hledání, jedny Filmy a jedny Seriály — dřív tu byly Filmy/Seriály zvlášť za
     # každý zdroj katalogu (Luna, Sosáč, databáze), každé s vlastními podkategoriemi.
     # Který zdroj stojí za kterým seznamem, rozhoduje až `browse_menu`.
+    mylist_menu_item(MYLIST_POS_TOP)
     folder_item(L(30150, "Hledat"), build_url(action="search", type="any"),
                icon="DefaultAddonsSearch.png", context=[(L(30106), runplugin(action="clear_cache"))])
     if STORE.in_progress() or STORE.recently_watched(1):
@@ -4722,6 +4747,7 @@ def main_menu(apis):
         # „nově přidané díly“, jinak seznam videí
         icon = "DefaultRecentlyAddedEpisodes.png" if new else "DefaultVideoPlaylists.png"
         folder_item(label, build_url(action="watchlist"), icon=icon)
+    mylist_menu_item(MYLIST_POS_WATCH)
     folder_item(L(30012), build_url(action="browse", type="movie"), icon="DefaultMovies.png")
     folder_item(L(30013), build_url(action="browse", type="series"), icon="DefaultTVShows.png")
     # sezónní a tematické katalogy zapnuté na dashboardu (bez vydání nové verze)
@@ -4741,6 +4767,7 @@ def main_menu(apis):
         folder_item(L(30387, "Moje úložiště"), build_url(action="dav_browse"), icon="DefaultHardDisk.png")
     if setting("download_dir") or sync_targets():
         folder_item(L(30391, "Stažené"), build_url(action="downloads"), icon="DefaultHardDisk.png")
+    mylist_menu_item(MYLIST_POS_BOTTOM)
     action_item(L(30392, "Nastavení"), build_url(action="settings"), icon="DefaultAddonProgram.png")
     # bez cache na disk — položky se mění podle stavu (Novinky, Pokračovat), zpět do
     # menu z podsložky by jinak Kodi ukázalo starý výpis i s už přečtenými Novinkami

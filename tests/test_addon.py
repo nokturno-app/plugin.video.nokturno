@@ -5433,7 +5433,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 117)   # +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled
+        self.assertEqual(len(volby), 123)   # +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):
@@ -5747,7 +5747,8 @@ class TestVlastniSeznam(unittest.TestCase):
                                    "mylist_header1": "CF-Access-Client-Id: abc", "mylist_header2": "vadná"})
 
     def tearDown(self):
-        for k in ("mylist_url", "mylist_header1", "mylist_header2", "mylist3_url", "mylist3_header1"):
+        for k in ("mylist_url", "mylist_header1", "mylist_header2", "mylist3_url", "mylist3_header1",
+                  "mylist_icon", "mylist_pos", "mylist3_icon", "mylist3_pos"):
             xbmcaddon.settings.pop(k, None)
 
     def test_validace(self):
@@ -5823,6 +5824,33 @@ class TestVlastniSeznam(unittest.TestCase):
         self.assertEqual(seen, [("https://example.test/3.json", {"X-Key": "k"}),
                                 ("https://example.test/l.json", {"CF-Access-Client-Id": "abc"})])
         self.assertEqual(default.mylist_slot("9"), 1)
+
+    def test_ikona_a_misto_v_menu(self):
+        def menu(extra=None):
+            self.reset()
+            xbmcaddon.settings.update(extra or {})
+            default.main_menu({"ws": object()})
+            return [(params_of(u).get("action"), params_of(u).get("slot"), li.art.get("icon"))
+                    for _h, u, li, *_ in xbmcplugin.items]
+
+        # výchozí = dřívější chování: pod Filmy a Seriály, ikona seznamu videí
+        default_menu = menu()
+        i = [a for a, *_ in default_menu].index("mylist")
+        self.assertEqual(default_menu[i - 1][0], "browse")
+        self.assertEqual(default_menu[i][2], "DefaultVideoPlaylists.png")
+        # slot 3 nahoru s ikonou alba, slot 1 dolů; neplatná hodnota = výchozí
+        rows = menu({"mylist3_url": "https://example.test/3.json", "mylist3_pos": "1",
+                     "mylist3_icon": "4", "mylist_pos": "3", "mylist_icon": "99"})
+        actions = [a for a, *_ in rows]
+        self.assertEqual(rows[actions.index("mylist")], ("mylist", "3", "DefaultMusicAlbums.png"))
+        self.assertLess(actions.index("mylist"), actions.index("search"))
+        last = len(actions) - 1 - actions[::-1].index("mylist")
+        self.assertEqual(rows[last], ("mylist", None, "DefaultVideoPlaylists.png"))
+        self.assertEqual(actions[last + 1], "settings")
+        # obě volby zná stránka z mobilu (a tím i přenos nastavení)
+        ids = {f.get("id") for s in default.remote_setup_schema() for f in s["fields"]}
+        self.assertTrue({"mylist_icon", "mylist2_pos", "mylist3_icon"} <= ids)
+        self.assertIn("mylist2_pos", transfer.exportable(default.remote_setup_schema()))
 
 
 class TestSyncWatch(unittest.TestCase):

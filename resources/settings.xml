@@ -597,6 +597,40 @@
           </constraints>
           <control type="edit" format="string"/>
         </setting>
+        <setting id="mylist_icon" type="integer" label="30864" help="30865">
+          <level>0</level>
+          <default>0</default>
+          <constraints>
+            <options>
+              <option label="30872">0</option>
+              <option label="30012">1</option>
+              <option label="30013">2</option>
+              <option label="30873">3</option>
+              <option label="30874">4</option>
+              <option label="30875">5</option>
+              <option label="30876">6</option>
+              <option label="30877">7</option>
+              <option label="30878">8</option>
+              <option label="30879">9</option>
+              <option label="30880">10</option>
+              <option label="30881">11</option>
+            </options>
+          </constraints>
+          <control format="string" type="spinner"/>
+        </setting>
+        <setting id="mylist_pos" type="integer" label="30866" help="30867">
+          <level>0</level>
+          <default>0</default>
+          <constraints>
+            <options>
+              <option label="30868">1</option>
+              <option label="30869">2</option>
+              <option label="30870">0</option>
+              <option label="30871">3</option>
+            </options>
+          </constraints>
+          <control format="string" type="spinner"/>
+        </setting>
         <setting id="mylist_header1" type="string" label="30983" help="30988">
           <level>0</level>
           <default></default>
@@ -627,6 +661,40 @@
           </constraints>
           <control type="edit" format="string"/>
         </setting>
+        <setting id="mylist2_icon" type="integer" label="30864" help="30865">
+          <level>0</level>
+          <default>0</default>
+          <constraints>
+            <options>
+              <option label="30872">0</option>
+              <option label="30012">1</option>
+              <option label="30013">2</option>
+              <option label="30873">3</option>
+              <option label="30874">4</option>
+              <option label="30875">5</option>
+              <option label="30876">6</option>
+              <option label="30877">7</option>
+              <option label="30878">8</option>
+              <option label="30879">9</option>
+              <option label="30880">10</option>
+              <option label="30881">11</option>
+            </options>
+          </constraints>
+          <control format="string" type="spinner"/>
+        </setting>
+        <setting id="mylist2_pos" type="integer" label="30866" help="30867">
+          <level>0</level>
+          <default>0</default>
+          <constraints>
+            <options>
+              <option label="30868">1</option>
+              <option label="30869">2</option>
+              <option label="30870">0</option>
+              <option label="30871">3</option>
+            </options>
+          </constraints>
+          <control format="string" type="spinner"/>
+        </setting>
         <setting id="mylist2_header1" type="string" label="30983" help="30988">
           <level>0</level>
           <default></default>
@@ -656,6 +724,40 @@
             <allowempty>true</allowempty>
           </constraints>
           <control type="edit" format="string"/>
+        </setting>
+        <setting id="mylist3_icon" type="integer" label="30864" help="30865">
+          <level>0</level>
+          <default>0</default>
+          <constraints>
+            <options>
+              <option label="30872">0</option>
+              <option label="30012">1</option>
+              <option label="30013">2</option>
+              <option label="30873">3</option>
+              <option label="30874">4</option>
+              <option label="30875">5</option>
+              <option label="30876">6</option>
+              <option label="30877">7</option>
+              <option label="30878">8</option>
+              <option label="30879">9</option>
+              <option label="30880">10</option>
+              <option label="30881">11</option>
+            </options>
+          </constraints>
+          <control format="string" type="spinner"/>
+        </setting>
+        <setting id="mylist3_pos" type="integer" label="30866" help="30867">
+          <level>0</level>
+          <default>0</default>
+          <constraints>
+            <options>
+              <option label="30868">1</option>
+              <option label="30869">2</option>
+              <option label="30870">0</option>
+              <option label="30871">3</option>
+            </options>
+          </constraints>
+          <control format="string" type="spinner"/>
         </setting>
         <setting id="mylist3_header1" type="string" label="30983" help="30988">
           <level>0</level>
