@@ -26,7 +26,7 @@ import zipfile
 from unittest import mock
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-CORE_LIB = ROOT.parent.parent / "nokturno-core" / "nokturno_core" / "lib"
+CORE_LIB = ROOT.parent / "nokturno-jadro" / "nokturno_core" / "lib"
 sys.path.insert(0, str(ROOT / "tests" / "stubs"))
 sys.path.insert(0, str(ROOT))
 

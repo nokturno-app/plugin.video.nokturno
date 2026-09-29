@@ -154,7 +154,7 @@ def check(version):
     news = (ET.parse(os.path.join(ROOT, "addon.xml")).getroot().findtext(".//news") or "").lstrip()
     if not news.startswith(version.split("~")[0]):
         sys.exit(f"<news> v addon.xml nezačíná verzí {version} — doplň řádek s novinkami")
-    sync = os.path.join(ROOT, "..", "..", "nokturno-core", "tools", "sync_core.py")
+    sync = os.path.join(ROOT, "..", "nokturno-jadro", "tools", "sync_core.py")
     if os.path.exists(sync):
         import subprocess
         out = subprocess.run([sys.executable, sync, "--check", "kodi"], capture_output=True, text=True)
