@@ -1,0 +1,18 @@
+{
+    "name": "Nokturno",
+    "plugin": "plugin.video.nokturno",
+    "priority": 100,
+    "is_resolvable": "true",
+    "assert": {
+        "play_movie": [
+            "imdb"
+        ],
+        "play_episode": [
+            "imdb",
+            "season",
+            "episode"
+        ]
+    },
+    "play_movie": "plugin://plugin.video.nokturno/?action=play&type=movie&id={imdb}&ask=1",
+    "play_episode": "plugin://plugin.video.nokturno/?action=play&type=series&id={imdb}%3A{season}%3A{episode}&series={imdb}&ask=1"
+}

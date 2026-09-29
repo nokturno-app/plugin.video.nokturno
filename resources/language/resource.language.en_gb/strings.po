@@ -1,0 +1,2732 @@
+# Kodi Media Center language file
+# Addon Name: Nokturno
+# Addon id: plugin.video.nokturno
+msgid ""
+msgstr ""
+"Project-Id-Version: plugin.video.nokturno\n"
+"Language: en_GB\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgctxt "#30000"
+msgid "Nokturno"
+msgstr ""
+
+msgctxt "#30001"
+msgid "Luna"
+msgstr ""
+
+msgctxt "#30002"
+msgid "Luna server address (http://IP:7126)"
+msgstr ""
+
+msgctxt "#30003"
+msgid "Add-on address or token from Luna's /setup page"
+msgstr ""
+
+msgctxt "#30004"
+msgid "Playback"
+msgstr ""
+
+msgctxt "#30009"
+msgid "Search via Luna and WebShare full-text too (slower)"
+msgstr ""
+
+msgctxt "#30010"
+msgid "Search movies"
+msgstr ""
+
+msgctxt "#30011"
+msgid "Search series"
+msgstr ""
+
+msgctxt "#30012"
+msgid "Movies"
+msgstr ""
+
+msgctxt "#30013"
+msgid "Series"
+msgstr ""
+
+msgctxt "#30020"
+msgid "All"
+msgstr ""
+
+msgctxt "#30021"
+msgid "Next page »"
+msgstr ""
+
+msgctxt "#30022"
+msgid "Specials"
+msgstr ""
+
+msgctxt "#30023"
+msgid "Season %d"
+msgstr ""
+
+msgctxt "#30024"
+msgid "Choose stream"
+msgstr ""
+
+msgctxt "#30102"
+msgid "No stream found"
+msgstr ""
+
+msgctxt "#30030"
+msgid "Sosáč"
+msgstr ""
+
+msgctxt "#30031"
+msgid "Use Sosáč"
+msgstr ""
+
+msgctxt "#30034"
+msgid "Also look up streams for a title in the other source"
+msgstr ""
+
+msgctxt "#30014"
+msgid "Use Luna"
+msgstr ""
+
+msgctxt "#30040"
+msgid "New search…"
+msgstr ""
+
+msgctxt "#30041"
+msgid "Clear history"
+msgstr ""
+
+msgctxt "#30042"
+msgid "Remove from history"
+msgstr ""
+
+msgctxt "#30043"
+msgid "Mark as watched"
+msgstr ""
+
+msgctxt "#30044"
+msgid "Mark as unwatched"
+msgstr ""
+
+msgctxt "#30045"
+msgid "Search WebShare"
+msgstr ""
+
+msgctxt "#30050"
+msgid "WebShare"
+msgstr ""
+
+msgctxt "#30051"
+msgid "Use WebShare"
+msgstr ""
+
+msgctxt "#30052"
+msgid "Username or e-mail"
+msgstr ""
+
+msgctxt "#30053"
+msgid "Password (or 40-char salted hash)"
+msgstr ""
+
+msgctxt "#30054"
+msgid "Sort results"
+msgstr ""
+
+msgctxt "#30055"
+msgid "Relevance"
+msgstr ""
+
+msgctxt "#30056"
+msgid "Newest"
+msgstr ""
+
+msgctxt "#30057"
+msgid "Rating"
+msgstr ""
+
+msgctxt "#30058"
+msgid "Largest"
+msgstr ""
+
+msgctxt "#30059"
+msgid "Smallest"
+msgstr ""
+
+msgctxt "#30104"
+msgid "The source is not enabled or set up – check Sources and accounts and Own storage in settings"
+msgstr ""
+
+msgctxt "#30060"
+msgid "My list"
+msgstr ""
+
+msgctxt "#30061"
+msgid "Add to My list"
+msgstr ""
+
+msgctxt "#30062"
+msgid "Remove from My list"
+msgstr ""
+
+msgctxt "#30063"
+msgid "Continue watching"
+msgstr ""
+
+msgctxt "#30064"
+msgid "Recently watched"
+msgstr ""
+
+msgctxt "#30065"
+msgid "Added to My list"
+msgstr ""
+
+msgctxt "#30066"
+msgid "Removed from My list"
+msgstr ""
+
+msgctxt "#30067"
+msgid "Next episode"
+msgstr ""
+
+msgctxt "#30070"
+msgid "Download"
+msgstr ""
+
+msgctxt "#30071"
+msgid "Downloads"
+msgstr ""
+
+msgctxt "#30072"
+msgid "Queued for download: %s"
+msgstr ""
+
+msgctxt "#30073"
+msgid "Downloading: %s"
+msgstr ""
+
+msgctxt "#30074"
+msgid "Downloaded: %s"
+msgstr ""
+
+msgctxt "#30075"
+msgid "Download failed: %s"
+msgstr ""
+
+msgctxt "#30076"
+msgid "Set the download folder in settings first."
+msgstr ""
+
+msgctxt "#30077"
+msgid "Already in the download queue"
+msgstr ""
+
+msgctxt "#30078"
+msgid "queued"
+msgstr ""
+
+msgctxt "#30079"
+msgid "downloading"
+msgstr ""
+
+msgctxt "#30080"
+msgid "done"
+msgstr ""
+
+msgctxt "#30081"
+msgid "error"
+msgstr ""
+
+msgctxt "#30082"
+msgid "cancelling"
+msgstr ""
+
+msgctxt "#30083"
+msgid "Cancel download"
+msgstr ""
+
+msgctxt "#30084"
+msgid "Remove from list"
+msgstr ""
+
+msgctxt "#30085"
+msgid "Retry"
+msgstr ""
+
+msgctxt "#30086"
+msgid "Delete the downloaded file %s as well?"
+msgstr ""
+
+msgctxt "#30087"
+msgid "Download folder"
+msgstr ""
+
+msgctxt "#30090"
+msgid "Trakt.tv"
+msgstr ""
+
+msgctxt "#30091"
+msgid "Use Trakt.tv"
+msgstr ""
+
+msgctxt "#30092"
+msgid "Own Trakt client id (optional)"
+msgstr ""
+
+msgctxt "#30093"
+msgid "Own Trakt client secret (optional)"
+msgstr ""
+
+msgctxt "#30094"
+msgid "Could not load the Trakt app key from the Nokturno server. Try again later, or fill in your own app."
+msgstr ""
+
+msgctxt "#30095"
+msgid "Open %s and enter the code: [B]%s[/B]"
+msgstr ""
+
+msgctxt "#30096"
+msgid "Trakt sign-in failed"
+msgstr ""
+
+msgctxt "#30097"
+msgid "Signed in to Trakt"
+msgstr ""
+
+msgctxt "#30098"
+msgid "Sign out of Trakt"
+msgstr ""
+
+msgctxt "#30099"
+msgid "Cache cleared"
+msgstr ""
+
+msgctxt "#30100"
+msgid "Sign in to Trakt (device code)"
+msgstr ""
+
+msgctxt "#30105"
+msgid "Advanced"
+msgstr ""
+
+msgctxt "#30106"
+msgid "Clear cache (catalogues, searches, streams)"
+msgstr ""
+
+msgctxt "#30110"
+msgid "Preferred audio language"
+msgstr ""
+
+msgctxt "#30111"
+msgid "Any"
+msgstr ""
+
+msgctxt "#30112"
+msgid "Czech"
+msgstr ""
+
+msgctxt "#30113"
+msgid "Slovak"
+msgstr ""
+
+msgctxt "#30114"
+msgid "English"
+msgstr ""
+
+msgctxt "#30115"
+msgid "Hide SD streams"
+msgstr ""
+
+msgctxt "#30117"
+msgid "Sort streams"
+msgstr ""
+
+msgctxt "#30118"
+msgid "As provided"
+msgstr ""
+
+msgctxt "#30119"
+msgid "Best quality first"
+msgstr ""
+
+msgctxt "#30120"
+msgid "Largest first"
+msgstr ""
+
+msgctxt "#30121"
+msgid "Smallest first"
+msgstr ""
+
+msgctxt "#30128"
+msgid "Streamuj.tv user name"
+msgstr ""
+
+msgctxt "#30129"
+msgid "Streamuj.tv password"
+msgstr ""
+
+msgctxt "#30107"
+msgid "Open settings"
+msgstr ""
+
+msgctxt "#30131"
+msgid "Prefer surround sound (5.1 and up)"
+msgstr ""
+
+msgctxt "#30150"
+msgid "Search"
+msgstr "Search"
+
+msgctxt "#30160"
+msgid "Statistics"
+msgstr "Statistics"
+
+msgctxt "#30161"
+msgid "Send anonymous usage statistics"
+msgstr "Send anonymous usage statistics"
+
+msgctxt "#30163"
+msgid "Send statistics now"
+msgstr "Send statistics now"
+
+msgctxt "#30164"
+msgid "Sends a random installation id, add-on version, platform, language, enabled sources (switches only, no accounts), the titles whose streams were opened, and technical reliability data (skin, architecture, update method, playback counts, loading time). Login details and search queries never leave the device; the server does not store your IP address or storage addresses with the statistics. When switched off, only the random installation id, add-on version, update method and a message that the add-on started or stopped are still sent, so it is known the installation is alive."
+msgstr "Sends a random installation id, add-on version, platform, language, enabled sources (switches only, no accounts), the titles whose streams were opened, and technical reliability data (skin, architecture, update method, playback counts, loading time). Login details and search queries never leave the device; the server does not store your IP address or storage addresses with the statistics. When switched off, only the random installation id, add-on version, update method and a message that the add-on started or stopped are still sent, so it is known the installation is alive."
+
+msgctxt "#30165"
+msgid "Statistics sent"
+msgstr "Statistics sent"
+
+msgctxt "#30166"
+msgid "Statistics could not be sent"
+msgstr "Statistics could not be sent"
+
+msgctxt "#30167"
+msgid "Check sources"
+msgstr "Check sources"
+
+msgctxt "#30168"
+msgid "OK"
+msgstr "OK"
+
+msgctxt "#30169"
+msgid "not set up"
+msgstr "not set up"
+
+msgctxt "#30170"
+msgid "Sources check"
+msgstr "Sources check"
+
+msgctxt "#30180"
+msgid "Sync"
+msgstr "Sync"
+
+msgctxt "#30181"
+msgid "Sync across multiple Kodi"
+msgstr "Sync across multiple Kodi"
+
+msgctxt "#30182"
+msgid "Home Assistant address"
+msgstr "Home Assistant address"
+
+msgctxt "#30183"
+msgid "Key (from the Nokturno integration settings)"
+msgstr "Key (from the Nokturno integration settings)"
+
+msgctxt "#30184"
+msgid "Sync now"
+msgstr "Sync now"
+
+msgctxt "#30185"
+msgid "Watched, in-progress, My list and the other circles (below in What gets synced) are shared across your Kodi devices, and with Home Assistant too if you use it."
+msgstr "Watched, in-progress, My list and the other circles (below in What gets synced) are shared across your Kodi devices, and with Home Assistant too if you use it."
+
+msgctxt "#30186"
+msgid "Sync is off or not set up (Home Assistant needs the address and key, the dashboard needs the group code)"
+msgstr "Sync is off or not set up (Home Assistant needs the address and key, the dashboard needs the group code)"
+
+msgctxt "#30187"
+msgid "Synced: sent %d, received %d"
+msgstr "Synced: sent %d, received %d"
+
+msgctxt "#30188"
+msgid "Sync failed"
+msgstr "Sync failed"
+
+msgctxt "#30190"
+msgid "Downloaded in HA"
+msgstr "Downloaded in HA"
+
+msgctxt "#30191"
+msgid "What's new"
+msgstr "What's new"
+
+msgctxt "#30192"
+msgid "What's new in version"
+msgstr "What's new in version"
+
+msgctxt "#30193"
+msgid "No news"
+msgstr "No news"
+
+msgctxt "#30194"
+msgid "HellSpy"
+msgstr "HellSpy"
+
+msgctxt "#30195"
+msgid "Use HellSpy"
+msgstr ""
+
+msgctxt "#30196"
+msgid "HellSpy needs no account. It offers the original files, same as WebShare."
+msgstr "HellSpy needs no account. It offers the original files, same as WebShare."
+
+msgctxt "#30197"
+msgid "Search HellSpy"
+msgstr "Search HellSpy"
+
+msgctxt "#30198"
+msgid "Detect audio from the file (how many streams)"
+msgstr "Detect audio from the file (how many streams)"
+
+msgctxt "#30199"
+msgid "Reads the start of the file to find audio language and channels where the source stays silent. Only for such streams, from the top of the sorted list, result kept for a month. 0 = off."
+msgstr "Reads the start of the file to find audio language and channels where the source stays silent. Only for such streams, from the top of the sorted list, result kept for a month. 0 = off."
+
+msgctxt "#30201"
+msgid "Stream selection"
+msgstr ""
+
+msgctxt "#30207"
+msgid "Quality is shown as a picture, audio languages and the rest of the details are set below. A tilde before a value means an estimate from the file name."
+msgstr ""
+
+msgctxt "#30208"
+msgid "Quality"
+msgstr "Quality"
+
+msgctxt "#30209"
+msgid "Audio"
+msgstr "Audio"
+
+msgctxt "#30210"
+msgid "Subtitles"
+msgstr "Subtitles"
+
+msgctxt "#30211"
+msgid "Source"
+msgstr "Source"
+
+msgctxt "#30212"
+msgid "Nothing to filter by"
+msgstr "Nothing to filter by"
+
+msgctxt "#30213"
+msgid "Filter streams"
+msgstr "Filter streams"
+
+msgctxt "#30214"
+msgid "Filter left nothing, showing all streams"
+msgstr "Filter left nothing, showing all streams"
+
+msgctxt "#30215"
+msgid "Channels"
+msgstr "Channels"
+
+msgctxt "#30216"
+msgid "Codec"
+msgstr "Codec"
+
+msgctxt "#30220"
+msgid "Measure speed and set the limit"
+msgstr "Measure speed and set the limit"
+
+msgctxt "#30221"
+msgid "Speed measurement failed"
+msgstr "Speed measurement failed"
+
+msgctxt "#30222"
+msgid "Too little data downloaded, try again"
+msgstr "Too little data downloaded, try again"
+
+msgctxt "#30223"
+msgid "Speed %s Mb/s → allowed %s Mb/s (e.g. %s GB for a 2-hour movie)"
+msgstr "Speed %s Mb/s → allowed %s Mb/s (e.g. %s GB for a 2-hour movie)"
+
+msgctxt "#30224"
+msgid "Max. bitrate (Mb/s, 0 = unlimited)"
+msgstr "Max. bitrate (Mb/s, 0 = unlimited)"
+
+msgctxt "#30225"
+msgid "Converted to GB using the current title's runtime; without a known runtime (typically fulltext) it assumes a 2-hour movie."
+msgstr "Converted to GB using the current title's runtime; without a known runtime (typically fulltext) it assumes a 2-hour movie."
+
+msgctxt "#30229"
+msgid "WebShare subscription status"
+msgstr "WebShare subscription status"
+
+msgctxt "#30230"
+msgid "WebShare is off or has no account filled in."
+msgstr "WebShare is off or has no account filled in."
+
+msgctxt "#30231"
+msgid "VIP active, days left: %s (until %s)"
+msgstr "VIP active, days left: %s (until %s)"
+
+msgctxt "#30232"
+msgid "VIP is not active."
+msgstr "VIP is not active."
+
+msgctxt "#30233"
+msgid "Notifies a few days before the subscription runs out and every day after it does."
+msgstr "Notifies a few days before the subscription runs out and every day after it does."
+
+msgctxt "#30234"
+msgid "Warn this many days before expiry (0 = only after expiry)"
+msgstr "Warn this many days before expiry (0 = only after expiry)"
+
+msgctxt "#30236"
+msgid "Days until the WebShare subscription runs out: %s."
+msgstr "Days until the WebShare subscription runs out: %s."
+
+msgctxt "#30237"
+msgid "WebShare subscription has run out."
+msgstr "WebShare subscription has run out."
+
+msgctxt "#30300"
+msgid "Works without a Luna server – logs into WebShare directly with your own account and searches full-text by title."
+msgstr ""
+
+msgctxt "#30301"
+msgid "E-mail or user name you log into webshare.cz with."
+msgstr ""
+
+msgctxt "#30302"
+msgid "Password from webshare.cz, or a 40-character salted hash if you'd rather not type it in plain text."
+msgstr ""
+
+msgctxt "#30303"
+msgid "Order of WebShare full-text results, before they get matched with Luna or Sosáč."
+msgstr ""
+
+msgctxt "#30304"
+msgid "Catalogues and descriptions come from tv.sosac.to's public exports; playback itself goes through your Streamuj.tv account."
+msgstr ""
+
+msgctxt "#30305"
+msgid "Streamuj.tv user name – needed to play streams found on Sosáč."
+msgstr ""
+
+msgctxt "#30306"
+msgid "Streamuj.tv password. It's stored as a one-way hash, not in plain text, so it can't be used to log into the streamuj.tv website itself."
+msgstr ""
+
+msgctxt "#30307"
+msgid "When a title has streams in only one of the two sources, also look it up in the other. Slower search, but more streams."
+msgstr ""
+
+msgctxt "#30308"
+msgid "Luna: Absolute Cinema is your own server (a computer, NAS or the Android TV box itself) with catalogues, posters and Czech descriptions. It needs a WebShare VIP account. The other sources and your own storage work without it."
+msgstr ""
+
+msgctxt "#30309"
+msgid "Address of your Luna server on the local network, e.g. http://192.168.1.10:7126. If Luna runs on the same device as Kodi, enter http://127.0.0.1:7126."
+msgstr ""
+
+msgctxt "#30310"
+msgid "Paste the whole add-on address from Luna's /setup page, or just the token itself starting with \"e1.\"."
+msgstr ""
+
+msgctxt "#30311"
+msgid "Luna can also full-text search WebShare (its own Search feature) – finds more, but takes longer."
+msgstr ""
+
+msgctxt "#30313"
+msgid "Streams with this audio language always come first, then the rest. Nothing gets hidden, just reordered."
+msgstr ""
+
+msgctxt "#30314"
+msgid "At equal quality, a stream with surround sound (5.1 and up) is sorted higher."
+msgstr ""
+
+msgctxt "#30315"
+msgid "Streams below 720p are removed from the list – the filter can't bring them back either. If no stream would be left, all of them are shown."
+msgstr ""
+
+msgctxt "#30316"
+msgid "'As provided' keeps the source's own order; the other options sort by quality or file size."
+msgstr ""
+
+msgctxt "#30323"
+msgid "Where downloaded videos and their subtitles are saved on the device."
+msgstr ""
+
+msgctxt "#30324"
+msgid "Sign in once with the device code button and enter the code at trakt.tv/activate. Works with a free account too, which can have two connected apps at a time."
+msgstr ""
+
+msgctxt "#30325"
+msgid "Leave empty to use the Nokturno app. Fill in only if you have your own app at developer.trakt.tv; after changing it, sign in again."
+msgstr ""
+
+msgctxt "#30326"
+msgid "The secret of your own app, together with the client id above. Leave empty for the Nokturno app."
+msgstr ""
+
+msgctxt "#30327"
+msgid "Address of the Home Assistant instance running the Nokturno integration."
+msgstr ""
+
+msgctxt "#30328"
+msgid "Must match the sync key shown in the Nokturno integration's settings in Home Assistant."
+msgstr ""
+
+msgctxt "#30238"
+msgid "Loading streams…"
+msgstr ""
+
+msgctxt "#30239"
+msgid "Meta: {done}/{total}"
+msgstr ""
+
+msgctxt "#30240"
+msgid "Streams: {count}"
+msgstr ""
+
+msgctxt "#30332"
+msgid "TMDB API"
+msgstr ""
+
+msgctxt "#30333"
+msgid "TMDB API key"
+msgstr ""
+
+msgctxt "#30334"
+msgid "TMDB API key help"
+msgstr "Your own TMDB (themoviedb.org) key – with it, titles, descriptions, genres and cast are in Czech, also in the Sosáč catalogues and without Luna. Without a key, the public Sosáč catalogue and Cinemeta are used, but neither has a Czech description (Sosáč has none at all, Cinemeta is English-only).\n\nGetting one is free: sign up at themoviedb.org → profile icon → Settings → API (left menu) → Request an API Key → Developer → short form (\"Nokturno\" is fine as the app name) → copy the \"API Key (v3 auth)\" (not the longer \"API Read Access Token\")."
+
+msgctxt "#30335"
+msgid "Search more loosely by file name"
+msgstr ""
+
+msgctxt "#30336"
+msgid "Welcome to Nokturno"
+msgstr ""
+
+
+msgctxt "#30339"
+msgid "Skip"
+msgstr ""
+
+msgctxt "#30340"
+msgid "WebShare"
+msgstr ""
+
+msgctxt "#30341"
+msgid "Do you have a WebShare account?"
+msgstr ""
+
+msgctxt "#30342"
+msgid "WebShare – e-mail"
+msgstr ""
+
+msgctxt "#30343"
+msgid "WebShare – password"
+msgstr ""
+
+msgctxt "#30344"
+msgid "Sosáč"
+msgstr ""
+
+msgctxt "#30345"
+msgid "Do you have a Streamuj.tv account (Sosáč player)?\nSosáč catalogues work without an account, it is only needed for playback."
+msgstr ""
+
+msgctxt "#30346"
+msgid "Streamuj.tv – username"
+msgstr ""
+
+msgctxt "#30347"
+msgid "Streamuj.tv – password"
+msgstr ""
+
+msgctxt "#30348"
+msgid "Luna: Absolute Cinema"
+msgstr ""
+
+msgctxt "#30349"
+msgid "Do you have a Luna: Absolute Cinema server running on your network?"
+msgstr ""
+
+msgctxt "#30350"
+msgid "Add-on address or token from Luna's /setup page"
+msgstr ""
+
+msgctxt "#30351"
+msgid "HellSpy"
+msgstr ""
+
+msgctxt "#30352"
+msgid "Enable HellSpy? It's free and needs no account."
+msgstr ""
+
+msgctxt "#30353"
+msgid "Own movie/series database"
+msgstr ""
+
+msgctxt "#30354"
+msgid "Do you want to enter a free TMDB key so descriptions and cast are in Czech? (optional)"
+msgstr ""
+
+msgctxt "#30355"
+msgid "Get a free key at themoviedb.org → profile icon → Settings → API → Request an API Key → Developer → copy the \"API Key (v3 auth)\".\nThe help for this setting has a detailed guide."
+msgstr ""
+
+msgctxt "#30356"
+msgid "TMDB API key"
+msgstr ""
+
+msgctxt "#30357"
+msgid "Settings saved"
+msgstr ""
+
+msgctxt "#30358"
+msgid "Done. You can change any of this later in the add-on settings.\nWithout a TMDB key and without Luna, catalogues and search still work, only descriptions will be in English."
+msgstr ""
+
+msgctxt "#30359"
+msgid "Run setup wizard"
+msgstr ""
+
+msgctxt "#30360"
+msgid "Source did not respond"
+msgstr ""
+
+msgctxt "#30361"
+msgid "Internet speed"
+msgstr ""
+
+msgctxt "#30362"
+msgid "Measure your internet speed now and set the highest allowed stream bitrate from it? It prevents stuttering when a file is too big for your connection.\nIt takes under a minute and can also be done later in Settings → Playback."
+msgstr ""
+
+msgctxt "#30363"
+msgid "Clear filter"
+msgstr ""
+
+msgctxt "#30364"
+msgid "Apply last filter"
+msgstr ""
+
+msgctxt "#30365"
+msgid "Remove from Continue watching"
+msgstr ""
+
+msgctxt "#30366"
+msgid "skipped"
+msgstr ""
+
+msgctxt "#30367"
+msgid "Sledujteto"
+msgstr ""
+
+msgctxt "#30368"
+msgid "Use Sledujteto"
+msgstr ""
+
+msgctxt "#30369"
+msgid "Sledujteto.cz is a Czech video hosting. Searching needs an account, playback needs a Premium account."
+msgstr ""
+
+msgctxt "#30370"
+msgid "E-mail"
+msgstr ""
+
+msgctxt "#30371"
+msgid "E-mail you use to sign in to sledujteto.cz."
+msgstr ""
+
+msgctxt "#30372"
+msgid "Password"
+msgstr ""
+
+msgctxt "#30373"
+msgid "Password for sledujteto.cz. It is sent only when signing in; requests then use a token."
+msgstr ""
+
+msgctxt "#30374"
+msgid "Own storage"
+msgstr ""
+
+msgctxt "#30375"
+msgid "Up to three WebDAV folders with your own files (NAS, Nextcloud, server). Files are matched to titles by file name and the folders above it and show up among streams and in search."
+msgstr ""
+
+msgctxt "#30376"
+msgid "Storage 1"
+msgstr ""
+
+msgctxt "#30377"
+msgid "Storage 2"
+msgstr ""
+
+msgctxt "#30378"
+msgid "Storage 3"
+msgstr ""
+
+msgctxt "#30379"
+msgid "Folder address"
+msgstr ""
+
+msgctxt "#30380"
+msgid "WebDAV folder, e.g. davs://nas.doma:10000/ or https://nas/remote.php/dav/files/me/Video/. Empty = storage off. The file list is refreshed at most once an hour."
+msgstr ""
+
+msgctxt "#30381"
+msgid "Username"
+msgstr ""
+
+msgctxt "#30382"
+msgid "Login for the storage (HTTP Basic). Leave empty if the storage has no password."
+msgstr ""
+
+msgctxt "#30383"
+msgid "Password"
+msgstr ""
+
+msgctxt "#30384"
+msgid "Name"
+msgstr ""
+
+msgctxt "#30385"
+msgid "Shown next to streams from this storage, e.g. NAS. Empty = server name."
+msgstr ""
+
+msgctxt "#30386"
+msgid "Search own storage"
+msgstr ""
+
+msgctxt "#30387"
+msgid "My storage"
+msgstr ""
+
+msgctxt "#30388"
+msgid "Do you have a Sledujteto account?[CR]Search uses your account, playback needs Premium."
+msgstr ""
+
+msgctxt "#30389"
+msgid "Sledujteto – e-mail"
+msgstr ""
+
+msgctxt "#30390"
+msgid "Sledujteto – password"
+msgstr ""
+
+msgctxt "#30391"
+msgid "Downloaded"
+msgstr ""
+
+msgctxt "#30392"
+msgid "Settings"
+msgstr ""
+
+msgctxt "#30393"
+msgid "Most watched this week"
+msgstr ""
+
+msgctxt "#30398"
+msgid "Popular on TMDB"
+msgstr ""
+
+msgctxt "#30399"
+msgid "Top rated"
+msgstr ""
+
+msgctxt "#30402"
+msgid "Measuring download speed…"
+msgstr ""
+
+msgctxt "#30403"
+msgid "Per day"
+msgstr ""
+
+msgctxt "#30404"
+msgid "Per week"
+msgstr ""
+
+msgctxt "#30405"
+msgid "Storage"
+msgstr ""
+
+msgctxt "#30406"
+msgid "no Premium – playback will not work"
+msgstr ""
+
+msgctxt "#30407"
+msgid "Check for add-on updates"
+msgstr ""
+
+msgctxt "#30408"
+msgid "Checking for add-on updates…"
+msgstr ""
+
+msgctxt "#30409"
+msgid "Add Nokturno to TMDb Helper (Play on movie details)"
+msgstr ""
+
+msgctxt "#30410"
+msgid "TMDb Helper is not installed"
+msgstr ""
+
+msgctxt "#30411"
+msgid "Set Nokturno as the default player in TMDb Helper? Play on a movie or episode details page will then search streams in Nokturno."
+msgstr ""
+
+msgctxt "#30412"
+msgid "Nokturno added to TMDb Helper"
+msgstr ""
+
+msgctxt "#30413"
+msgid "Adding to TMDb Helper failed"
+msgstr ""
+
+msgctxt "#30415"
+msgid "Play from movie details"
+msgstr ""
+
+msgctxt "#30416"
+msgid "You have TMDb Helper (movie details in Arctic Fuse and other skins).[CR]Set Nokturno as its player? The Play button on the details page will then search streams in Nokturno."
+msgstr ""
+
+msgctxt "#30417"
+msgid "FastShare"
+msgstr ""
+
+msgctxt "#30418"
+msgid "Use FastShare / Sdilej.cz"
+msgstr ""
+
+msgctxt "#30419"
+msgid "FastShare.cz is a Czech file host. Search works without an account; playback needs one and is charged from your credit unless you have unlimited downloads."
+msgstr ""
+
+msgctxt "#30420"
+msgid "FastShare – username"
+msgstr ""
+
+msgctxt "#30421"
+msgid "Name you use to sign in to fastshare.cz or sdilej.cz."
+msgstr ""
+
+msgctxt "#30422"
+msgid "FastShare – password"
+msgstr ""
+
+msgctxt "#30423"
+msgid "Password for fastshare.cz or sdilej.cz. It is sent only when signing in; playback then uses a cookie."
+msgstr ""
+
+msgctxt "#30424"
+msgid "Do you have a FastShare or Sdilej.cz account?[CR]Search works without it, playback is charged from your credit or unlimited plan."
+msgstr ""
+
+msgctxt "#30425"
+msgid "unlimited downloads"
+msgstr ""
+
+msgctxt "#30426"
+msgid "credit"
+msgstr ""
+
+msgctxt "#30427"
+msgid "Send Kodi log"
+msgstr ""
+
+msgctxt "#30428"
+msgid "Sends the last ~500 KB of kodi.log to the same server as statistics, so the reported problem can be diagnosed. Passwords, tokens and IP addresses are removed first. Nothing else leaves the device."
+msgstr ""
+
+msgctxt "#30429"
+msgid "Log sent"
+msgstr ""
+
+msgctxt "#30430"
+msgid "Log could not be sent"
+msgstr ""
+
+msgctxt "#30431"
+msgid "Really send the log?"
+msgstr ""
+
+msgctxt "#30432"
+msgid "Info"
+msgstr ""
+
+
+msgctxt "#30440"
+msgid "Switch audio to the preferred language automatically"
+msgstr ""
+
+msgctxt "#30441"
+msgid "When playback starts, the audio track in the preferred language is selected, even if the file has a different default track (often English in re-muxed movies)."
+msgstr ""
+
+msgctxt "#30442"
+msgid "Subtitles"
+msgstr ""
+
+msgctxt "#30443"
+msgid "Leave to Kodi"
+msgstr ""
+
+msgctxt "#30444"
+msgid "When audio in the preferred language is missing"
+msgstr ""
+
+msgctxt "#30445"
+msgid "Always in the preferred language"
+msgstr ""
+
+msgctxt "#30446"
+msgid "Subtitles in the preferred language (or a close one: Czech and Slovak substitute for each other) are turned on when the audio isn't in that language. When the audio is in the preferred language, subtitles are turned off, forced ones included. Subtitles from the source are downloaded and their language is recognised from the text."
+msgstr ""
+
+msgctxt "#30447"
+msgid "Set up from phone"
+msgstr ""
+
+msgctxt "#30448"
+msgid "Shows a QR code on the TV. Open it on a phone connected to the same Wi-Fi and fill in the settings in the browser – no typing passwords with the remote. Works only on the local network."
+msgstr ""
+
+msgctxt "#30449"
+msgid "You can fill in accounts and sources on your phone – the TV shows a QR code, the phone just needs the same Wi-Fi and you don't type passwords with the remote. Or go through a short wizard with the remote.[CR]You can skip this and fill it in later in the add-on settings."
+msgstr ""
+
+msgctxt "#30450"
+msgid "From phone"
+msgstr ""
+
+msgctxt "#30451"
+msgid "Wizard with remote"
+msgstr ""
+
+msgctxt "#30452"
+msgid "1. Connect your phone to the same Wi-Fi as this device.[CR]2. Scan the QR code with the camera, or open this address in a browser:"
+msgstr ""
+
+msgctxt "#30453"
+msgid "Back cancels · the address is valid for 30 minutes and one save"
+msgstr ""
+
+msgctxt "#30454"
+msgid "This device has no local network address. Connect it to Wi-Fi or a cable and try again."
+msgstr ""
+
+msgctxt "#30455"
+msgid "Couldn't start setup from phone (%s)."
+msgstr ""
+
+msgctxt "#30456"
+msgid "Settings from phone saved (%s)"
+msgstr ""
+
+msgctxt "#30457"
+msgid "No changes came from the phone"
+msgstr ""
+
+msgctxt "#30458"
+msgid "Fill in what you want to change and save. The settings go straight to Kodi."
+msgstr ""
+
+msgctxt "#30459"
+msgid "Save to Kodi"
+msgstr ""
+
+msgctxt "#30460"
+msgid "Saved. The settings are in Kodi, you can close this page."
+msgstr ""
+
+msgctxt "#30461"
+msgid "filled in – leave empty to keep the current value"
+msgstr ""
+
+msgctxt "#30462"
+msgid "This address is no longer valid. Start Set up from phone on the TV again."
+msgstr ""
+
+msgctxt "#30463"
+msgid "Invalid value: %s"
+msgstr ""
+
+msgctxt "#30480"
+msgid "Send error reports"
+msgstr ""
+
+msgctxt "#30481"
+msgid "When an error in the add-on's code happens, a short report goes to the author: error type, place in the code, version and a few lines of the Nokturno log. Addresses, accounts, passwords and IPs are removed first. Source outages are not sent. The same error is sent at most once per version."
+msgstr ""
+
+msgctxt "#30482"
+msgid "Similar titles"
+msgstr ""
+
+msgctxt "#30483"
+msgid "TV guide"
+msgstr ""
+
+msgctxt "#30484"
+msgid "Day"
+msgstr ""
+
+msgctxt "#30485"
+msgid "Channel"
+msgstr ""
+
+msgctxt "#30486"
+msgid "Type"
+msgstr ""
+
+msgctxt "#30487"
+msgid "All channels"
+msgstr ""
+
+msgctxt "#30488"
+msgid "Movies and series"
+msgstr ""
+
+msgctxt "#30489"
+msgid "Today"
+msgstr ""
+
+msgctxt "#30490"
+msgid "Tomorrow"
+msgstr ""
+
+msgctxt "#30491"
+msgid "Mon,Tue,Wed,Thu,Fri,Sat,Sun"
+msgstr ""
+
+msgctxt "#30492"
+msgid "TV guide is not available right now"
+msgstr ""
+
+msgctxt "#30493"
+msgid "No similar titles found"
+msgstr ""
+
+msgctxt "#30494"
+msgid "No programmes in this selection"
+msgstr ""
+
+msgctxt "#30495"
+msgid "What to show for a stream and in which order"
+msgstr ""
+
+msgctxt "#30496"
+msgid "Items separated by commas, the vertical bar splits the top and bottom line of the stream dialog. Whatever is missing is not shown. Items: langs (audio languages), size, video (resolution and codec), audio (audio tracks), bitrate, length, subs (subtitles), source, file (file name). Quality is always the picture on the left. Easier with Set up from phone."
+msgstr ""
+
+msgctxt "#30497"
+msgid "Default order"
+msgstr ""
+
+msgctxt "#30498"
+msgid "Puts back the default items and order. Reopen settings to see the new value."
+msgstr ""
+
+msgctxt "#30499"
+msgid "Top line|Bottom line"
+msgstr ""
+
+msgctxt "#30500"
+msgid "Do not show"
+msgstr ""
+
+msgctxt "#30501"
+msgid "Audio languages"
+msgstr ""
+
+msgctxt "#30502"
+msgid "Size"
+msgstr ""
+
+msgctxt "#30503"
+msgid "Resolution and codec"
+msgstr ""
+
+msgctxt "#30504"
+msgid "Audio tracks"
+msgstr ""
+
+msgctxt "#30505"
+msgid "Bitrate"
+msgstr ""
+
+msgctxt "#30506"
+msgid "Length"
+msgstr ""
+
+msgctxt "#30507"
+msgid "Subtitles"
+msgstr ""
+
+msgctxt "#30508"
+msgid "Source"
+msgstr ""
+
+msgctxt "#30509"
+msgid "File name"
+msgstr ""
+
+msgctxt "#30510"
+msgid "Up"
+msgstr ""
+
+msgctxt "#30511"
+msgid "Down"
+msgstr ""
+
+msgctxt "#30512"
+msgid "Stream details reset to the default order"
+msgstr ""
+
+msgctxt "#30513"
+msgid "Choose stream"
+msgstr ""
+
+msgctxt "#30514"
+msgid "Use the arrows to move details between the top and bottom line of the stream dialog; move what should not be shown into Do not show. Quality is always the picture on the left."
+msgstr ""
+
+msgctxt "#30515"
+msgid "On the phone the details move with arrows between the top and bottom line. That is easier than typing the order here."
+msgstr ""
+
+msgctxt "#30516"
+msgid "Delete"
+msgstr ""
+
+msgctxt "#30517"
+msgid "OK opens the address in a browser"
+msgstr ""
+
+msgctxt "#30518"
+msgid "Opening in browser…"
+msgstr ""
+
+msgctxt "#30520"
+msgid "Luna %s responds and returns streams. The setup is fine."
+msgstr ""
+
+msgctxt "#30521"
+msgid "Neither the Luna address nor the token is filled in.[CR]Use “Find Luna on the network”, or paste the whole add-on address from Luna's /setup page into the Token field."
+msgstr ""
+
+msgctxt "#30522"
+msgid "The address %s is not in the expected format.[CR]Expected something like 192.168.1.10:7126."
+msgstr ""
+
+msgctxt "#30523"
+msgid "Nobody answered at %s.[CR][CR]Is the computer running Luna switched on? Is it on the same network as this device? Try “Find Luna on the network”."
+msgstr ""
+
+msgctxt "#30524"
+msgid "Something answers at %s, but it is not Luna.[CR]Check the port – Luna uses 7126 by default."
+msgstr ""
+
+msgctxt "#30525"
+msgid "Luna %s is running, but the token is missing.[CR][CR]Open %s/setup in a browser, copy the add-on address and paste the whole thing into the Token field – the add-on will pull both the address and the token out of it."
+msgstr ""
+
+msgctxt "#30526"
+msgid "What is in the Token field is not a token.[CR][CR]A token starts with “e1.” and is long. Open %s/setup and copy the whole add-on address."
+msgstr ""
+
+msgctxt "#30527"
+msgid "Luna %s is running, but it did not accept this token.[CR][CR]Generate the add-on address again at %s/setup and paste the whole thing into the Token field."
+msgstr ""
+
+msgctxt "#30528"
+msgid "Luna %s answers and the WebShare search works, but its main source returns nothing.[CR][CR]Check the WebShare account at %s/setup and whether the token really comes from this Luna."
+msgstr ""
+
+msgctxt "#30529"
+msgid "Luna %s is running, but it found no streams even for well-known films.[CR][CR]Usually the WebShare account is missing in Luna itself – open %s/setup and fill it in."
+msgstr ""
+
+msgctxt "#30530"
+msgid "Looking for Luna on the local network…"
+msgstr ""
+
+msgctxt "#30531"
+msgid "Luna was not found on this network.[CR][CR]Is it running on some computer at home? Does it use the default port 7126? If it runs elsewhere or on another port, fill the address in by hand."
+msgstr ""
+
+msgctxt "#30532"
+msgid "Luna servers found"
+msgstr ""
+
+msgctxt "#30533"
+msgid "Checking Luna…"
+msgstr ""
+
+msgctxt "#30534"
+msgid "Luna check"
+msgstr ""
+
+
+msgctxt "#30536"
+msgid "Send log"
+msgstr ""
+
+msgctxt "#30537"
+msgid "Close"
+msgstr ""
+
+msgctxt "#30538"
+msgid "Find Luna on the network"
+msgstr ""
+
+msgctxt "#30539"
+msgid "Check Luna setup"
+msgstr ""
+
+msgctxt "#30540"
+msgid "Goes through your home network and fills in the address where Luna is running. It only takes a few seconds."
+msgstr ""
+
+msgctxt "#30541"
+msgid "Says exactly what is wrong: whether the server answers, whether the token is valid and whether any streams come back."
+msgstr ""
+
+msgctxt "#30542"
+msgid "Paste the add-on address from %s/setup"
+msgstr ""
+
+msgctxt "#30543"
+msgid "address and token are both missing"
+msgstr ""
+
+msgctxt "#30544"
+msgid "the address makes no sense"
+msgstr ""
+
+msgctxt "#30545"
+msgid "the server does not answer"
+msgstr ""
+
+msgctxt "#30546"
+msgid "Luna is not running at that address"
+msgstr ""
+
+msgctxt "#30547"
+msgid "running, but the token is missing"
+msgstr ""
+
+msgctxt "#30548"
+msgid "what is in the Token field is not a token"
+msgstr ""
+
+msgctxt "#30549"
+msgid "Luna did not accept the token"
+msgstr ""
+
+msgctxt "#30550"
+msgid "the main source returns nothing – WebShare account in Luna?"
+msgstr ""
+
+msgctxt "#30551"
+msgid "no streams found – WebShare account in Luna?"
+msgstr ""
+
+msgctxt "#30552"
+msgid "All good"
+msgstr ""
+
+msgctxt "#30553"
+msgid "Careful"
+msgstr ""
+
+msgctxt "#30554"
+msgid "Did not work"
+msgstr ""
+
+msgctxt "#30555"
+msgid "Enter address"
+msgstr ""
+
+msgctxt "#30556"
+msgid "Luna address (or the whole add-on address from /setup)"
+msgstr ""
+
+msgctxt "#30557"
+msgid "The saved setup is what gets checked – a value typed into the field counts only after OK. A different address can be entered right here."
+msgstr ""
+
+msgctxt "#30558"
+msgid "Show all streams"
+msgstr ""
+
+msgctxt "#30559"
+msgid "Hungarian"
+msgstr ""
+
+msgctxt "#30560"
+msgid "CZtor"
+msgstr ""
+
+msgctxt "#30561"
+msgid "Use CZtor"
+msgstr ""
+
+msgctxt "#30562"
+msgid "CZtor catalogue with a subscription (cztor.com, storage at giganthost.com). The device is paired with a PIN – the account password is never entered into the add-on."
+msgstr ""
+
+msgctxt "#30563"
+msgid "Pair with PIN"
+msgstr ""
+
+msgctxt "#30564"
+msgid "Open cztor.com/activate on your phone or computer, log in and enter the PIN shown here."
+msgstr ""
+
+msgctxt "#30565"
+msgid "Unpair this device"
+msgstr ""
+
+msgctxt "#30566"
+msgid "Account status"
+msgstr ""
+
+msgctxt "#30567"
+msgid "On your phone or computer open[CR][B]%s[/B][CR]log in and enter PIN [B]%s[/B]"
+msgstr ""
+
+msgctxt "#30568"
+msgid "CZtor: %s, plan %s until %s"
+msgstr ""
+
+msgctxt "#30569"
+msgid "Pairing with CZtor failed."
+msgstr ""
+
+msgctxt "#30570"
+msgid "CZtor unpaired."
+msgstr ""
+
+msgctxt "#30571"
+msgid "CZtor is not paired – use Pair with PIN."
+msgstr ""
+
+msgctxt "#30572"
+msgid "CZtor subscription is not active."
+msgstr ""
+
+msgctxt "#30573"
+msgid "Do you have a CZtor subscription (cztor.com)?[CR]The device is paired with a PIN, no password needed."
+msgstr ""
+
+msgctxt "#30574"
+msgid "How to set up Luna"
+msgstr ""
+
+msgctxt "#30575"
+msgid "1. Luna runs at home on a computer, server, NAS or right on the Android TV box with Kodi (port 7126) and needs a WebShare VIP account.[CR]2. Tap Find Luna on the network – the address fills in by itself. If Luna runs on the same device as Kodi, the address is http://127.0.0.1:7126.[CR]3. Open the Luna address plus /setup in a browser, copy the add-on address and paste all of it into the Token field – the add-on takes the address and the token from it.[CR]4. Tap Check Luna setup. When it says all is well, tap Save to Kodi at the bottom."
+msgstr ""
+
+msgctxt "#30576"
+msgid "Luna found: %s[CR]Tap Save to Kodi at the bottom to keep the address."
+msgstr ""
+
+msgctxt "#30577"
+msgid "No stream found"
+msgstr ""
+
+msgctxt "#30578"
+msgid "Try searching under a different name?[CR]The name you type is searched as full text in the sources (for an episode the season and episode number is added)."
+msgstr ""
+
+msgctxt "#30579"
+msgid "Name to search for"
+msgstr ""
+
+msgctxt "#30580"
+msgid "Connection to the TV was lost – start Set up from phone on the TV again."
+msgstr ""
+
+msgctxt "#30581"
+msgid "Open Luna settings (/setup)"
+msgstr ""
+
+msgctxt "#30582"
+msgid "TV guide: show programmes that already ended today"
+msgstr ""
+
+msgctxt "#30583"
+msgid "Today's TV programme normally hides programmes that have already ended. Turn on to show the whole day."
+msgstr ""
+
+msgctxt "#30584"
+msgid "Finished programmes"
+msgstr ""
+
+msgctxt "#30585"
+msgid "shown"
+msgstr ""
+
+msgctxt "#30586"
+msgid "hidden"
+msgstr ""
+
+msgctxt "#30587"
+msgid "Transfer settings"
+msgstr ""
+
+msgctxt "#30588"
+msgid "Copies accounts and options to another Kodi. CZtor and Trakt accounts stay behind – sign in again on the new device."
+msgstr ""
+
+msgctxt "#30589"
+msgid "Send to another Kodi"
+msgstr ""
+
+msgctxt "#30590"
+msgid "Load from another Kodi"
+msgstr ""
+
+msgctxt "#30591"
+msgid "Save to a file"
+msgstr ""
+
+msgctxt "#30592"
+msgid "Load from a file"
+msgstr ""
+
+msgctxt "#30593"
+msgid "On the other Kodi open Settings → Set up from phone and transfer → Load from another Kodi and type this code:[CR][CR][B]%s[/B][CR][CR]It works once and expires in %s minutes."
+msgstr ""
+
+msgctxt "#30594"
+msgid "Code from the other Kodi"
+msgstr ""
+
+msgctxt "#30595"
+msgid "Transfer failed: %s"
+msgstr ""
+
+msgctxt "#30596"
+msgid "%s settings will be written, from %s.[CR]Already the same: %s · not used here: %s[CR][CR]Current settings will be overwritten. A copy stays in %s."
+msgstr ""
+
+msgctxt "#30597"
+msgid "Settings transferred (%s)"
+msgstr ""
+
+msgctxt "#30598"
+msgid "Nothing to change – the other device has the same settings."
+msgstr ""
+
+msgctxt "#30599"
+msgid "Saved to %s[CR][CR]Code for loading it:[CR][B]%s[/B][CR][CR]Without the code nobody can read the file."
+msgstr ""
+
+msgctxt "#30600"
+msgid "The CZtor account is not transferred. Pair now?"
+msgstr ""
+
+msgctxt "#30601"
+msgid "The Trakt account is not transferred. Sign in now?"
+msgstr ""
+
+msgctxt "#30603"
+msgid "The file could not be written: %s"
+msgstr ""
+
+msgctxt "#30604"
+msgid "The file could not be read: %s"
+msgstr ""
+
+msgctxt "#30605"
+msgid "For You"
+msgstr ""
+
+msgctxt "#30606"
+msgid "Because you watched %s"
+msgstr ""
+
+msgctxt "#30607"
+msgid "No recommendations yet – they are built from recently watched titles."
+msgstr ""
+
+msgctxt "#30608"
+msgid "Random movie"
+msgstr ""
+
+msgctxt "#30609"
+msgid "Random series"
+msgstr ""
+
+msgctxt "#30610"
+msgid "Nothing to pick from"
+msgstr ""
+
+msgctxt "#30630"
+msgid "Source status"
+msgstr ""
+
+msgctxt "#30631"
+msgid "subscription until %s"
+msgstr ""
+
+msgctxt "#30632"
+msgid "days until the subscription ends: %s"
+msgstr ""
+
+msgctxt "#30633"
+msgid "subscription has expired"
+msgstr ""
+
+msgctxt "#30634"
+msgid "account without VIP – downloads at a few kB/s"
+msgstr ""
+
+msgctxt "#30635"
+msgid "unlimited downloads"
+msgstr ""
+
+msgctxt "#30636"
+msgid "%s GB of credit left"
+msgstr ""
+
+msgctxt "#30637"
+msgid "out of credit"
+msgstr ""
+
+msgctxt "#30638"
+msgid "%s until %s"
+msgstr ""
+
+msgctxt "#30639"
+msgid "days until the subscription ends: %s"
+msgstr ""
+
+msgctxt "#30640"
+msgid "subscription has expired"
+msgstr ""
+
+msgctxt "#30641"
+msgid "the device is not paired"
+msgstr ""
+
+msgctxt "#30642"
+msgid "account status unknown"
+msgstr ""
+
+msgctxt "#30643"
+msgid "Premium"
+msgstr ""
+
+msgctxt "#30644"
+msgid "account without Premium – playback will not work"
+msgstr ""
+
+msgctxt "#30645"
+msgid "all good"
+msgstr ""
+
+msgctxt "#30646"
+msgid "rejects this network (HTTP 429) – VPN or mobile data? Retry in %s min"
+msgstr ""
+
+msgctxt "#30647"
+msgid "responding"
+msgstr ""
+
+msgctxt "#30648"
+msgid "the username or password does not match"
+msgstr ""
+
+msgctxt "#30649"
+msgid "not responding"
+msgstr ""
+
+msgctxt "#30650"
+msgid "the status could not be determined"
+msgstr ""
+
+msgctxt "#30611"
+msgid "OpenSubtitles"
+msgstr ""
+
+
+msgctxt "#30613"
+msgid "Use OpenSubtitles"
+msgstr ""
+
+msgctxt "#30614"
+msgid "Used only for titles with no subtitles from the source, from WebShare or in the file itself."
+msgstr ""
+
+msgctxt "#30615"
+msgid "OpenSubtitles account (optional)"
+msgstr ""
+
+msgctxt "#30616"
+msgid "Without an account you can download 5 subtitles a day, with a free account 20."
+msgstr ""
+
+msgctxt "#30617"
+msgid "OpenSubtitles password"
+msgstr ""
+
+msgctxt "#30618"
+msgid "Sent only when signing in; only the issued token is stored."
+msgstr ""
+
+msgctxt "#30619"
+msgid "Check OpenSubtitles"
+msgstr ""
+
+msgctxt "#30620"
+msgid "Checks the connection, the account and the remaining daily quota."
+msgstr ""
+
+msgctxt "#30621"
+msgid "OpenSubtitles works."
+msgstr ""
+
+msgctxt "#30622"
+msgid "OpenSubtitles is switched off in the settings."
+msgstr ""
+
+msgctxt "#30623"
+msgid "The key could not be fetched from the server – try again later."
+msgstr ""
+
+msgctxt "#30624"
+msgid "Sign-in failed – check the username and password."
+msgstr ""
+
+msgctxt "#30625"
+msgid "Subtitles found for the test title: %s"
+msgstr ""
+
+msgctxt "#30626"
+msgid "Downloads left today: %s"
+msgstr ""
+
+msgctxt "#30627"
+msgid "Signed in as %s"
+msgstr ""
+
+msgctxt "#30628"
+msgid "Not signed in – 5 downloads a day for this IP address."
+msgstr ""
+
+msgctxt "#30651"
+msgid "days left: %s"
+msgstr ""
+
+msgctxt "#30652"
+msgid "no VIP"
+msgstr ""
+
+msgctxt "#30653"
+msgid "%s GB left"
+msgstr ""
+
+msgctxt "#30654"
+msgid "not paired"
+msgstr ""
+
+msgctxt "#30655"
+msgid "no Premium"
+msgstr ""
+
+msgctxt "#30656"
+msgid "paused %s min"
+msgstr ""
+
+msgctxt "#30657"
+msgid "sign-in does not match"
+msgstr ""
+
+msgctxt "#30658"
+msgid "status unknown"
+msgstr ""
+
+msgctxt "#30659"
+msgid "no preferred language"
+msgstr ""
+
+msgctxt "#30660"
+msgid "Looking for a title in your preferred language…"
+msgstr ""
+
+msgctxt "#30661"
+msgid "Synchronisation hub"
+msgstr ""
+
+msgctxt "#30662"
+msgid "Home Assistant"
+msgstr ""
+
+msgctxt "#30663"
+msgid "Nokturno dashboard"
+msgstr ""
+
+msgctxt "#30664"
+msgid "Group code"
+msgstr ""
+
+msgctxt "#30665"
+msgid "Create group / open for joining"
+msgstr ""
+
+msgctxt "#30666"
+msgid "Join a group"
+msgstr ""
+
+msgctxt "#30667"
+msgid "Leave the group"
+msgstr ""
+
+msgctxt "#30668"
+msgid "Sync watched and resume points"
+msgstr ""
+
+msgctxt "#30669"
+msgid "Sync My list"
+msgstr ""
+
+msgctxt "#30670"
+msgid "Sync search history"
+msgstr ""
+
+msgctxt "#30671"
+msgid "The group is set up. Enter this code on the next Kodi:"
+msgstr ""
+
+msgctxt "#30672"
+msgid "The code lets a new device join for 30 minutes. Keep the code – without it the data cannot be read and cannot be recovered."
+msgstr ""
+
+msgctxt "#30673"
+msgid "Type the group code from your first Kodi"
+msgstr ""
+
+msgctxt "#30674"
+msgid "Joined. Synchronisation runs in the background."
+msgstr ""
+
+msgctxt "#30675"
+msgid "That code does not look right."
+msgstr ""
+
+msgctxt "#30676"
+msgid "No group yet – start one, or join with a code from another Kodi."
+msgstr ""
+
+msgctxt "#30677"
+msgid "Leave the group? This Kodi stops synchronising. Nothing already saved here is deleted. The other devices keep the code – to really cut off a removed device, start a new group and join the others with a new code."
+msgstr ""
+
+msgctxt "#30678"
+msgid "The group has been left."
+msgstr ""
+
+msgctxt "#30679"
+msgid "Joining is open again. Enter this code on the next Kodi:"
+msgstr ""
+
+msgctxt "#30680"
+msgid "Joining is open for 30 minutes."
+msgstr ""
+
+msgctxt "#30681"
+msgid "The dashboard only stores sealed data it cannot read. The code is the key and never leaves the devices. With Home Assistant, enter the same group code in the integration settings – HA then joins the group as another device and its card stays current."
+msgstr ""
+
+msgctxt "#30682"
+msgid "What gets synced"
+msgstr ""
+
+msgctxt "#30683"
+msgid "Sync add-on settings"
+msgstr ""
+
+msgctxt "#30684"
+msgid "Sync source accounts"
+msgstr ""
+
+msgctxt "#30685"
+msgid "Options such as preferred language, stream sorting or enabled sources. The download folder and the sync settings themselves are never shared."
+msgstr ""
+
+msgctxt "#30686"
+msgid "Sign-ins to the sources (WebShare, Sosáč, Sledujteto, FastShare, Přehraj.to, OpenSubtitles, Luna, own storage) and the TMDB key. Passwords travel encrypted and the server cannot read them, but anyone holding the group code can – give the code only to your own devices. CZtor and Trakt must be paired on each device separately."
+msgstr ""
+
+msgctxt "#30688"
+msgid "Synchronisation goes through the dashboard. With Home Assistant, enter the same group code in the integration settings as well."
+msgstr ""
+
+msgctxt "#30690"
+msgid "Nokturno"
+msgstr ""
+
+msgctxt "#30691"
+msgid "Version and ID of this installation"
+msgstr ""
+
+msgctxt "#30692"
+msgid "Web: nokturno.stream"
+msgstr ""
+
+msgctxt "#30693"
+msgid "Family: Kodi · Stremio · Home Assistant"
+msgstr ""
+
+msgctxt "#30694"
+msgid "When something does not work"
+msgstr ""
+
+msgctxt "#30695"
+msgid "ID of this installation"
+msgstr ""
+
+msgctxt "#30700"
+msgid "Where to ask"
+msgstr ""
+
+msgctxt "#30701"
+msgid "Kodi forum: xbmc-kodi.cz"
+msgstr ""
+
+msgctxt "#30702"
+msgid "Stremio forum: stremio.cz/d/240"
+msgstr ""
+
+msgctxt "#30703"
+msgid "Version"
+msgstr ""
+
+msgctxt "#30707"
+msgid "The code from the first Kodi where you created the group. Turn on Synchronisation, choose Nokturno dashboard as the hub and save – this Kodi joins within five minutes."
+msgstr ""
+
+msgctxt "#30708"
+msgid "Přehraj.to"
+msgstr ""
+
+msgctxt "#30709"
+msgid "Use Přehraj.to"
+msgstr ""
+
+msgctxt "#30710"
+msgid "Works without an account too: search is the same, but only the first page of results (32 files) is visible and playback uses a re-encoded 1080p file. A Premium account adds paging and plays the original file, including 4K."
+msgstr ""
+
+msgctxt "#30711"
+msgid "E-mail"
+msgstr ""
+
+msgctxt "#30712"
+msgid "The e-mail you sign in with at prehraj.to. Leave it empty to use the source without an account."
+msgstr ""
+
+msgctxt "#30713"
+msgid "Password"
+msgstr ""
+
+msgctxt "#30714"
+msgid "The password for the same account. Přehraj.to counts every sign-in as a device, so Nokturno signs in only once every few hours."
+msgstr ""
+
+msgctxt "#30715"
+msgid "Premium, days left: %s"
+msgstr ""
+
+msgctxt "#30716"
+msgid "days until the subscription ends: %s"
+msgstr ""
+
+msgctxt "#30717"
+msgid "account without Premium – fewer results and 1080p only"
+msgstr ""
+
+msgctxt "#30718"
+msgid "no account – only the first page of results"
+msgstr ""
+
+msgctxt "#30719"
+msgid "paused for %s min (HTTP 429)"
+msgstr ""
+
+msgctxt "#30720"
+msgid "no Premium"
+msgstr ""
+
+msgctxt "#30721"
+msgid "no account, %s found"
+msgstr ""
+
+msgctxt "#30722"
+msgid "no Premium – fewer results and 1080p only"
+msgstr ""
+
+msgctxt "#30723"
+msgid "Premium, days left: %s"
+msgstr ""
+
+msgctxt "#30724"
+msgid "Set up from phone and transfer"
+msgstr ""
+
+msgctxt "#30725"
+msgid "rejects network"
+msgstr ""
+
+msgctxt "#30726"
+msgid "Sources and accounts"
+msgstr ""
+
+msgctxt "#30727"
+msgid "Maintenance"
+msgstr ""
+
+msgctxt "#30728"
+msgid "Legal notice"
+msgstr ""
+
+msgctxt "#30729"
+msgid "[B]Nokturno terms of use[/B]\nVersion 3 · effective from 30 September 2026\n\n[B]1. What Nokturno is[/B]\nNokturno is an add-on for Kodi and Home Assistant. It is a player and search tool for your own storage (for example WebDAV) and for the storage services and catalogues of third parties that you enable in the settings (WebShare, Sosáč, HellSpy, Sledujteto, FastShare / Sdilej.cz, Přehraj.to, CZtor, Luna). It searches for subtitles on OpenSubtitles. You decide which sources you use. Nokturno is free, without ads and without paid features.\n\n[B]2. How searching works[/B]\nNokturno asks the enabled sources for a title's name or identifier and shows the files they return. The files are stored on the servers of those services, were uploaded by their users, and your player downloads them directly from there. Nokturno does not host or distribute any film, series or other work.\n\nNokturno does not verify the legal status of individual files. It does not check who uploaded a file or whether they had the rightsholder's consent. A file appearing in the results does not mean you may legally play it.\n\nSearching runs on your device with your accounts. The Nokturno server does not search for files. It provides title information (catalogues, TV guide, recommendations), keys for the interfaces of title-information and subtitle services, and synchronisation between your devices.\n\n[B]3. What you may and may not do[/B]\n- Use Nokturno only for content you have the right to – your own recordings, freely licensed works, and content you hold a licence or other legal title to. Playing or downloading a copyrighted work without the rightsholder's consent is prohibited.\n- Do not use Nokturno to infringe the rights of others or to distribute content you have no right to.\n- When you connect a third-party service, its terms apply to you as well. Nokturno gives you no rights to the content of those services.\n- Do not share your source accounts with other people unless the source's terms allow it.\n- Do not send automated requests to the Nokturno server, do not get around limits or blocks, and do not offer access through Nokturno as a paid service.\n\n[B]4. Reporting content and blocking[/B]\nOnly the service that stores a file can actually delete it. We therefore recommend that rightsholders report it there directly (contacts are at the end).\n\nYou can also report it to us. What a notice must contain and how we handle it is described at nokturno.stream/abuse; send it to abuse@nokturno.stream. We reply to a complete notice and block the title or file in Nokturno's results within 48 hours. The block reaches the add-on with a list from the server, older versions after they are updated.\n\n[B]5. No warranty and limitation of liability[/B]\nWe provide Nokturno \"as is\", free of charge and with no warranty of functionality, availability or of what third-party sources contain. You are responsible for what you play and download with Nokturno.\n\nTo the extent permitted by law, we are not liable for damage arising from using Nokturno or from being unable to use it, for the content, availability and terms of third-party services, or for how you use Nokturno. Liability that cannot be excluded by law is not affected.\n\nWe may restrict or end access to the server at any time, especially if these terms are breached.\n\n[B]6. Personal data[/B]\nWhich data Nokturno sends, why, how long we keep it and how to ask for its deletion is described at nokturno.stream/privacy.\n\n[B]7. Governing law[/B]\nThese terms are governed by the law of the Czech Republic. If you are a consumer habitually resident in another country, you keep the protection the law of that country gives you.\n\n[B]8. Changes to these terms[/B]\nEvery version has a number and a date. We will announce significant changes in the add-on, and Kodi and Home Assistant will ask for your consent again.\n\n[B]9. Contacts[/B]\n- reporting content: abuse@nokturno.stream (procedure at nokturno.stream/abuse)\n- personal data: privacy@nokturno.stream\n- everything else: kontakt@nokturno.stream\n- help with the add-on: the help pages and Discord (not for legal matters)"
+msgstr ""
+
+msgctxt "#30730"
+msgid "I confirm I will use Nokturno only for content I have the right to, and I agree to the terms of use (version 3)."
+msgstr ""
+
+msgctxt "#30732"
+msgid "I don't agree"
+msgstr ""
+
+msgctxt "#30733"
+msgid "First accept the legal notice in the Nokturno menu."
+msgstr ""
+
+
+msgctxt "#30734"
+msgid "[B]Reporting directly to the source[/B]\n- WebShare – abuse@webshare.cz\n- Sosáč / Streamuj.tv – streamuj.tv/advertise (DMCA)\n- HellSpy – hellspy.to/contact\n- Sledujteto – sledujteto.cz/nahlasit-nelegalni-soubor\n- FastShare – fastshare.cz/abuse\n- Sdilej.cz – abuse@sdilej.cz\n- Přehraj.to – prehrajto.cz/nahlasit-nelegalni-soubor\n- CZtor – contact via cztor.com/kontakt\n- OpenSubtitles – copyright@opensubtitles.org (DMCA)"
+msgstr ""
+
+
+msgctxt "#30735"
+msgid "Terms of use"
+msgstr ""
+
+
+msgctxt "#30736"
+msgid "I agree to the terms of use"
+msgstr ""
+
+
+msgctxt "#30738"
+msgid "Show the terms"
+msgstr ""
+
+
+msgctxt "#30741"
+msgid "Unavailable streams: %s – hidden"
+msgstr ""
+
+msgctxt "#30742"
+msgid "Pause source"
+msgstr ""
+
+msgctxt "#30743"
+msgid "10 minutes"
+msgstr ""
+
+msgctxt "#30744"
+msgid "1 hour"
+msgstr ""
+
+msgctxt "#30745"
+msgid "12 hours"
+msgstr ""
+
+msgctxt "#30746"
+msgid "Cancel pause"
+msgstr ""
+
+msgctxt "#30747"
+msgid "%s paused for %s"
+msgstr ""
+
+msgctxt "#30748"
+msgid "I agree"
+msgstr ""
+
+msgctxt "#30749"
+msgid "Do you agree to the terms of use above?"
+msgstr ""
+
+msgctxt "#30800"
+msgid "SyncWatch"
+msgstr ""
+
+msgctxt "#30801"
+msgid "Watch one film or episode together on several devices – each on their own, but at the same moment.[CR][CR][B]1.[/B] One person creates a group and becomes its leader. They get a code, e.g. SW-7K2Q-9MFX.[CR][B]2.[/B] The others (up to 4 more devices) enter the code in SyncWatch → Join with code. They wait until the leader plays something.[CR][B]3.[/B] The leader plays a film in Nokturno as usual. The same stream starts on the other devices by itself – playback begins once it has loaded everywhere.[CR][B]4.[/B] Pause, play and seeking by anyone apply to everyone. When someone is buffering, the others wait.[CR][CR]Everyone plays exactly the same stream – same quality, audio and length – each through their own account at the source. Whoever has no account at the leader's source cannot play it.[CR]The group ends when nobody joins it for 5 minutes, or when the leader ends it. The server cannot see what you watch – it is encrypted with the group code."
+msgstr ""
+
+msgctxt "#30802"
+msgid "Got it"
+msgstr ""
+
+msgctxt "#30803"
+msgid "Got it, don't show again"
+msgstr ""
+
+msgctxt "#30804"
+msgid "leader"
+msgstr ""
+
+msgctxt "#30805"
+msgid "member"
+msgstr ""
+
+msgctxt "#30806"
+msgid "connected: %d"
+msgstr ""
+
+msgctxt "#30807"
+msgid "Close the group to more devices"
+msgstr ""
+
+msgctxt "#30808"
+msgid "Open the group to more devices"
+msgstr ""
+
+msgctxt "#30809"
+msgid "End watching for everyone"
+msgstr ""
+
+msgctxt "#30810"
+msgid "Leave the group"
+msgstr ""
+
+msgctxt "#30811"
+msgid "Create a group (I'll lead)"
+msgstr ""
+
+msgctxt "#30812"
+msgid "Join with code"
+msgstr ""
+
+msgctxt "#30813"
+msgid "How SyncWatch works"
+msgstr ""
+
+msgctxt "#30814"
+msgid "The SyncWatch server is not responding, try again in a moment."
+msgstr ""
+
+msgctxt "#30815"
+msgid "Group code (SW-XXXX-XXXX)"
+msgstr ""
+
+msgctxt "#30816"
+msgid "The code is not valid. It has eight characters, e.g. SW-7K2Q-9MFX."
+msgstr ""
+
+msgctxt "#30817"
+msgid "End watching? The group will end for everyone else too."
+msgstr ""
+
+msgctxt "#30818"
+msgid "Leave the group? The others will keep watching."
+msgstr ""
+
+msgctxt "#30819"
+msgid "SyncWatch ended"
+msgstr ""
+
+msgctxt "#30820"
+msgid "The group is closed, nobody else can join"
+msgstr ""
+
+msgctxt "#30821"
+msgid "The group is open to more devices"
+msgstr ""
+
+msgctxt "#30822"
+msgid "Group code"
+msgstr ""
+
+msgctxt "#30823"
+msgid "On another Kodi: Nokturno → SyncWatch → Join with code."
+msgstr ""
+
+msgctxt "#30824"
+msgid "Waiting for the broadcast…"
+msgstr ""
+
+msgctxt "#30825"
+msgid "Group %s – when the leader plays something, it will start here too."
+msgstr ""
+
+msgctxt "#30826"
+msgid "Back closes the window. Then play a film in Nokturno – it starts for everyone."
+msgstr ""
+
+msgctxt "#30827"
+msgid "Back closes the window, you stay in the group. You can leave in the SyncWatch menu."
+msgstr ""
+
+msgctxt "#30828"
+msgid "this device"
+msgstr ""
+
+msgctxt "#30829"
+msgid "disconnected"
+msgstr ""
+
+msgctxt "#30830"
+msgid "Connecting…"
+msgstr ""
+
+msgctxt "#30831"
+msgid "Nobody has joined yet – the code expires in %s"
+msgstr ""
+
+msgctxt "#30832"
+msgid "Now playing"
+msgstr ""
+
+msgctxt "#30833"
+msgid "SyncWatch ended: %s"
+msgstr ""
+
+msgctxt "#30834"
+msgid "The leader's stream cannot be played here (%s). An account at the same source is needed."
+msgstr ""
+
+msgctxt "#30835"
+msgid "Back to the film: %s"
+msgstr ""
+
+msgctxt "#30840"
+msgid "Pause for everyone"
+msgstr ""
+
+msgctxt "#30841"
+msgid "%(who)s: paused"
+msgstr ""
+
+msgctxt "#30842"
+msgid "%(who)s: playing again"
+msgstr ""
+
+msgctxt "#30843"
+msgid "%(who)s: jumped to %(pos)s"
+msgstr ""
+
+msgctxt "#30844"
+msgid "%(who)s: loading, waiting"
+msgstr ""
+
+msgctxt "#30845"
+msgid "%(who)s: playback ended"
+msgstr ""
+
+msgctxt "#30846"
+msgid "Starting: %(title)s"
+msgstr ""
+
+msgctxt "#30847"
+msgid "Waiting for the stream to load for the others…"
+msgstr ""
+
+msgctxt "#30848"
+msgid "Starting without: %(names)s"
+msgstr ""
+
+msgctxt "#30849"
+msgid "The stream could not be started"
+msgstr ""
+
+msgctxt "#30850"
+msgid "You are playing a different version – times may not match exactly"
+msgstr ""
+
+msgctxt "#30851"
+msgid "You are playing something else – the group waits for the next title from the leader"
+msgstr ""
+
+msgctxt "#30852"
+msgid "This can't be shared with the others (it is not a Nokturno title)"
+msgstr ""
+
+msgctxt "#30853"
+msgid "You stopped playback, the others keep watching. You can return in SyncWatch"
+msgstr ""
+
+msgctxt "#30860"
+msgid "Apply the last filter automatically"
+msgstr ""
+
+msgctxt "#30861"
+msgid "The stream selection opens with the filter you set last time. If it would leave no stream for a title, all streams are shown."
+msgstr ""
+
+msgctxt "#30862"
+msgid "Use this storage"
+msgstr ""
+
+msgctxt "#30863"
+msgid "A disabled storage stays filled in, it is just not searched and not shown in the menu."
+msgstr ""
+
+msgctxt "#30900"
+msgid "Watchlist"
+msgstr ""
+
+msgctxt "#30901"
+msgid "Watch for new episodes"
+msgstr ""
+
+msgctxt "#30902"
+msgid "Stop watching for new episodes"
+msgstr ""
+
+msgctxt "#30903"
+msgid "Watch until available"
+msgstr ""
+
+msgctxt "#30904"
+msgid "Stop watching"
+msgstr ""
+
+msgctxt "#30905"
+msgid "Keep checking"
+msgstr ""
+
+msgctxt "#30906"
+msgid "Stop checking"
+msgstr ""
+
+msgctxt "#30907"
+msgid "Mark new episode as seen"
+msgstr ""
+
+msgctxt "#30908"
+msgid "new episode"
+msgstr ""
+
+msgctxt "#30909"
+msgid "can be played"
+msgstr ""
+
+msgctxt "#30910"
+msgid "not yet"
+msgstr ""
+
+msgctxt "#30911"
+msgid "watching"
+msgstr ""
+
+msgctxt "#30912"
+msgid "torrent only"
+msgstr ""
+
+msgctxt "#30913"
+msgid "New episode to watch"
+msgstr ""
+
+msgctxt "#30914"
+msgid "Now available: %s"
+msgstr ""
+
+msgctxt "#30915"
+msgid "New source: %s"
+msgstr ""
+
+msgctxt "#30916"
+msgid "Added to the watchlist"
+msgstr ""
+
+msgctxt "#30917"
+msgid "Removed from the watchlist"
+msgstr ""
+
+msgctxt "#30918"
+msgid "Check now"
+msgstr ""
+
+msgctxt "#30919"
+msgid "Sync Watchlist"
+msgstr ""
+
+msgctxt "#30920"
+msgid "Checking the watchlist…"
+msgstr ""
+
+msgctxt "#30924"
+msgid "Let you know when it is available?[CR]The title goes to the watchlist and Nokturno checks it once a day."
+msgstr ""
+
+msgctxt "#30925"
+msgid "Let you know when the episode is available?[CR]The series goes to the watchlist and Nokturno checks it every six hours."
+msgstr ""
+
+msgctxt "#30926"
+msgid "Account from"
+msgstr ""
+
+msgctxt "#30927"
+msgid "Sdilej.cz has the same files as FastShare, only the account is separate. Choose the site where you have your account and credit."
+msgstr ""
+
+msgctxt "#30928"
+msgid "Sdilej.cz"
+msgstr ""
+
+msgctxt "#30929"
+msgid "TMDb Helper language"
+msgstr ""
+
+msgctxt "#30930"
+msgid "TMDb Helper has its own language setting and does not follow Kodi, so the movie details page and its widgets are in English.[CR]Switch TMDb Helper to Kodi's language?"
+msgstr ""
+
+msgctxt "#30931"
+msgid "Hide 3D streams"
+msgstr ""
+
+msgctxt "#30932"
+msgid "3D files (by name: 3D, H-SBS, Half-OU, MVC, or by the MKV header) are never shown, not even when there is no other stream."
+msgstr ""
+
+msgctxt "#30933"
+msgid "WebShare account without VIP – downloads at only a few kB/s."
+msgstr ""
+
+msgctxt "#30934"
+msgid "Measures your connection speed and sets Max. bitrate from it. Takes under a minute."
+msgstr ""
+
+msgctxt "#30935"
+msgid "Deletes saved catalogues, search results and stream lists, they load again next time. Settings, My list and history are not deleted."
+msgstr ""
+
+msgctxt "#30936"
+msgid "Tries every enabled source and sign-in and shows what works."
+msgstr ""
+
+msgctxt "#30937"
+msgid "The Play button on a movie details page (TMDb Helper, Arctic Fuse and other skins) then searches for streams in Nokturno."
+msgstr ""
+
+msgctxt "#30938"
+msgid "Shows a code that you enter at trakt.tv/activate."
+msgstr ""
+
+msgctxt "#30939"
+msgid "The watched mark and the point where playback stopped."
+msgstr ""
+
+msgctxt "#30940"
+msgid "Watched series and titles including Keep checking. The check is then not repeated on every device."
+msgstr ""
+
+msgctxt "#30941"
+msgid "This Kodi stops syncing, the data saved here stays."
+msgstr ""
+
+msgctxt "#30942"
+msgid "Working…"
+msgstr ""
+
+msgctxt "#30943"
+msgid "Without a group it creates one and shows the code. With an existing group it opens joining again for 30 minutes so another device can join. Keep the code – without it the data cannot be read and cannot be recovered."
+msgstr ""
+
+msgctxt "#30944"
+msgid "Custom catalogs"
+msgstr ""
+
+msgctxt "#30945"
+msgid "New catalog"
+msgstr ""
+
+msgctxt "#30946"
+msgid "Edit catalog"
+msgstr ""
+
+msgctxt "#30947"
+msgid "Delete catalog"
+msgstr ""
+
+msgctxt "#30948"
+msgid "Genres (none = all)"
+msgstr ""
+
+msgctxt "#30949"
+msgid "Original language"
+msgstr ""
+
+msgctxt "#30950"
+msgid "Any"
+msgstr ""
+
+msgctxt "#30951"
+msgid "From year (empty = no limit)"
+msgstr ""
+
+msgctxt "#30952"
+msgid "To year (empty = no limit)"
+msgstr ""
+
+msgctxt "#30953"
+msgid "Sort by"
+msgstr ""
+
+msgctxt "#30954"
+msgid "Popularity"
+msgstr ""
+
+msgctxt "#30955"
+msgid "Rating"
+msgstr ""
+
+msgctxt "#30956"
+msgid "Release date"
+msgstr ""
+
+msgctxt "#30957"
+msgid "Catalog name"
+msgstr ""
+
+msgctxt "#30958"
+msgid "Delete catalog %s?"
+msgstr ""
+
+msgctxt "#30959"
+msgid "The catalog could not be loaded. Try again later."
+msgstr ""
+
+msgctxt "#30960"
+msgid "Czech"
+msgstr ""
+
+msgctxt "#30961"
+msgid "Slovak"
+msgstr ""
+
+msgctxt "#30962"
+msgid "Czech or Slovak"
+msgstr ""
+
+msgctxt "#30963"
+msgid "English"
+msgstr ""
+
+msgctxt "#30964"
+msgid "German"
+msgstr ""
+
+msgctxt "#30965"
+msgid "French"
+msgstr ""
+
+msgctxt "#30966"
+msgid "Spanish"
+msgstr ""
+
+msgctxt "#30967"
+msgid "Italian"
+msgstr ""
+
+msgctxt "#30968"
+msgid "Polish"
+msgstr ""
+
+msgctxt "#30969"
+msgid "Hungarian"
+msgstr ""
+
+msgctxt "#30970"
+msgid "Korean"
+msgstr ""
+
+msgctxt "#30971"
+msgid "Japanese"
+msgstr ""
+
+msgctxt "#30972"
+msgid "Custom catalog"
+msgstr ""
+
+msgctxt "#30973"
+msgid "Titles must have"
+msgstr ""
+
+msgctxt "#30974"
+msgid "all selected genres"
+msgstr ""
+
+msgctxt "#30975"
+msgid "at least one selected genre"
+msgstr ""
+
+msgctxt "#30976"
+msgid "Fairy tales"
+msgstr ""
+
+msgctxt "#30977"
+msgid "Discord (fastest reply): discord.gg/ChmMPmDDEj"
+msgstr ""
+
+msgctxt "#30979"
+msgid "Episode list"
+msgstr ""
+
+msgctxt "#30980"
+msgid "All seasons"
+msgstr ""
+
+msgctxt "#30981"
+msgid "Custom list"
+msgstr ""
+
+msgctxt "#30982"
+msgid "List address (JSON)"
+msgstr ""
+
+msgctxt "#30983"
+msgid "Request header 1"
+msgstr ""
+
+msgctxt "#30984"
+msgid "Request header 2"
+msgstr ""
+
+msgctxt "#30985"
+msgid "The custom list could not be loaded."
+msgstr ""
+
+msgctxt "#30986"
+msgid "Showing the last known version."
+msgstr ""
+
+msgctxt "#30987"
+msgid "Address of a JSON file with the list. It appears in the main menu. You are responsible for the content of the list."
+msgstr ""
+
+msgctxt "#30988"
+msgid "Optional, in the form Name: value. Sent when the list is loaded."
+msgstr ""

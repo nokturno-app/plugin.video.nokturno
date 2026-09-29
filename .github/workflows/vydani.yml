@@ -1,0 +1,28 @@
+name: vydani
+# Tag v* (anotovaný) = release, který vydá github-actions[bot].
+# První řádek zprávy tagu = název („Nokturno pro Kodi 9.0.0 – opravy chyb“), zbytek = text.
+# repo/ se staví lokálně (tools/build_repo.py) a je součástí commitu s tagem.
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  vydani:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: git fetch --force origin "refs/tags/$GITHUB_REF_NAME:refs/tags/$GITHUB_REF_NAME"
+      - name: Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=$(python3 -c "import xml.etree.ElementTree as ET; print(ET.parse('addon.xml').getroot().get('version'))")
+          test "v${V/\~/-}" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME, addon.xml $V"; exit 1; }
+          TITLE=$(git for-each-ref "refs/tags/$GITHUB_REF_NAME" --format='%(contents:subject)')
+          git for-each-ref "refs/tags/$GITHUB_REF_NAME" --format='%(contents:body)' > notes.md
+          PRE=""; [[ "$V" == *"~"* ]] && PRE="--prerelease"
+          DIR=repo; [[ -n "$PRE" ]] && DIR=repo-beta
+          gh release create "$GITHUB_REF_NAME" $PRE --title "$TITLE" --notes-file notes.md \
+            "$DIR/plugin.video.nokturno/plugin.video.nokturno-$V.zip" \
+            repo/repository.nokturno/repository.nokturno-*.zip repo/repository.nokturno/repository.nokturno.zip

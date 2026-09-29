@@ -1,0 +1,2732 @@
+# Kodi Media Center language file
+# Addon Name: Nokturno
+# Addon id: plugin.video.nokturno
+msgid ""
+msgstr ""
+"Project-Id-Version: plugin.video.nokturno\n"
+"Language: cs_CZ\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+
+msgctxt "#30000"
+msgid "Nokturno"
+msgstr "Nokturno"
+
+msgctxt "#30001"
+msgid "Luna"
+msgstr "Luna"
+
+msgctxt "#30002"
+msgid "Luna server address (http://IP:7126)"
+msgstr "Adresa serveru Luna (http://IP:7126)"
+
+msgctxt "#30003"
+msgid "Add-on address or token from Luna's /setup page"
+msgstr "Adresa doplňku nebo token ze stránky /setup Luny"
+
+msgctxt "#30004"
+msgid "Playback"
+msgstr "Přehrávání"
+
+msgctxt "#30009"
+msgid "Search via Luna and WebShare full-text too (slower)"
+msgstr "Hledat přes Lunu i fulltextem na WebShare (pomalejší)"
+
+msgctxt "#30010"
+msgid "Search movies"
+msgstr "Hledat film"
+
+msgctxt "#30011"
+msgid "Search series"
+msgstr "Hledat seriál"
+
+msgctxt "#30012"
+msgid "Movies"
+msgstr "Filmy"
+
+msgctxt "#30013"
+msgid "Series"
+msgstr "Seriály"
+
+msgctxt "#30020"
+msgid "All"
+msgstr "Vše"
+
+msgctxt "#30021"
+msgid "Next page »"
+msgstr "Další strana »"
+
+msgctxt "#30022"
+msgid "Specials"
+msgstr "Speciály"
+
+msgctxt "#30023"
+msgid "Season %d"
+msgstr "%d. série"
+
+msgctxt "#30024"
+msgid "Choose stream"
+msgstr "Vyber stream"
+
+msgctxt "#30102"
+msgid "No stream found"
+msgstr "Žádný stream nenalezen"
+
+msgctxt "#30030"
+msgid "Sosáč"
+msgstr "Sosáč"
+
+msgctxt "#30031"
+msgid "Use Sosáč"
+msgstr "Používat Sosáč"
+
+msgctxt "#30034"
+msgid "Also look up streams for a title in the other source"
+msgstr "Dohledat streamy titulu i v druhém zdroji"
+
+msgctxt "#30014"
+msgid "Use Luna"
+msgstr "Používat Lunu"
+
+msgctxt "#30040"
+msgid "New search…"
+msgstr "Nové hledání…"
+
+msgctxt "#30041"
+msgid "Clear history"
+msgstr "Vymazat historii"
+
+msgctxt "#30042"
+msgid "Remove from history"
+msgstr "Odebrat z historie"
+
+msgctxt "#30043"
+msgid "Mark as watched"
+msgstr "Označit jako zhlédnuté"
+
+msgctxt "#30044"
+msgid "Mark as unwatched"
+msgstr "Označit jako nezhlédnuté"
+
+msgctxt "#30045"
+msgid "Search WebShare"
+msgstr "Hledat na WebShare"
+
+msgctxt "#30050"
+msgid "WebShare"
+msgstr "WebShare"
+
+msgctxt "#30051"
+msgid "Use WebShare"
+msgstr "Používat WebShare"
+
+msgctxt "#30052"
+msgid "Username or e-mail"
+msgstr "Uživatelské jméno nebo e-mail"
+
+msgctxt "#30053"
+msgid "Password (or 40-char salted hash)"
+msgstr "Heslo (nebo 40znakový salted hash)"
+
+msgctxt "#30054"
+msgid "Sort results"
+msgstr "Řazení výsledků"
+
+msgctxt "#30055"
+msgid "Relevance"
+msgstr "Relevance"
+
+msgctxt "#30056"
+msgid "Newest"
+msgstr "Nejnovější"
+
+msgctxt "#30057"
+msgid "Rating"
+msgstr "Hodnocení"
+
+msgctxt "#30058"
+msgid "Largest"
+msgstr "Největší"
+
+msgctxt "#30059"
+msgid "Smallest"
+msgstr "Nejmenší"
+
+msgctxt "#30104"
+msgid "The source is not enabled or set up – check Sources and accounts and Own storage in settings"
+msgstr "Zdroj není zapnutý nebo nastavený – zkontroluj v nastavení Zdroje a účty a Vlastní úložiště"
+
+msgctxt "#30060"
+msgid "My list"
+msgstr "Můj seznam"
+
+msgctxt "#30061"
+msgid "Add to My list"
+msgstr "Přidat do Mého seznamu"
+
+msgctxt "#30062"
+msgid "Remove from My list"
+msgstr "Odebrat z Mého seznamu"
+
+msgctxt "#30063"
+msgid "Continue watching"
+msgstr "Pokračovat ve sledování"
+
+msgctxt "#30064"
+msgid "Recently watched"
+msgstr "Naposledy zhlédnuté"
+
+msgctxt "#30065"
+msgid "Added to My list"
+msgstr "Přidáno do Mého seznamu"
+
+msgctxt "#30066"
+msgid "Removed from My list"
+msgstr "Odebráno z Mého seznamu"
+
+msgctxt "#30067"
+msgid "Next episode"
+msgstr "Další díl"
+
+msgctxt "#30070"
+msgid "Download"
+msgstr "Stáhnout"
+
+msgctxt "#30071"
+msgid "Downloads"
+msgstr "Stahování"
+
+msgctxt "#30072"
+msgid "Queued for download: %s"
+msgstr "Zařazeno ke stažení: %s"
+
+msgctxt "#30073"
+msgid "Downloading: %s"
+msgstr "Stahuji: %s"
+
+msgctxt "#30074"
+msgid "Downloaded: %s"
+msgstr "Staženo: %s"
+
+msgctxt "#30075"
+msgid "Download failed: %s"
+msgstr "Stahování selhalo: %s"
+
+msgctxt "#30076"
+msgid "Set the download folder in settings first."
+msgstr "Nejdřív nastav složku pro stahování v nastavení."
+
+msgctxt "#30077"
+msgid "Already in the download queue"
+msgstr "Už je ve frontě stahování"
+
+msgctxt "#30078"
+msgid "queued"
+msgstr "ve frontě"
+
+msgctxt "#30079"
+msgid "downloading"
+msgstr "stahuje se"
+
+msgctxt "#30080"
+msgid "done"
+msgstr "hotovo"
+
+msgctxt "#30081"
+msgid "error"
+msgstr "chyba"
+
+msgctxt "#30082"
+msgid "cancelling"
+msgstr "ruší se"
+
+msgctxt "#30083"
+msgid "Cancel download"
+msgstr "Zrušit stahování"
+
+msgctxt "#30084"
+msgid "Remove from list"
+msgstr "Odebrat ze seznamu"
+
+msgctxt "#30085"
+msgid "Retry"
+msgstr "Zkusit znovu"
+
+msgctxt "#30086"
+msgid "Delete the downloaded file %s as well?"
+msgstr "Smazat i stažený soubor %s?"
+
+msgctxt "#30087"
+msgid "Download folder"
+msgstr "Složka pro stahování"
+
+msgctxt "#30090"
+msgid "Trakt.tv"
+msgstr "Trakt.tv"
+
+msgctxt "#30091"
+msgid "Use Trakt.tv"
+msgstr "Používat Trakt.tv"
+
+msgctxt "#30092"
+msgid "Own Trakt client id (optional)"
+msgstr "Vlastní Trakt client id (nepovinné)"
+
+msgctxt "#30093"
+msgid "Own Trakt client secret (optional)"
+msgstr "Vlastní Trakt client secret (nepovinné)"
+
+msgctxt "#30094"
+msgid "Could not load the Trakt app key from the Nokturno server. Try again later, or fill in your own app."
+msgstr "Klíč aplikace Trakt se nepodařilo načíst ze serveru Nokturna. Zkus to později, nebo vyplň vlastní aplikaci."
+
+msgctxt "#30095"
+msgid "Open %s and enter the code: [B]%s[/B]"
+msgstr "Otevři %s a zadej kód: [B]%s[/B]"
+
+msgctxt "#30096"
+msgid "Trakt sign-in failed"
+msgstr "Přihlášení k Traktu se nepodařilo"
+
+msgctxt "#30097"
+msgid "Signed in to Trakt"
+msgstr "Přihlášeno k Traktu"
+
+msgctxt "#30098"
+msgid "Sign out of Trakt"
+msgstr "Odhlásit se z Traktu"
+
+msgctxt "#30099"
+msgid "Cache cleared"
+msgstr "Cache vymazána"
+
+msgctxt "#30100"
+msgid "Sign in to Trakt (device code)"
+msgstr "Přihlásit se k Traktu (kódem zařízení)"
+
+msgctxt "#30105"
+msgid "Advanced"
+msgstr "Pokročilé"
+
+msgctxt "#30106"
+msgid "Clear cache (catalogues, searches, streams)"
+msgstr "Vymazat cache (katalogy, hledání, streamy)"
+
+msgctxt "#30110"
+msgid "Preferred audio language"
+msgstr "Preferovaný jazyk zvuku"
+
+msgctxt "#30111"
+msgid "Any"
+msgstr "Libovolný"
+
+msgctxt "#30112"
+msgid "Czech"
+msgstr "Čeština"
+
+msgctxt "#30113"
+msgid "Slovak"
+msgstr "Slovenština"
+
+msgctxt "#30114"
+msgid "English"
+msgstr "Angličtina"
+
+msgctxt "#30115"
+msgid "Hide SD streams"
+msgstr "Skrýt SD streamy"
+
+msgctxt "#30117"
+msgid "Sort streams"
+msgstr "Řazení streamů"
+
+msgctxt "#30118"
+msgid "As provided"
+msgstr "Jak přišly"
+
+msgctxt "#30119"
+msgid "Best quality first"
+msgstr "Nejdřív nejlepší kvalita"
+
+msgctxt "#30120"
+msgid "Largest first"
+msgstr "Nejdřív největší"
+
+msgctxt "#30121"
+msgid "Smallest first"
+msgstr "Nejdřív nejmenší"
+
+msgctxt "#30128"
+msgid "Streamuj.tv user name"
+msgstr "Streamuj.tv uživatelské jméno"
+
+msgctxt "#30129"
+msgid "Streamuj.tv password"
+msgstr "Streamuj.tv heslo"
+
+msgctxt "#30107"
+msgid "Open settings"
+msgstr "Otevřít nastavení"
+
+msgctxt "#30131"
+msgid "Prefer surround sound (5.1 and up)"
+msgstr "Preferovat prostorový zvuk (5.1 a víc)"
+
+msgctxt "#30150"
+msgid "Search"
+msgstr "Hledat"
+
+msgctxt "#30160"
+msgid "Statistics"
+msgstr "Statistiky"
+
+msgctxt "#30161"
+msgid "Send anonymous usage statistics"
+msgstr "Odesílat anonymní statistiky"
+
+msgctxt "#30163"
+msgid "Send statistics now"
+msgstr "Odeslat statistiky teď"
+
+msgctxt "#30164"
+msgid "Sends a random installation id, add-on version, platform, language, enabled sources (switches only, no accounts), the titles whose streams were opened, and technical reliability data (skin, architecture, update method, playback counts, loading time). Login details and search queries never leave the device; the server does not store your IP address or storage addresses with the statistics. When switched off, only the random installation id, add-on version, update method and a message that the add-on started or stopped are still sent, so it is known the installation is alive."
+msgstr "Posílá se náhodné id instalace, verze doplňku, platforma, jazyk, zapnuté zdroje (jen přepínače, žádné účty), tituly, u kterých se otevřely streamy, a technické údaje o spolehlivosti (skin, architektura, způsob aktualizace, počty přehrání, doba načítání). Přihlašovací údaje a obsah hledání neodcházejí nikdy, IP adresu ani adresy úložišť server ke statistikám neukládá. Po vypnutí se dál posílá jen náhodné id instalace, verze doplňku, způsob aktualizace a zpráva, že se doplněk spustil nebo ukončil, aby bylo vidět, že instalace žije."
+
+msgctxt "#30165"
+msgid "Statistics sent"
+msgstr "Statistiky odeslány"
+
+msgctxt "#30166"
+msgid "Statistics could not be sent"
+msgstr "Statistiky se nepodařilo odeslat"
+
+msgctxt "#30167"
+msgid "Check sources"
+msgstr "Ověřit zdroje"
+
+msgctxt "#30168"
+msgid "OK"
+msgstr "v pořádku"
+
+msgctxt "#30169"
+msgid "not set up"
+msgstr "není nastaveno"
+
+msgctxt "#30170"
+msgid "Sources check"
+msgstr "Kontrola zdrojů"
+
+msgctxt "#30180"
+msgid "Sync"
+msgstr "Synchronizace"
+
+msgctxt "#30181"
+msgid "Sync across multiple Kodi"
+msgstr "Synchronizovat mezi více Kodi"
+
+msgctxt "#30182"
+msgid "Home Assistant address"
+msgstr "Adresa Home Assistantu"
+
+msgctxt "#30183"
+msgid "Key (from the Nokturno integration settings)"
+msgstr "Klíč (z nastavení integrace Nokturno)"
+
+msgctxt "#30184"
+msgid "Sync now"
+msgstr "Synchronizovat teď"
+
+msgctxt "#30185"
+msgid "Watched, in-progress, My list and the other circles (below in What gets synced) are shared across your Kodi devices, and with Home Assistant too if you use it."
+msgstr "Zhlédnuté, rozkoukané, Můj seznam a další okruhy (níž v Co se synchronizuje) se sdílí mezi tvými Kodi, případně i s Home Assistantem."
+
+msgctxt "#30186"
+msgid "Sync is off or not set up (Home Assistant needs the address and key, the dashboard needs the group code)"
+msgstr "Synchronizace není zapnutá nebo nastavená (u Home Assistantu adresa a klíč, u dashboardu kód skupiny)"
+
+msgctxt "#30187"
+msgid "Synced: sent %d, received %d"
+msgstr "Synchronizováno: odesláno %d, přijato %d"
+
+msgctxt "#30188"
+msgid "Sync failed"
+msgstr "Synchronizace selhala"
+
+msgctxt "#30190"
+msgid "Downloaded in HA"
+msgstr "Staženo v HA"
+
+msgctxt "#30191"
+msgid "What's new"
+msgstr "Novinky"
+
+msgctxt "#30192"
+msgid "What's new in version"
+msgstr "Novinky ve verzi"
+
+msgctxt "#30193"
+msgid "No news"
+msgstr "Žádné novinky"
+
+msgctxt "#30194"
+msgid "HellSpy"
+msgstr "HellSpy"
+
+msgctxt "#30195"
+msgid "Use HellSpy"
+msgstr "Používat HellSpy"
+
+msgctxt "#30196"
+msgid "HellSpy needs no account. It offers the original files, same as WebShare."
+msgstr "HellSpy nepotřebuje účet. Nabízí původní soubory, stejně jako WebShare."
+
+msgctxt "#30197"
+msgid "Search HellSpy"
+msgstr "Hledat na HellSpy"
+
+msgctxt "#30198"
+msgid "Detect audio from the file (how many streams)"
+msgstr "Zjišťovat zvuk ze souboru (kolik streamů)"
+
+msgctxt "#30199"
+msgid "Reads the start of the file to find audio language and channels where the source stays silent. Only for such streams, from the top of the sorted list, result kept for a month. 0 = off."
+msgstr "Přečte začátek souboru a zjistí z něj jazyk a počet kanálů tam, kde je zdroj neřekl. Týká se jen takových streamů, bere se od začátku seřazeného seznamu a výsledek se pamatuje měsíc. 0 = nezjišťovat."
+
+msgctxt "#30201"
+msgid "Stream selection"
+msgstr "Výběr streamu"
+
+msgctxt "#30207"
+msgid "Quality is shown as a picture, audio languages and the rest of the details are set below. A tilde before a value means an estimate from the file name."
+msgstr "Kvalita je vždy obrázek, ostatní údaje a jejich pořadí nastavíš níž. Vlnovka před údajem znamená odhad z názvu souboru, bez ní je údaj od zdroje nebo z hlavičky souboru."
+
+msgctxt "#30208"
+msgid "Quality"
+msgstr "Kvalita"
+
+msgctxt "#30209"
+msgid "Audio"
+msgstr "Zvuk"
+
+msgctxt "#30210"
+msgid "Subtitles"
+msgstr "Titulky"
+
+msgctxt "#30211"
+msgid "Source"
+msgstr "Zdroj"
+
+msgctxt "#30212"
+msgid "Nothing to filter by"
+msgstr "Není podle čeho filtrovat"
+
+msgctxt "#30213"
+msgid "Filter streams"
+msgstr "Filtr streamů"
+
+msgctxt "#30214"
+msgid "Filter left nothing, showing all streams"
+msgstr "Filtr nic nenechal, zobrazeny všechny streamy"
+
+msgctxt "#30215"
+msgid "Channels"
+msgstr "Kanály"
+
+msgctxt "#30216"
+msgid "Codec"
+msgstr "Kodek"
+
+msgctxt "#30220"
+msgid "Measure speed and set the limit"
+msgstr "Změřit rychlost a nastavit datový tok"
+
+msgctxt "#30221"
+msgid "Speed measurement failed"
+msgstr "Měření rychlosti selhalo"
+
+msgctxt "#30222"
+msgid "Too little data downloaded, try again"
+msgstr "Stáhlo se příliš málo dat, zkus to znovu"
+
+msgctxt "#30223"
+msgid "Speed %s Mb/s → allowed %s Mb/s (e.g. %s GB for a 2-hour movie)"
+msgstr "Rychlost %s Mb/s → dovoleno %s Mb/s (např. %s GB u dvouhodinového filmu)"
+
+msgctxt "#30224"
+msgid "Max. bitrate (Mb/s, 0 = unlimited)"
+msgstr "Max. datový tok (Mb/s, 0 = bez omezení)"
+
+msgctxt "#30225"
+msgid "Converted to GB using the current title's runtime; without a known runtime (typically fulltext) it assumes a 2-hour movie."
+msgstr "Přepočítá se na GB podle stopáže aktuálního titulu; bez známé stopáže (typicky fulltext) se počítá s dvouhodinovým filmem."
+
+msgctxt "#30229"
+msgid "WebShare subscription status"
+msgstr "Stav předplatného WebShare"
+
+msgctxt "#30230"
+msgid "WebShare is off or has no account filled in."
+msgstr "WebShare není zapnutý nebo nemá vyplněný účet."
+
+msgctxt "#30231"
+msgid "VIP active, days left: %s (until %s)"
+msgstr "VIP aktivní, zbývá dní: %s (do %s)"
+
+msgctxt "#30232"
+msgid "VIP is not active."
+msgstr "VIP není aktivní."
+
+msgctxt "#30233"
+msgid "Notifies a few days before the subscription runs out and every day after it does."
+msgstr "Upozorní pár dní před koncem předplatného a pak každý den, i po jeho vypršení."
+
+msgctxt "#30234"
+msgid "Warn this many days before expiry (0 = only after expiry)"
+msgstr "Upozornit tolik dní před koncem (0 = jen po vypršení)"
+
+msgctxt "#30236"
+msgid "Days until the WebShare subscription runs out: %s."
+msgstr "Do konce předplatného WebShare zbývá dní: %s."
+
+msgctxt "#30237"
+msgid "WebShare subscription has run out."
+msgstr "Předplatné WebShare vypršelo."
+
+msgctxt "#30300"
+msgid "Works without a Luna server – logs into WebShare directly with your own account and searches full-text by title."
+msgstr "Funguje bez serveru Luna – doplněk se přihlásí přímo na WebShare tvým účtem a hledá fulltextem podle názvu."
+
+msgctxt "#30301"
+msgid "E-mail or user name you log into webshare.cz with."
+msgstr "E-mail nebo uživatelské jméno, kterým se přihlašuješ na webshare.cz."
+
+msgctxt "#30302"
+msgid "Password from webshare.cz, or a 40-character salted hash if you'd rather not type it in plain text."
+msgstr "Heslo z webshare.cz, nebo 40znakový salted hash, pokud ho nechceš zadávat v čitelné podobě."
+
+msgctxt "#30303"
+msgid "Order of WebShare full-text results, before they get matched with Luna or Sosáč."
+msgstr "Řazení výsledků fulltextového hledání na WebShare, než se spárují s Lunou nebo Sosáčem."
+
+msgctxt "#30304"
+msgid "Catalogues and descriptions come from tv.sosac.to's public exports; playback itself goes through your Streamuj.tv account."
+msgstr "Katalogy a popisy titulů se berou z veřejných exportů tv.sosac.to, samotné přehrání jde přes tvůj účet Streamuj.tv."
+
+msgctxt "#30305"
+msgid "Streamuj.tv user name – needed to play streams found on Sosáč."
+msgstr "Uživatelské jméno pro streamuj.tv – je potřeba k přehrání streamů ze Sosáče."
+
+msgctxt "#30306"
+msgid "Streamuj.tv password. It's stored as a one-way hash, not in plain text, so it can't be used to log into the streamuj.tv website itself."
+msgstr "Heslo pro streamuj.tv. Ukládá se jako jednosměrný otisk, ne v čitelné podobě, takže se s ním nejde přihlásit na web streamuj.tv."
+
+msgctxt "#30307"
+msgid "When a title has streams in only one of the two sources, also look it up in the other. Slower search, but more streams."
+msgstr "Když má titul streamy jen v jednom ze dvou zdrojů, dohledá se i ve druhém. Hledání je pomalejší, ale streamů je víc."
+
+msgctxt "#30308"
+msgid "Luna: Absolute Cinema is your own server (a computer, NAS or the Android TV box itself) with catalogues, posters and Czech descriptions. It needs a WebShare VIP account. The other sources and your own storage work without it."
+msgstr "Luna: Absolute Cinema je vlastní server (počítač, NAS nebo přímo Android TV box) s katalogy, plakáty a českými popisy titulů. Potřebuje účet WebShare VIP. Ostatní zdroje i vlastní úložiště fungují i bez ní."
+
+msgctxt "#30309"
+msgid "Address of your Luna server on the local network, e.g. http://192.168.1.10:7126. If Luna runs on the same device as Kodi, enter http://127.0.0.1:7126."
+msgstr "Adresa tvého serveru Luna v místní síti, např. http://192.168.1.10:7126. Když Luna běží na stejném zařízení jako Kodi, zadej http://127.0.0.1:7126."
+
+msgctxt "#30310"
+msgid "Paste the whole add-on address from Luna's /setup page, or just the token itself starting with \"e1.\"."
+msgstr "Vlož celou adresu doplňku ze stránky /setup Luny, nebo jen samotný token začínající na „e1.“."
+
+msgctxt "#30311"
+msgid "Luna can also full-text search WebShare (its own Search feature) – finds more, but takes longer."
+msgstr "Luna umí i fulltext přes WebShare (vlastní funkce Search) – najde víc, ale hledání trvá déle."
+
+msgctxt "#30313"
+msgid "Streams with this audio language always come first, then the rest. Nothing gets hidden, just reordered."
+msgstr "Streamy s tímto jazykem zvuku jsou vždy nahoře, ostatní pod nimi. Nic se neskrývá, jen se změní pořadí."
+
+msgctxt "#30314"
+msgid "At equal quality, a stream with surround sound (5.1 and up) is sorted higher."
+msgstr "Při stejné kvalitě jde nahoru stream s prostorovým zvukem (5.1 a víc)."
+
+msgctxt "#30315"
+msgid "Streams below 720p are removed from the list – the filter can't bring them back either. If no stream would be left, all of them are shown."
+msgstr "Streamy pod 720p se ze seznamu vyřadí a nejdou zobrazit ani přes filtr. Když by nezbyl žádný stream, zobrazí se všechny."
+
+msgctxt "#30316"
+msgid "'As provided' keeps the source's own order; the other options sort by quality or file size."
+msgstr "„Jak přišly“ nechá pořadí ze zdroje, ostatní volby řadí podle kvality nebo velikosti souboru."
+
+msgctxt "#30323"
+msgid "Where downloaded videos and their subtitles are saved on the device."
+msgstr "Kam se na zařízení ukládají stažená videa a jejich titulky."
+
+msgctxt "#30324"
+msgid "Sign in once with the device code button and enter the code at trakt.tv/activate. Works with a free account too, which can have two connected apps at a time."
+msgstr "Stačí jedno přihlášení tlačítkem s kódem zařízení a zadání kódu na trakt.tv/activate. Jde to i s bezplatným účtem, ten může mít připojené dvě aplikace naráz."
+
+msgctxt "#30325"
+msgid "Leave empty to use the Nokturno app. Fill in only if you have your own app at developer.trakt.tv; after changing it, sign in again."
+msgstr "Nech prázdné, použije se aplikace Nokturna. Vyplň jen, když máš vlastní aplikaci na developer.trakt.tv; po změně se znovu přihlas."
+
+msgctxt "#30326"
+msgid "The secret of your own app, together with the client id above. Leave empty for the Nokturno app."
+msgstr "Tajný klíč vlastní aplikace, spolu s client id výše. Pro aplikaci Nokturna nech prázdné."
+
+msgctxt "#30327"
+msgid "Address of the Home Assistant instance running the Nokturno integration."
+msgstr "Adresa Home Assistantu, na kterém běží integrace Nokturno."
+
+msgctxt "#30328"
+msgid "Must match the sync key shown in the Nokturno integration's settings in Home Assistant."
+msgstr "Musí sedět se synchronizačním klíčem z nastavení integrace Nokturno v Home Assistantu."
+
+msgctxt "#30238"
+msgid "Loading streams…"
+msgstr "Načítám streamy…"
+
+msgctxt "#30239"
+msgid "Meta: {done}/{total}"
+msgstr "Meta: {done}/{total}"
+
+msgctxt "#30240"
+msgid "Streams: {count}"
+msgstr "Streamy: {count}"
+
+msgctxt "#30332"
+msgid "TMDB API"
+msgstr "TMDB API"
+
+msgctxt "#30333"
+msgid "TMDB API key"
+msgstr "API klíč TMDB"
+
+msgctxt "#30334"
+msgid "TMDB API key help"
+msgstr "Vlastní klíč pro TMDB (themoviedb.org) – s ním jsou názvy, popisy, žánry i herci česky, i v katalozích ze Sosáče a bez Luny. Bez klíče se použije veřejný katalog Sosáče a Cinemeta, ty ale popis v češtině nemají (Sosáč popis vůbec nemá, Cinemeta jen anglicky).\n\nZaložení je zdarma: registrace na themoviedb.org → ikona profilu → Nastavení → API (v levém menu) → Request an API Key → Developer → krátký formulář (název aplikace stačí „Nokturno“) → zkopírovat „API Key (v3 auth)“ (ne delší „API Read Access Token“)."
+
+msgctxt "#30335"
+msgid "Search more loosely by file name"
+msgstr "Hledat volněji podle názvu souboru"
+
+msgctxt "#30336"
+msgid "Welcome to Nokturno"
+msgstr "Vítej v Nokturnu"
+
+
+msgctxt "#30339"
+msgid "Skip"
+msgstr "Přeskočit"
+
+msgctxt "#30340"
+msgid "WebShare"
+msgstr "WebShare"
+
+msgctxt "#30341"
+msgid "Do you have a WebShare account?"
+msgstr "Máš účet WebShare?"
+
+msgctxt "#30342"
+msgid "WebShare – e-mail"
+msgstr "WebShare – e-mail"
+
+msgctxt "#30343"
+msgid "WebShare – password"
+msgstr "WebShare – heslo"
+
+msgctxt "#30344"
+msgid "Sosáč"
+msgstr "Sosáč"
+
+msgctxt "#30345"
+msgid "Do you have a Streamuj.tv account (Sosáč player)?\nSosáč catalogues work without an account, it is only needed for playback."
+msgstr "Máš účet Streamuj.tv (přehrávač Sosáče)?\nKatalogy Sosáče fungují i bez účtu, jen pro přehrávání je potřeba."
+
+msgctxt "#30346"
+msgid "Streamuj.tv – username"
+msgstr "Streamuj.tv – uživatel"
+
+msgctxt "#30347"
+msgid "Streamuj.tv – password"
+msgstr "Streamuj.tv – heslo"
+
+msgctxt "#30348"
+msgid "Luna: Absolute Cinema"
+msgstr "Luna: Absolute Cinema"
+
+msgctxt "#30349"
+msgid "Do you have a Luna: Absolute Cinema server running on your network?"
+msgstr "Máš v síti spuštěný server Luna: Absolute Cinema?"
+
+msgctxt "#30350"
+msgid "Add-on address or token from Luna's /setup page"
+msgstr "Adresa doplňku nebo token ze stránky /setup Luny"
+
+msgctxt "#30351"
+msgid "HellSpy"
+msgstr "HellSpy"
+
+msgctxt "#30352"
+msgid "Enable HellSpy? It's free and needs no account."
+msgstr "Zapnout HellSpy? Je zdarma a nepotřebuje žádný účet."
+
+msgctxt "#30353"
+msgid "Own movie/series database"
+msgstr "Vlastní databáze filmů a seriálů"
+
+msgctxt "#30354"
+msgid "Do you want to enter a free TMDB key so descriptions and cast are in Czech? (optional)"
+msgstr "Chceš zadat bezplatný klíč TMDB, aby popisy a obsazení filmů byly česky? (nepovinné)"
+
+msgctxt "#30355"
+msgid "Get a free key at themoviedb.org → profile icon → Settings → API → Request an API Key → Developer → copy the \"API Key (v3 auth)\".\nThe help for this setting has a detailed guide."
+msgstr "Klíč se zakládá zdarma na themoviedb.org → ikona profilu → Nastavení → API → Request an API Key → Developer → zkopírovat „API Key (v3 auth)“.\nPodrobný návod je v nápovědě u tohoto nastavení."
+
+msgctxt "#30356"
+msgid "TMDB API key"
+msgstr "API klíč TMDB"
+
+msgctxt "#30357"
+msgid "Settings saved"
+msgstr "Nastavení uloženo"
+
+msgctxt "#30358"
+msgid "Done. You can change any of this later in the add-on settings.\nWithout a TMDB key and without Luna, catalogues and search still work, only descriptions will be in English."
+msgstr "Hotovo. Vše se dá kdykoli změnit v nastavení doplňku.\nBez klíče TMDB a bez Luny fungují katalogy i hledání dál, jen popisy budou anglicky."
+
+msgctxt "#30359"
+msgid "Run setup wizard"
+msgstr "Průvodce nastavením"
+
+msgctxt "#30360"
+msgid "Source did not respond"
+msgstr "Zdroj neodpověděl"
+
+msgctxt "#30361"
+msgid "Internet speed"
+msgstr "Rychlost internetu"
+
+msgctxt "#30362"
+msgid "Measure your internet speed now and set the highest allowed stream bitrate from it? It prevents stuttering when a file is too big for your connection.\nIt takes under a minute and can also be done later in Settings → Playback."
+msgstr "Chceš teď změřit rychlost internetu a podle ní nastavit nejvyšší dovolený datový tok streamů? Zabrání to sekání při přehrávání příliš velkého souboru.\nZabere necelou minutu, jde udělat i později v Nastavení → Přehrávání."
+
+msgctxt "#30363"
+msgid "Clear filter"
+msgstr "Zrušit filtr"
+
+msgctxt "#30364"
+msgid "Apply last filter"
+msgstr "Použít poslední filtr"
+
+msgctxt "#30365"
+msgid "Remove from Continue watching"
+msgstr "Odebrat z Pokračovat ve sledování"
+
+msgctxt "#30366"
+msgid "skipped"
+msgstr "přeskočeno"
+
+msgctxt "#30367"
+msgid "Sledujteto"
+msgstr "Sledujteto"
+
+msgctxt "#30368"
+msgid "Use Sledujteto"
+msgstr "Používat Sledujteto"
+
+msgctxt "#30369"
+msgid "Sledujteto.cz is a Czech video hosting. Searching needs an account, playback needs a Premium account."
+msgstr "Sledujteto.cz je česká úschovna videí. Hledání vyžaduje účet, přehrávání účet Premium – bez něj Sledujteto odkaz na soubor nevydá."
+
+msgctxt "#30370"
+msgid "E-mail"
+msgstr "E-mail"
+
+msgctxt "#30371"
+msgid "E-mail you use to sign in to sledujteto.cz."
+msgstr "E-mail, kterým se přihlašuješ na sledujteto.cz."
+
+msgctxt "#30372"
+msgid "Password"
+msgstr "Heslo"
+
+msgctxt "#30373"
+msgid "Password for sledujteto.cz. It is sent only when signing in; requests then use a token."
+msgstr "Heslo ze sledujteto.cz. Posílá se jen při přihlášení, další dotazy jdou s tokenem."
+
+msgctxt "#30374"
+msgid "Own storage"
+msgstr "Vlastní úložiště"
+
+msgctxt "#30375"
+msgid "Up to three WebDAV folders with your own files (NAS, Nextcloud, server). Files are matched to titles by file name and the folders above it and show up among streams and in search."
+msgstr "Až tři složky na WebDAV s vlastními soubory (NAS, Nextcloud, server). Soubory se k titulům přiřazují podle názvu souboru a složek nad ním a objeví se mezi streamy i ve vyhledávání."
+
+msgctxt "#30376"
+msgid "Storage 1"
+msgstr "Úložiště 1"
+
+msgctxt "#30377"
+msgid "Storage 2"
+msgstr "Úložiště 2"
+
+msgctxt "#30378"
+msgid "Storage 3"
+msgstr "Úložiště 3"
+
+msgctxt "#30379"
+msgid "Folder address"
+msgstr "Adresa složky"
+
+msgctxt "#30380"
+msgid "WebDAV folder, e.g. davs://nas.doma:10000/ or https://nas/remote.php/dav/files/me/Video/. Empty = storage off. The file list is refreshed at most once an hour."
+msgstr "Složka na WebDAV, například davs://nas.doma:10000/ nebo https://nas/remote.php/dav/files/ja/Video/. Prázdné = úložiště vypnuté. Seznam souborů se obnovuje nejvýš jednou za hodinu."
+
+msgctxt "#30381"
+msgid "Username"
+msgstr "Uživatelské jméno"
+
+msgctxt "#30382"
+msgid "Login for the storage (HTTP Basic). Leave empty if the storage has no password."
+msgstr "Přihlášení k úložišti (HTTP Basic). Když úložiště heslo nemá, nech prázdné."
+
+msgctxt "#30383"
+msgid "Password"
+msgstr "Heslo"
+
+msgctxt "#30384"
+msgid "Name"
+msgstr "Název"
+
+msgctxt "#30385"
+msgid "Shown next to streams from this storage, e.g. NAS. Empty = server name."
+msgstr "Zobrazí se u streamů z tohoto úložiště, například NAS. Prázdné = jméno serveru."
+
+msgctxt "#30386"
+msgid "Search own storage"
+msgstr "Hledat ve vlastním úložišti"
+
+msgctxt "#30387"
+msgid "My storage"
+msgstr "Moje úložiště"
+
+msgctxt "#30388"
+msgid "Do you have a Sledujteto account?[CR]Search uses your account, playback needs Premium."
+msgstr "Máš účet Sledujteto?[CR]Hledá se přes tvůj účet, přehrávat jde jen s Premium."
+
+msgctxt "#30389"
+msgid "Sledujteto – e-mail"
+msgstr "Sledujteto – e-mail"
+
+msgctxt "#30390"
+msgid "Sledujteto – password"
+msgstr "Sledujteto – heslo"
+
+msgctxt "#30391"
+msgid "Downloaded"
+msgstr "Stažené"
+
+msgctxt "#30392"
+msgid "Settings"
+msgstr "Nastavení"
+
+msgctxt "#30393"
+msgid "Most watched this week"
+msgstr "Nejsledovanější tento týden"
+
+msgctxt "#30398"
+msgid "Popular on TMDB"
+msgstr "Populární na TMDB"
+
+msgctxt "#30399"
+msgid "Top rated"
+msgstr "Nejlépe hodnocené"
+
+msgctxt "#30402"
+msgid "Measuring download speed…"
+msgstr "Měřím rychlost stahování…"
+
+msgctxt "#30403"
+msgid "Per day"
+msgstr "Za den"
+
+msgctxt "#30404"
+msgid "Per week"
+msgstr "Za týden"
+
+msgctxt "#30405"
+msgid "Storage"
+msgstr "Úložiště"
+
+msgctxt "#30406"
+msgid "no Premium – playback will not work"
+msgstr "bez Premium – přehrávání nepůjde"
+
+msgctxt "#30407"
+msgid "Check for add-on updates"
+msgstr "Zkontrolovat aktualizace doplňků"
+
+msgctxt "#30408"
+msgid "Checking for add-on updates…"
+msgstr "Kontroluji aktualizace doplňků…"
+
+msgctxt "#30409"
+msgid "Add Nokturno to TMDb Helper (Play on movie details)"
+msgstr "Přidat Nokturno do TMDb Helperu (Přehrát v detailu filmu)"
+
+msgctxt "#30410"
+msgid "TMDb Helper is not installed"
+msgstr "TMDb Helper není nainstalovaný"
+
+msgctxt "#30411"
+msgid "Set Nokturno as the default player in TMDb Helper? Play on a movie or episode details page will then search streams in Nokturno."
+msgstr "Nastavit Nokturno jako výchozí přehrávač v TMDb Helperu? Přehrát v detailu filmu nebo dílu pak rovnou hledá streamy v Nokturnu."
+
+msgctxt "#30412"
+msgid "Nokturno added to TMDb Helper"
+msgstr "Nokturno je v TMDb Helperu"
+
+msgctxt "#30413"
+msgid "Adding to TMDb Helper failed"
+msgstr "Přidání do TMDb Helperu selhalo"
+
+msgctxt "#30415"
+msgid "Play from movie details"
+msgstr "Přehrát z detailu filmu"
+
+msgctxt "#30416"
+msgid "You have TMDb Helper (movie details in Arctic Fuse and other skins).[CR]Set Nokturno as its player? The Play button on the details page will then search streams in Nokturno."
+msgstr "Máš doplněk TMDb Helper (detail filmu v Arctic Fuse a dalších skinech).[CR]Nastavit Nokturno jako jeho přehrávač? Tlačítko Přehrát v detailu pak hledá streamy v Nokturnu."
+
+msgctxt "#30417"
+msgid "FastShare"
+msgstr "FastShare"
+
+msgctxt "#30418"
+msgid "Use FastShare / Sdilej.cz"
+msgstr "Používat FastShare / Sdilej.cz"
+
+msgctxt "#30419"
+msgid "FastShare.cz is a Czech file host. Search works without an account; playback needs one and is charged from your credit unless you have unlimited downloads."
+msgstr "FastShare.cz je česká úschovna souborů. Hledá se i bez účtu, k přehrání je potřeba účet – soubor se odečte z kreditu, pokud nemáš neomezené stahování."
+
+msgctxt "#30420"
+msgid "FastShare – username"
+msgstr "FastShare – uživatel"
+
+msgctxt "#30421"
+msgid "Name you use to sign in to fastshare.cz or sdilej.cz."
+msgstr "Jméno, kterým se přihlašuješ na fastshare.cz nebo sdilej.cz."
+
+msgctxt "#30422"
+msgid "FastShare – password"
+msgstr "FastShare – heslo"
+
+msgctxt "#30423"
+msgid "Password for fastshare.cz or sdilej.cz. It is sent only when signing in; playback then uses a cookie."
+msgstr "Heslo z fastshare.cz nebo sdilej.cz. Posílá se jen při přihlášení, přehrávání pak jde s cookie."
+
+msgctxt "#30424"
+msgid "Do you have a FastShare or Sdilej.cz account?[CR]Search works without it, playback is charged from your credit or unlimited plan."
+msgstr "Máš účet FastShare nebo Sdilej.cz?[CR]Hledá se i bez něj, přehrání jde z tvého kreditu nebo neomezeného tarifu."
+
+msgctxt "#30425"
+msgid "unlimited downloads"
+msgstr "neomezené stahování"
+
+msgctxt "#30426"
+msgid "credit"
+msgstr "kredit"
+
+msgctxt "#30427"
+msgid "Send Kodi log"
+msgstr "Odeslat log Kodi"
+
+msgctxt "#30428"
+msgid "Sends the last ~500 KB of kodi.log to the same server as statistics, so the reported problem can be diagnosed. Passwords, tokens and IP addresses are removed first. Nothing else leaves the device."
+msgstr "Odešle posledních ~500 KB souboru kodi.log na stejný server jako statistiky, aby šel nahlášený problém dohledat. Hesla, tokeny a IP adresy se předem odstraní. Nic dalšího zařízení neopouští."
+
+msgctxt "#30429"
+msgid "Log sent"
+msgstr "Log odeslán"
+
+msgctxt "#30430"
+msgid "Log could not be sent"
+msgstr "Log se nepodařilo odeslat"
+
+msgctxt "#30431"
+msgid "Really send the log?"
+msgstr "Opravdu odeslat log?"
+
+msgctxt "#30432"
+msgid "Info"
+msgstr "Info"
+
+
+msgctxt "#30440"
+msgid "Switch audio to the preferred language automatically"
+msgstr "Automaticky přepnout zvuk na preferovaný jazyk"
+
+msgctxt "#30441"
+msgid "When playback starts, the audio track in the preferred language is selected, even if the file has a different default track (often English in re-muxed movies)."
+msgstr "Po spuštění přehrávání se vybere zvuková stopa v preferovaném jazyce, i když má soubor jako výchozí jinou (u přebalených filmů často anglickou)."
+
+msgctxt "#30442"
+msgid "Subtitles"
+msgstr "Titulky"
+
+msgctxt "#30443"
+msgid "Leave to Kodi"
+msgstr "Nechat na Kodi"
+
+msgctxt "#30444"
+msgid "When audio in the preferred language is missing"
+msgstr "Když chybí zvuk v preferovaném jazyce"
+
+msgctxt "#30445"
+msgid "Always in the preferred language"
+msgstr "Vždy v preferovaném jazyce"
+
+msgctxt "#30446"
+msgid "Subtitles in the preferred language (or a close one: Czech and Slovak substitute for each other) are turned on when the audio isn't in that language. When the audio is in the preferred language, subtitles are turned off, forced ones included. Subtitles from the source are downloaded and their language is recognised from the text."
+msgstr "Titulky v preferovaném jazyce (nebo blízkém, čeština a slovenština se zastoupí) se zapnou, když zvuk v tom jazyce není. Když zvuk v preferovaném jazyce je, titulky se vypnou, i vynucené. Titulky ze zdroje se stáhnou a jejich jazyk se pozná z textu."
+
+msgctxt "#30447"
+msgid "Set up from phone"
+msgstr "Nastavit z mobilu"
+
+msgctxt "#30448"
+msgid "Shows a QR code on the TV. Open it on a phone connected to the same Wi-Fi and fill in the settings in the browser – no typing passwords with the remote. Works only on the local network."
+msgstr "Na TV se ukáže QR kód. Otevři ho mobilem připojeným ke stejné Wi-Fi a vyplň nastavení v prohlížeči – bez psaní hesel ovladačem. Funguje jen v místní síti."
+
+msgctxt "#30449"
+msgid "You can fill in accounts and sources on your phone – the TV shows a QR code, the phone just needs the same Wi-Fi and you don't type passwords with the remote. Or go through a short wizard with the remote.[CR]You can skip this and fill it in later in the add-on settings."
+msgstr "Účty a zdroje můžeš vyplnit v mobilu – na TV se ukáže QR kód, stačí mobil ve stejné Wi-Fi a hesla nepíšeš ovladačem. Nebo projdi krátkého průvodce ovladačem.[CR]Kdykoli to můžeš přeskočit a doplnit později v Nastavení doplňku."
+
+msgctxt "#30450"
+msgid "From phone"
+msgstr "Z mobilu"
+
+msgctxt "#30451"
+msgid "Wizard with remote"
+msgstr "Průvodce ovladačem"
+
+msgctxt "#30452"
+msgid "1. Connect your phone to the same Wi-Fi as this device.[CR]2. Scan the QR code with the camera, or open this address in a browser:"
+msgstr "1. Připoj mobil ke stejné Wi-Fi jako toto zařízení.[CR]2. Naskenuj QR kód fotoaparátem, nebo otevři v prohlížeči adresu:"
+
+msgctxt "#30453"
+msgid "Back cancels · the address is valid for 30 minutes and one save"
+msgstr "Zpět zruší · adresa platí 30 minut a pro jedno uložení"
+
+msgctxt "#30454"
+msgid "This device has no local network address. Connect it to Wi-Fi or a cable and try again."
+msgstr "Toto zařízení nemá adresu v místní síti. Připoj ho k Wi-Fi nebo kabelem a zkus to znovu."
+
+msgctxt "#30455"
+msgid "Couldn't start setup from phone (%s)."
+msgstr "Nastavení z mobilu se nepodařilo spustit (%s)."
+
+msgctxt "#30456"
+msgid "Settings from phone saved (%s)"
+msgstr "Nastavení z mobilu uloženo (%s)"
+
+msgctxt "#30457"
+msgid "No changes came from the phone"
+msgstr "Z mobilu nepřišla žádná změna"
+
+msgctxt "#30458"
+msgid "Fill in what you want to change and save. The settings go straight to Kodi."
+msgstr "Vyplň, co chceš změnit, a ulož. Nastavení se hned propíše do Kodi."
+
+msgctxt "#30459"
+msgid "Save to Kodi"
+msgstr "Uložit do Kodi"
+
+msgctxt "#30460"
+msgid "Saved. The settings are in Kodi, you can close this page."
+msgstr "Uloženo. Nastavení je v Kodi, stránku můžeš zavřít."
+
+msgctxt "#30461"
+msgid "filled in – leave empty to keep the current value"
+msgstr "vyplněno – prázdné pole ponechá původní hodnotu"
+
+msgctxt "#30462"
+msgid "This address is no longer valid. Start Set up from phone on the TV again."
+msgstr "Tato adresa už neplatí. Na TV spusť Nastavit z mobilu znovu."
+
+msgctxt "#30463"
+msgid "Invalid value: %s"
+msgstr "Neplatná hodnota: %s"
+
+msgctxt "#30480"
+msgid "Send error reports"
+msgstr "Posílat hlášení o chybách"
+
+msgctxt "#30481"
+msgid "When an error in the add-on's code happens, a short report goes to the author: error type, place in the code, version and a few lines of the Nokturno log. Addresses, accounts, passwords and IPs are removed first. Source outages are not sent. The same error is sent at most once per version."
+msgstr "Když v doplňku nastane chyba v kódu, pošle se autorovi krátké hlášení: typ chyby, místo v kódu, verze a pár řádků logu Nokturna. Adresy, účty, hesla a IP se předem vymažou. Výpadky zdrojů se neposílají. Stejná chyba odejde nejvýš jednou za verzi."
+
+msgctxt "#30482"
+msgid "Similar titles"
+msgstr "Podobné tituly"
+
+msgctxt "#30483"
+msgid "TV guide"
+msgstr "TV program"
+
+msgctxt "#30484"
+msgid "Day"
+msgstr "Den"
+
+msgctxt "#30485"
+msgid "Channel"
+msgstr "Stanice"
+
+msgctxt "#30486"
+msgid "Type"
+msgstr "Typ"
+
+msgctxt "#30487"
+msgid "All channels"
+msgstr "Všechny stanice"
+
+msgctxt "#30488"
+msgid "Movies and series"
+msgstr "Filmy i seriály"
+
+msgctxt "#30489"
+msgid "Today"
+msgstr "Dnes"
+
+msgctxt "#30490"
+msgid "Tomorrow"
+msgstr "Zítra"
+
+msgctxt "#30491"
+msgid "Mon,Tue,Wed,Thu,Fri,Sat,Sun"
+msgstr "po,út,st,čt,pá,so,ne"
+
+msgctxt "#30492"
+msgid "TV guide is not available right now"
+msgstr "TV program teď není dostupný"
+
+msgctxt "#30493"
+msgid "No similar titles found"
+msgstr "Žádné podobné tituly"
+
+msgctxt "#30494"
+msgid "No programmes in this selection"
+msgstr "V tomto výběru nejsou žádné pořady"
+
+msgctxt "#30495"
+msgid "What to show for a stream and in which order"
+msgstr "Co a v jakém pořadí ukazovat u streamu"
+
+msgctxt "#30496"
+msgid "Items separated by commas, the vertical bar splits the top and bottom line of the stream dialog. Whatever is missing is not shown. Items: langs (audio languages), size, video (resolution and codec), audio (audio tracks), bitrate, length, subs (subtitles), source, file (file name). Quality is always the picture on the left. Easier with Set up from phone."
+msgstr "Položky oddělené čárkou, svislítko dělí horní a dolní řádek dialogu výběru streamu. Co chybí, se nezobrazí. Položky: langs (jazyky zvuku), size (velikost), video (rozlišení a kodek), audio (zvukové stopy), bitrate (datový tok), length (délka), subs (titulky), source (zdroj), file (název souboru). Kvalita je vždy obrázek vlevo. Pohodlněji přes Nastavit z mobilu."
+
+msgctxt "#30497"
+msgid "Default order"
+msgstr "Výchozí pořadí"
+
+msgctxt "#30498"
+msgid "Puts back the default items and order. Reopen settings to see the new value."
+msgstr "Vrátí výchozí položky a pořadí. Nová hodnota se zobrazí po znovuotevření nastavení."
+
+msgctxt "#30499"
+msgid "Top line|Bottom line"
+msgstr "Horní řádek|Dolní řádek"
+
+msgctxt "#30500"
+msgid "Do not show"
+msgstr "Nezobrazovat"
+
+msgctxt "#30501"
+msgid "Audio languages"
+msgstr "Jazyky zvuku"
+
+msgctxt "#30502"
+msgid "Size"
+msgstr "Velikost"
+
+msgctxt "#30503"
+msgid "Resolution and codec"
+msgstr "Rozlišení a kodek"
+
+msgctxt "#30504"
+msgid "Audio tracks"
+msgstr "Zvukové stopy"
+
+msgctxt "#30505"
+msgid "Bitrate"
+msgstr "Datový tok"
+
+msgctxt "#30506"
+msgid "Length"
+msgstr "Délka"
+
+msgctxt "#30507"
+msgid "Subtitles"
+msgstr "Titulky"
+
+msgctxt "#30508"
+msgid "Source"
+msgstr "Zdroj"
+
+msgctxt "#30509"
+msgid "File name"
+msgstr "Název souboru"
+
+msgctxt "#30510"
+msgid "Up"
+msgstr "Nahoru"
+
+msgctxt "#30511"
+msgid "Down"
+msgstr "Dolů"
+
+msgctxt "#30512"
+msgid "Stream details reset to the default order"
+msgstr "Pořadí údajů u streamu vráceno na výchozí"
+
+msgctxt "#30513"
+msgid "Choose stream"
+msgstr "Vybrat stream"
+
+msgctxt "#30514"
+msgid "Use the arrows to move details between the top and bottom line of the stream dialog; move what should not be shown into Do not show. Quality is always the picture on the left."
+msgstr "Šipkami přesuň údaje mezi horním a dolním řádkem dialogu výběru streamu, do Nezobrazovat přesuň, co se nemá ukazovat. Kvalita je vždy obrázek vlevo."
+
+msgctxt "#30515"
+msgid "On the phone the details move with arrows between the top and bottom line. That is easier than typing the order here."
+msgstr "V mobilu jdou údaje přesouvat šipkami mezi horním a dolním řádkem. Je to pohodlnější než psát pořadí ručně."
+
+msgctxt "#30516"
+msgid "Delete"
+msgstr "Smazat"
+
+msgctxt "#30517"
+msgid "OK opens the address in a browser"
+msgstr "OK adresu otevře v prohlížeči"
+
+msgctxt "#30518"
+msgid "Opening in browser…"
+msgstr "Otvírám v prohlížeči…"
+
+msgctxt "#30520"
+msgid "Luna %s responds and returns streams. The setup is fine."
+msgstr "Luna %s odpovídá a vrací streamy. Nastavení je v pořádku."
+
+msgctxt "#30521"
+msgid "Neither the Luna address nor the token is filled in.[CR]Use “Find Luna on the network”, or paste the whole add-on address from Luna's /setup page into the Token field."
+msgstr "Není vyplněná adresa Luny ani token.[CR]Použij „Najít Lunu v síti“, nebo vlož do pole Token celou adresu doplňku ze stránky /setup Luny."
+
+msgctxt "#30522"
+msgid "The address %s is not in the expected format.[CR]Expected something like 192.168.1.10:7126."
+msgstr "Adresa %s nemá očekávaný tvar.[CR]Očekává se například 192.168.1.10:7126."
+
+msgctxt "#30523"
+msgid "Nobody answered at %s.[CR][CR]Is the computer running Luna switched on? Is it on the same network as this device? Try “Find Luna on the network”."
+msgstr "Na adrese %s se nikdo neozval.[CR][CR]Běží počítač, kde je Luna spuštěná? Je ve stejné síti jako toto zařízení? Zkus „Najít Lunu v síti“."
+
+msgctxt "#30524"
+msgid "Something answers at %s, but it is not Luna.[CR]Check the port – Luna uses 7126 by default."
+msgstr "Na adrese %s něco odpovídá, ale není to Luna.[CR]Zkontroluj port – Luna má výchozí 7126."
+
+msgctxt "#30525"
+msgid "Luna %s is running, but the token is missing.[CR][CR]Open %s/setup in a browser, copy the add-on address and paste the whole thing into the Token field – the add-on will pull both the address and the token out of it."
+msgstr "Luna %s běží, ale chybí token.[CR][CR]Otevři v prohlížeči %s/setup, zkopíruj adresu doplňku a vlož ji celou do pole Token – adresu i token z ní doplněk vytáhne sám."
+
+msgctxt "#30526"
+msgid "What is in the Token field is not a token.[CR][CR]A token starts with “e1.” and is long. Open %s/setup and copy the whole add-on address."
+msgstr "V poli Token není token.[CR][CR]Token začíná „e1.“ a je dlouhý. Otevři %s/setup a zkopíruj celou adresu doplňku."
+
+msgctxt "#30527"
+msgid "Luna %s is running, but it did not accept this token.[CR][CR]Generate the add-on address again at %s/setup and paste the whole thing into the Token field."
+msgstr "Luna %s běží, ale tento token nepřijala.[CR][CR]Vygeneruj si adresu doplňku znovu na %s/setup a vlož ji celou do pole Token."
+
+msgctxt "#30528"
+msgid "Luna %s answers and the WebShare search works, but its main source returns nothing.[CR][CR]Check the WebShare account at %s/setup and whether the token really comes from this Luna."
+msgstr "Luna %s odpovídá a hledání na WebShare funguje, ale její hlavní zdroj nic nevrací.[CR][CR]Zkontroluj na %s/setup účet WebShare a jestli je token opravdu z této Luny."
+
+msgctxt "#30529"
+msgid "Luna %s is running, but it found no streams even for well-known films.[CR][CR]Usually the WebShare account is missing in Luna itself – open %s/setup and fill it in."
+msgstr "Luna %s běží, ale nenašla streamy ani u známých filmů.[CR][CR]Nejčastěji chybí účet WebShare v samotné Luně – otevři %s/setup a doplň ho."
+
+msgctxt "#30530"
+msgid "Looking for Luna on the local network…"
+msgstr "Hledám Lunu v místní síti…"
+
+msgctxt "#30531"
+msgid "Luna was not found on this network.[CR][CR]Is it running on some computer at home? Does it use the default port 7126? If it runs elsewhere or on another port, fill the address in by hand."
+msgstr "V této síti se Luna nenašla.[CR][CR]Běží na některém počítači v domácnosti? Má výchozí port 7126? Pokud běží jinde nebo na jiném portu, vyplň adresu ručně."
+
+msgctxt "#30532"
+msgid "Luna servers found"
+msgstr "Nalezené servery Luny"
+
+msgctxt "#30533"
+msgid "Checking Luna…"
+msgstr "Ověřuji Lunu…"
+
+msgctxt "#30534"
+msgid "Luna check"
+msgstr "Ověření Luny"
+
+
+msgctxt "#30536"
+msgid "Send log"
+msgstr "Poslat log"
+
+msgctxt "#30537"
+msgid "Close"
+msgstr "Zavřít"
+
+msgctxt "#30538"
+msgid "Find Luna on the network"
+msgstr "Najít Lunu v síti"
+
+msgctxt "#30539"
+msgid "Check Luna setup"
+msgstr "Ověřit nastavení Luny"
+
+msgctxt "#30540"
+msgid "Goes through your home network and fills in the address where Luna is running. It only takes a few seconds."
+msgstr "Projde domácí síť a vyplní adresu, kde Luna běží. Trvá to pár vteřin."
+
+msgctxt "#30541"
+msgid "Says exactly what is wrong: whether the server answers, whether the token is valid and whether any streams come back."
+msgstr "Řekne, co přesně nesedí: jestli server odpovídá, jestli platí token a jestli chodí streamy."
+
+msgctxt "#30542"
+msgid "Paste the add-on address from %s/setup"
+msgstr "Vlož adresu doplňku z %s/setup"
+
+msgctxt "#30543"
+msgid "address and token are both missing"
+msgstr "chybí adresa i token"
+
+msgctxt "#30544"
+msgid "the address makes no sense"
+msgstr "adresa nedává smysl"
+
+msgctxt "#30545"
+msgid "the server does not answer"
+msgstr "server neodpovídá"
+
+msgctxt "#30546"
+msgid "Luna is not running at that address"
+msgstr "na té adrese neběží Luna"
+
+msgctxt "#30547"
+msgid "running, but the token is missing"
+msgstr "běží, ale chybí token"
+
+msgctxt "#30548"
+msgid "what is in the Token field is not a token"
+msgstr "v poli Token není token"
+
+msgctxt "#30549"
+msgid "Luna did not accept the token"
+msgstr "token Luna nepřijala"
+
+msgctxt "#30550"
+msgid "the main source returns nothing – WebShare account in Luna?"
+msgstr "hlavní zdroj nic nevrací – účet WebShare v Luně?"
+
+msgctxt "#30551"
+msgid "no streams found – WebShare account in Luna?"
+msgstr "nenašla žádné streamy – účet WebShare v Luně?"
+
+msgctxt "#30552"
+msgid "All good"
+msgstr "V pořádku"
+
+msgctxt "#30553"
+msgid "Careful"
+msgstr "Pozor"
+
+msgctxt "#30554"
+msgid "Did not work"
+msgstr "Nepovedlo se"
+
+msgctxt "#30555"
+msgid "Enter address"
+msgstr "Zadat adresu"
+
+msgctxt "#30556"
+msgid "Luna address (or the whole add-on address from /setup)"
+msgstr "Adresa Luny (nebo celá adresa doplňku ze /setup)"
+
+msgctxt "#30557"
+msgid "The saved setup is what gets checked – a value typed into the field counts only after OK. A different address can be entered right here."
+msgstr "Ověřuje se uložené nastavení – hodnota rozepsaná v políčku se započítá až po OK. Jinou adresu lze zadat rovnou zde."
+
+msgctxt "#30558"
+msgid "Show all streams"
+msgstr "Zobrazit všechny streamy"
+
+msgctxt "#30559"
+msgid "Hungarian"
+msgstr "Maďarština"
+
+msgctxt "#30560"
+msgid "CZtor"
+msgstr "CZtor"
+
+msgctxt "#30561"
+msgid "Use CZtor"
+msgstr "Používat CZtor"
+
+msgctxt "#30562"
+msgid "CZtor catalogue with a subscription (cztor.com, storage at giganthost.com). The device is paired with a PIN – the account password is never entered into the add-on."
+msgstr "Katalog CZtor na předplatné (cztor.com, úložiště giganthost.com). Zařízení se spáruje PINem – heslo účtu se do doplňku nezadává."
+
+msgctxt "#30563"
+msgid "Pair with PIN"
+msgstr "Spárovat PINem"
+
+msgctxt "#30564"
+msgid "Open cztor.com/activate on your phone or computer, log in and enter the PIN shown here."
+msgstr "Na telefonu nebo počítači otevři cztor.com/activate, přihlas se a zadej PIN, který se tu ukáže."
+
+msgctxt "#30565"
+msgid "Unpair this device"
+msgstr "Odhlásit toto zařízení"
+
+msgctxt "#30566"
+msgid "Account status"
+msgstr "Stav účtu"
+
+msgctxt "#30567"
+msgid "On your phone or computer open[CR][B]%s[/B][CR]log in and enter PIN [B]%s[/B]"
+msgstr "Na telefonu nebo počítači otevři[CR][B]%s[/B][CR]přihlas se a zadej PIN [B]%s[/B]"
+
+msgctxt "#30568"
+msgid "CZtor: %s, plan %s until %s"
+msgstr "CZtor: %s, předplatné %s do %s"
+
+msgctxt "#30569"
+msgid "Pairing with CZtor failed."
+msgstr "Spárování s CZtorem se nepodařilo."
+
+msgctxt "#30570"
+msgid "CZtor unpaired."
+msgstr "CZtor odhlášen."
+
+msgctxt "#30571"
+msgid "CZtor is not paired – use Pair with PIN."
+msgstr "CZtor není spárovaný – použij Spárovat PINem."
+
+msgctxt "#30572"
+msgid "CZtor subscription is not active."
+msgstr "Předplatné CZtor není aktivní."
+
+msgctxt "#30573"
+msgid "Do you have a CZtor subscription (cztor.com)?[CR]The device is paired with a PIN, no password needed."
+msgstr "Máš předplatné CZtor (cztor.com)?[CR]Zařízení se spáruje PINem, heslo není potřeba."
+
+msgctxt "#30574"
+msgid "How to set up Luna"
+msgstr "Jak nastavit Lunu"
+
+msgctxt "#30575"
+msgid "1. Luna runs at home on a computer, server, NAS or right on the Android TV box with Kodi (port 7126) and needs a WebShare VIP account.[CR]2. Tap Find Luna on the network – the address fills in by itself. If Luna runs on the same device as Kodi, the address is http://127.0.0.1:7126.[CR]3. Open the Luna address plus /setup in a browser, copy the add-on address and paste all of it into the Token field – the add-on takes the address and the token from it.[CR]4. Tap Check Luna setup. When it says all is well, tap Save to Kodi at the bottom."
+msgstr "1. Luna běží doma na počítači, serveru, NAS nebo přímo na Android TV boxu s Kodi (port 7126) a potřebuje účet WebShare VIP.[CR]2. Klepni na Najít Lunu v síti – adresa se vyplní sama. Když Luna běží na stejném zařízení jako Kodi, adresa je http://127.0.0.1:7126.[CR]3. V prohlížeči otevři adresu Luny s /setup na konci, zkopíruj adresu doplňku a vlož ji celou do pole Token – adresu i token z ní doplněk vytáhne sám.[CR]4. Klepni na Ověřit nastavení Luny. Když napíše, že je vše v pořádku, dole klepni na Uložit do Kodi."
+
+msgctxt "#30576"
+msgid "Luna found: %s[CR]Tap Save to Kodi at the bottom to keep the address."
+msgstr "Luna nalezena: %s[CR]Adresu uložíš tlačítkem Uložit do Kodi dole."
+
+msgctxt "#30577"
+msgid "No stream found"
+msgstr "Žádný stream nenalezen"
+
+msgctxt "#30578"
+msgid "Try searching under a different name?[CR]The name you type is searched as full text in the sources (for an episode the season and episode number is added)."
+msgstr "Zkusit hledat pod jiným názvem?[CR]Zadaný název se hledá fulltextem ve zdrojích (u dílu seriálu se přidá číslo série a dílu)."
+
+msgctxt "#30579"
+msgid "Name to search for"
+msgstr "Název pro hledání"
+
+msgctxt "#30580"
+msgid "Connection to the TV was lost – start Set up from phone on the TV again."
+msgstr "Spojení s televizí se přerušilo – na TV spusť Nastavit z mobilu znovu."
+
+msgctxt "#30581"
+msgid "Open Luna settings (/setup)"
+msgstr "Otevřít nastavení Luny (/setup)"
+
+msgctxt "#30582"
+msgid "TV guide: show programmes that already ended today"
+msgstr "TV program: ukázat i dnes už skončené pořady"
+
+msgctxt "#30583"
+msgid "Today's TV programme normally hides programmes that have already ended. Turn on to show the whole day."
+msgstr "Dnešní TV program běžně skrývá pořady, které už skončily. Zapnuté ukáže celý den."
+
+msgctxt "#30584"
+msgid "Finished programmes"
+msgstr "Skončené pořady"
+
+msgctxt "#30585"
+msgid "shown"
+msgstr "ukázané"
+
+msgctxt "#30586"
+msgid "hidden"
+msgstr "skryté"
+
+msgctxt "#30587"
+msgid "Transfer settings"
+msgstr "Přenos nastavení"
+
+msgctxt "#30588"
+msgid "Copies accounts and options to another Kodi. CZtor and Trakt accounts stay behind – sign in again on the new device."
+msgstr "Přenese účty a volby do dalšího Kodi. Účty CZtoru a Traktu zůstanou – na novém zařízení se přihlas znovu."
+
+msgctxt "#30589"
+msgid "Send to another Kodi"
+msgstr "Odeslat do jiného Kodi"
+
+msgctxt "#30590"
+msgid "Load from another Kodi"
+msgstr "Načíst z jiného Kodi"
+
+msgctxt "#30591"
+msgid "Save to a file"
+msgstr "Uložit do souboru"
+
+msgctxt "#30592"
+msgid "Load from a file"
+msgstr "Načíst ze souboru"
+
+msgctxt "#30593"
+msgid "On the other Kodi open Settings → Set up from phone and transfer → Load from another Kodi and type this code:[CR][CR][B]%s[/B][CR][CR]It works once and expires in %s minutes."
+msgstr "Na druhém Kodi otevři Nastavení → Nastavit z mobilu a přenos → Načíst z jiného Kodi a zadej tento kód:[CR][CR][B]%s[/B][CR][CR]Použije se jednou a platí %s minut."
+
+msgctxt "#30594"
+msgid "Code from the other Kodi"
+msgstr "Kód z druhého Kodi"
+
+msgctxt "#30595"
+msgid "Transfer failed: %s"
+msgstr "Přenos se nepodařil: %s"
+
+msgctxt "#30596"
+msgid "%s settings will be written, from %s.[CR]Already the same: %s · not used here: %s[CR][CR]Current settings will be overwritten. A copy stays in %s."
+msgstr "Zapíše se %s nastavení z %s.[CR]Shodné: %s · nepoužije se: %s[CR][CR]Stávající nastavení se přepíše. Kopie zůstane v %s."
+
+msgctxt "#30597"
+msgid "Settings transferred (%s)"
+msgstr "Nastavení přeneseno (%s)"
+
+msgctxt "#30598"
+msgid "Nothing to change – the other device has the same settings."
+msgstr "Z přenosu nepřišla žádná změna."
+
+msgctxt "#30599"
+msgid "Saved to %s[CR][CR]Code for loading it:[CR][B]%s[/B][CR][CR]Without the code nobody can read the file."
+msgstr "Uloženo do %s[CR][CR]Kód pro načtení:[CR][B]%s[/B][CR][CR]Bez kódu soubor nikdo nepřečte."
+
+msgctxt "#30600"
+msgid "The CZtor account is not transferred. Pair now?"
+msgstr "Účet CZtoru se nepřenáší. Spárovat teď?"
+
+msgctxt "#30601"
+msgid "The Trakt account is not transferred. Sign in now?"
+msgstr "Účet Traktu se nepřenáší. Přihlásit teď?"
+
+msgctxt "#30603"
+msgid "The file could not be written: %s"
+msgstr "Soubor se nepodařilo zapsat: %s"
+
+msgctxt "#30604"
+msgid "The file could not be read: %s"
+msgstr "Soubor se nepodařilo přečíst: %s"
+
+msgctxt "#30605"
+msgid "For You"
+msgstr "Pro Tebe"
+
+msgctxt "#30606"
+msgid "Because you watched %s"
+msgstr "Doporučeno podle: %s"
+
+msgctxt "#30607"
+msgid "No recommendations yet – they are built from recently watched titles."
+msgstr "Zatím není z čeho doporučovat – seznam vzniká z naposledy zhlédnutých titulů."
+
+msgctxt "#30608"
+msgid "Random movie"
+msgstr "Náhodný film"
+
+msgctxt "#30609"
+msgid "Random series"
+msgstr "Náhodný seriál"
+
+msgctxt "#30610"
+msgid "Nothing to pick from"
+msgstr "Není z čeho losovat"
+
+msgctxt "#30611"
+msgid "OpenSubtitles"
+msgstr "OpenSubtitles"
+
+
+msgctxt "#30613"
+msgid "Use OpenSubtitles"
+msgstr "Používat OpenSubtitles"
+
+msgctxt "#30614"
+msgid "Used only for titles with no subtitles from the source, from WebShare or in the file itself."
+msgstr "Použijí se jen u titulů, které nemají titulky ze zdroje, z WebShare ani přímo v souboru."
+
+msgctxt "#30615"
+msgid "OpenSubtitles account (optional)"
+msgstr "Účet na OpenSubtitles (nepovinný)"
+
+msgctxt "#30616"
+msgid "Without an account you can download 5 subtitles a day, with a free account 20."
+msgstr "Bez účtu se dá stáhnout 5 titulků denně, s bezplatným účtem 20."
+
+msgctxt "#30617"
+msgid "OpenSubtitles password"
+msgstr "Heslo na OpenSubtitles"
+
+msgctxt "#30618"
+msgid "Sent only when signing in; only the issued token is stored."
+msgstr "Posílá se jen při přihlášení, ukládá se z něj jen vydaný token."
+
+msgctxt "#30619"
+msgid "Check OpenSubtitles"
+msgstr "Ověřit OpenSubtitles"
+
+msgctxt "#30620"
+msgid "Checks the connection, the account and the remaining daily quota."
+msgstr "Ověří spojení, účet i to, kolik titulků dnes ještě zbývá."
+
+msgctxt "#30621"
+msgid "OpenSubtitles works."
+msgstr "OpenSubtitles funguje."
+
+msgctxt "#30622"
+msgid "OpenSubtitles is switched off in the settings."
+msgstr "OpenSubtitles jsou v nastavení vypnuté."
+
+msgctxt "#30623"
+msgid "The key could not be fetched from the server – try again later."
+msgstr "Klíč se nepodařilo získat ze serveru – zkus to později."
+
+msgctxt "#30624"
+msgid "Sign-in failed – check the username and password."
+msgstr "Přihlášení se nepodařilo – zkontroluj jméno a heslo."
+
+msgctxt "#30625"
+msgid "Subtitles found for the test title: %s"
+msgstr "Titulků ke zkušebnímu titulu: %s"
+
+msgctxt "#30626"
+msgid "Downloads left today: %s"
+msgstr "Zbývá dnes stažení: %s"
+
+msgctxt "#30627"
+msgid "Signed in as %s"
+msgstr "Přihlášen jako %s"
+
+msgctxt "#30628"
+msgid "Not signed in – 5 downloads a day for this IP address."
+msgstr "Bez přihlášení – 5 stažení denně pro tuto IP adresu."
+
+msgctxt "#30630"
+msgid "Source status"
+msgstr "Stav zdrojů"
+
+msgctxt "#30631"
+msgid "subscription until %s"
+msgstr "předplatné do %s"
+
+msgctxt "#30632"
+msgid "days until the subscription ends: %s"
+msgstr "do konce předplatného zbývá dní: %s"
+
+msgctxt "#30633"
+msgid "subscription has expired"
+msgstr "předplatné vypršelo"
+
+msgctxt "#30634"
+msgid "account without VIP – downloads at a few kB/s"
+msgstr "účet bez VIP – stahování pár kB/s"
+
+msgctxt "#30635"
+msgid "unlimited downloads"
+msgstr "neomezené stahování"
+
+msgctxt "#30636"
+msgid "%s GB of credit left"
+msgstr "zbývá %s GB kreditu"
+
+msgctxt "#30637"
+msgid "out of credit"
+msgstr "došel kredit"
+
+msgctxt "#30638"
+msgid "%s until %s"
+msgstr "%s do %s"
+
+msgctxt "#30639"
+msgid "days until the subscription ends: %s"
+msgstr "do konce předplatného zbývá dní: %s"
+
+msgctxt "#30640"
+msgid "subscription has expired"
+msgstr "předplatné vypršelo"
+
+msgctxt "#30641"
+msgid "the device is not paired"
+msgstr "zařízení není spárované"
+
+msgctxt "#30642"
+msgid "account status unknown"
+msgstr "stav účtu neznámý"
+
+msgctxt "#30643"
+msgid "Premium"
+msgstr "Premium"
+
+msgctxt "#30644"
+msgid "account without Premium – playback will not work"
+msgstr "účet bez Premium – přehrávání nepůjde"
+
+msgctxt "#30645"
+msgid "all good"
+msgstr "v pořádku"
+
+msgctxt "#30646"
+msgid "rejects this network (HTTP 429) – VPN or mobile data? Retry in %s min"
+msgstr "odmítá tuto síť (HTTP 429) – VPN nebo mobilní data? Zkusí se za %s min"
+
+msgctxt "#30647"
+msgid "responding"
+msgstr "odpovídá"
+
+msgctxt "#30648"
+msgid "the username or password does not match"
+msgstr "nesedí jméno nebo heslo"
+
+msgctxt "#30649"
+msgid "not responding"
+msgstr "neodpovídá"
+
+msgctxt "#30650"
+msgid "the status could not be determined"
+msgstr "nepodařilo se zjistit stav"
+
+msgctxt "#30651"
+msgid "days left: %s"
+msgstr "zbývá dní: %s"
+
+msgctxt "#30652"
+msgid "no VIP"
+msgstr "účet bez VIP"
+
+msgctxt "#30653"
+msgid "%s GB left"
+msgstr "zbývá %s GB"
+
+msgctxt "#30654"
+msgid "not paired"
+msgstr "není spárováno"
+
+msgctxt "#30655"
+msgid "no Premium"
+msgstr "účet bez Premium"
+
+msgctxt "#30656"
+msgid "paused %s min"
+msgstr "pozastaveno %s min"
+
+msgctxt "#30657"
+msgid "sign-in does not match"
+msgstr "nesedí přihlášení"
+
+msgctxt "#30658"
+msgid "status unknown"
+msgstr "stav neznámý"
+
+msgctxt "#30659"
+msgid "no preferred language"
+msgstr "bez preferovaného jazyka"
+
+msgctxt "#30660"
+msgid "Looking for a title in your preferred language…"
+msgstr "Hledám titul s preferovaným jazykem…"
+
+msgctxt "#30661"
+msgid "Synchronisation hub"
+msgstr "Středisko synchronizace"
+
+msgctxt "#30662"
+msgid "Home Assistant"
+msgstr "Home Assistant"
+
+msgctxt "#30663"
+msgid "Nokturno dashboard"
+msgstr "Dashboard Nokturna"
+
+msgctxt "#30664"
+msgid "Group code"
+msgstr "Kód skupiny"
+
+msgctxt "#30665"
+msgid "Create group / open for joining"
+msgstr "Založit skupinu / otevřít připojení"
+
+msgctxt "#30666"
+msgid "Join a group"
+msgstr "Připojit se ke skupině"
+
+msgctxt "#30667"
+msgid "Leave the group"
+msgstr "Odejít ze skupiny"
+
+msgctxt "#30668"
+msgid "Sync watched and resume points"
+msgstr "Synchronizovat zhlédnuté a rozkoukané"
+
+msgctxt "#30669"
+msgid "Sync My list"
+msgstr "Synchronizovat Můj seznam"
+
+msgctxt "#30670"
+msgid "Sync search history"
+msgstr "Synchronizovat historii hledání"
+
+msgctxt "#30671"
+msgid "The group is set up. Enter this code on the next Kodi:"
+msgstr "Skupina je založená. Na dalším Kodi zadej tento kód:"
+
+msgctxt "#30672"
+msgid "The code lets a new device join for 30 minutes. Keep the code – without it the data cannot be read and cannot be recovered."
+msgstr "Nové zařízení se může kódem připojit do 30 minut. Kód si uschovej – bez něj data nikdo nepřečte a nejdou obnovit."
+
+msgctxt "#30673"
+msgid "Type the group code from your first Kodi"
+msgstr "Zadej kód skupiny z prvního Kodi"
+
+msgctxt "#30674"
+msgid "Joined. Synchronisation runs in the background."
+msgstr "Připojeno. Synchronizace běží na pozadí."
+
+msgctxt "#30675"
+msgid "That code does not look right."
+msgstr "Kód nemá správný tvar."
+
+msgctxt "#30676"
+msgid "No group yet – start one, or join with a code from another Kodi."
+msgstr "Zatím žádná skupina – založ ji, nebo se připoj kódem z jiného Kodi."
+
+msgctxt "#30677"
+msgid "Leave the group? This Kodi stops synchronising. Nothing already saved here is deleted. The other devices keep the code – to really cut off a removed device, start a new group and join the others with a new code."
+msgstr "Odejít ze skupiny? Toto Kodi se přestane synchronizovat. Nic, co je tu uložené, se nesmaže. Ostatním zařízením kód zůstává – odebrané zařízení se dá odříznout jen založením nové skupiny a připojením ostatních novým kódem."
+
+msgctxt "#30678"
+msgid "The group has been left."
+msgstr "Skupina opuštěna."
+
+msgctxt "#30679"
+msgid "Joining is open again. Enter this code on the next Kodi:"
+msgstr "Připojení je znovu otevřené. Na dalším Kodi zadej tento kód:"
+
+msgctxt "#30680"
+msgid "Joining is open for 30 minutes."
+msgstr "Připojení je otevřené 30 minut."
+
+msgctxt "#30681"
+msgid "The dashboard only stores sealed data it cannot read. The code is the key and never leaves the devices. With Home Assistant, enter the same group code in the integration settings – HA then joins the group as another device and its card stays current."
+msgstr "Dashboard u sebe drží jen zapečetěná data, která sám nepřečte. Kód je klíč a ze zařízení nikdy neodejde. S Home Assistantem zadej týž kód skupiny i v nastavení integrace – HA se tím stane dalším členem skupiny a karta v HA zůstane aktuální."
+
+msgctxt "#30682"
+msgid "What gets synced"
+msgstr "Co se synchronizuje"
+
+msgctxt "#30683"
+msgid "Sync add-on settings"
+msgstr "Synchronizovat nastavení doplňku"
+
+msgctxt "#30684"
+msgid "Sync source accounts"
+msgstr "Synchronizovat účty ke zdrojům"
+
+msgctxt "#30685"
+msgid "Options such as preferred language, stream sorting or enabled sources. The download folder and the sync settings themselves are never shared."
+msgstr "Volby jako preferovaný jazyk, řazení streamů nebo zapnuté zdroje. Nesdílí se složka pro stahování ani samotné nastavení synchronizace."
+
+msgctxt "#30686"
+msgid "Sign-ins to the sources (WebShare, Sosáč, Sledujteto, FastShare, Přehraj.to, OpenSubtitles, Luna, own storage) and the TMDB key. Passwords travel encrypted and the server cannot read them, but anyone holding the group code can – give the code only to your own devices. CZtor and Trakt must be paired on each device separately."
+msgstr "Přihlášení ke zdrojům (WebShare, Sosáč, Sledujteto, FastShare, Přehraj.to, OpenSubtitles, Luna, vlastní úložiště) a klíč k TMDB. Hesla jdou zašifrovaná a server je nepřečte, ale kdo má kód skupiny, přečte je – kód patří jen vlastním zařízením. CZtor a Trakt se musí spárovat na každém zařízení zvlášť."
+
+msgctxt "#30688"
+msgid "Synchronisation goes through the dashboard. With Home Assistant, enter the same group code in the integration settings as well."
+msgstr "Synchronizace jede přes dashboard. S Home Assistantem zadej týž kód skupiny i v nastavení integrace."
+
+msgctxt "#30690"
+msgid "Nokturno"
+msgstr "Nokturno"
+
+msgctxt "#30691"
+msgid "Version and ID of this installation"
+msgstr "Verze a ID této instalace"
+
+msgctxt "#30692"
+msgid "Web: nokturno.stream"
+msgstr "Web: nokturno.stream"
+
+msgctxt "#30693"
+msgid "Family: Kodi · Stremio · Home Assistant"
+msgstr "Rodina: Kodi · Stremio · Home Assistant"
+
+msgctxt "#30694"
+msgid "When something does not work"
+msgstr "Když něco nefunguje"
+
+msgctxt "#30695"
+msgid "ID of this installation"
+msgstr "ID této instalace"
+
+msgctxt "#30700"
+msgid "Where to ask"
+msgstr "Kde se ptát"
+
+msgctxt "#30701"
+msgid "Kodi forum: xbmc-kodi.cz"
+msgstr "Fórum pro Kodi: xbmc-kodi.cz"
+
+msgctxt "#30702"
+msgid "Stremio forum: stremio.cz/d/240"
+msgstr "Fórum pro Stremio: stremio.cz/d/240"
+
+msgctxt "#30703"
+msgid "Version"
+msgstr "Verze"
+
+msgctxt "#30707"
+msgid "The code from the first Kodi where you created the group. Turn on Synchronisation, choose Nokturno dashboard as the hub and save – this Kodi joins within five minutes."
+msgstr "Kód z prvního Kodi, na kterém skupina vznikla. Zapni Synchronizaci, jako středisko zvol Dashboard Nokturna a ulož – toto Kodi se připojí do pěti minut."
+
+msgctxt "#30708"
+msgid "Přehraj.to"
+msgstr "Přehraj.to"
+
+msgctxt "#30709"
+msgid "Use Přehraj.to"
+msgstr "Používat Přehraj.to"
+
+msgctxt "#30710"
+msgid "Works without an account too: search is the same, but only the first page of results (32 files) is visible and playback uses a re-encoded 1080p file. A Premium account adds paging and plays the original file, including 4K."
+msgstr "Funguje i bez účtu: hledá se stejně, ale je vidět jen první strana výsledků (32 souborů) a hraje se překódovaný soubor v 1080p. S účtem Premium přibude stránkování a hraje se původní soubor včetně 4K."
+
+msgctxt "#30711"
+msgid "E-mail"
+msgstr "E-mail"
+
+msgctxt "#30712"
+msgid "The e-mail you sign in with at prehraj.to. Leave it empty to use the source without an account."
+msgstr "E-mail, kterým se přihlašuješ na prehraj.to. Nech prázdné a zdroj se použije bez účtu."
+
+msgctxt "#30713"
+msgid "Password"
+msgstr "Heslo"
+
+msgctxt "#30714"
+msgid "The password for the same account. Přehraj.to counts every sign-in as a device, so Nokturno signs in only once every few hours."
+msgstr "Heslo ke stejnému účtu. Přehraj.to počítá každé přihlášení jako zařízení, proto se Nokturno přihlašuje jen jednou za pár hodin."
+
+msgctxt "#30715"
+msgid "Premium, days left: %s"
+msgstr "Premium, zbývá dní: %s"
+
+msgctxt "#30716"
+msgid "days until the subscription ends: %s"
+msgstr "do konce předplatného zbývá dní: %s"
+
+msgctxt "#30717"
+msgid "account without Premium – fewer results and 1080p only"
+msgstr "účet bez Premium – méně výsledků a jen 1080p"
+
+msgctxt "#30718"
+msgid "no account – only the first page of results"
+msgstr "bez účtu – jen první strana výsledků"
+
+msgctxt "#30719"
+msgid "paused for %s min (HTTP 429)"
+msgstr "pozastaveno na %s min (HTTP 429)"
+
+msgctxt "#30720"
+msgid "no Premium"
+msgstr "účet bez Premium"
+
+msgctxt "#30721"
+msgid "no account, %s found"
+msgstr "bez účtu, nalezeno %s"
+
+msgctxt "#30722"
+msgid "no Premium – fewer results and 1080p only"
+msgstr "bez Premium – méně výsledků a jen 1080p"
+
+msgctxt "#30723"
+msgid "Premium, days left: %s"
+msgstr "Premium, zbývá dní: %s"
+
+msgctxt "#30724"
+msgid "Set up from phone and transfer"
+msgstr "Nastavit z mobilu a přenos"
+
+msgctxt "#30725"
+msgid "rejects network"
+msgstr "odmítá síť"
+
+msgctxt "#30726"
+msgid "Sources and accounts"
+msgstr "Zdroje a účty"
+
+msgctxt "#30727"
+msgid "Maintenance"
+msgstr "Údržba"
+
+msgctxt "#30728"
+msgid "Legal notice"
+msgstr "Právní upozornění"
+
+msgctxt "#30729"
+msgid "[B]Nokturno terms of use[/B]\nVersion 3 · effective from 30 September 2026\n\n[B]1. What Nokturno is[/B]\nNokturno is an add-on for Kodi and Home Assistant. It is a player and search tool for your own storage (for example WebDAV) and for the storage services and catalogues of third parties that you enable in the settings (WebShare, Sosáč, HellSpy, Sledujteto, FastShare / Sdilej.cz, Přehraj.to, CZtor, Luna). It searches for subtitles on OpenSubtitles. You decide which sources you use. Nokturno is free, without ads and without paid features.\n\n[B]2. How searching works[/B]\nNokturno asks the enabled sources for a title's name or identifier and shows the files they return. The files are stored on the servers of those services, were uploaded by their users, and your player downloads them directly from there. Nokturno does not host or distribute any film, series or other work.\n\nNokturno does not verify the legal status of individual files. It does not check who uploaded a file or whether they had the rightsholder's consent. A file appearing in the results does not mean you may legally play it.\n\nSearching runs on your device with your accounts. The Nokturno server does not search for files. It provides title information (catalogues, TV guide, recommendations), keys for the interfaces of title-information and subtitle services, and synchronisation between your devices.\n\n[B]3. What you may and may not do[/B]\n- Use Nokturno only for content you have the right to – your own recordings, freely licensed works, and content you hold a licence or other legal title to. Playing or downloading a copyrighted work without the rightsholder's consent is prohibited.\n- Do not use Nokturno to infringe the rights of others or to distribute content you have no right to.\n- When you connect a third-party service, its terms apply to you as well. Nokturno gives you no rights to the content of those services.\n- Do not share your source accounts with other people unless the source's terms allow it.\n- Do not send automated requests to the Nokturno server, do not get around limits or blocks, and do not offer access through Nokturno as a paid service.\n\n[B]4. Reporting content and blocking[/B]\nOnly the service that stores a file can actually delete it. We therefore recommend that rightsholders report it there directly (contacts are at the end).\n\nYou can also report it to us. What a notice must contain and how we handle it is described at nokturno.stream/abuse; send it to abuse@nokturno.stream. We reply to a complete notice and block the title or file in Nokturno's results within 48 hours. The block reaches the add-on with a list from the server, older versions after they are updated.\n\n[B]5. No warranty and limitation of liability[/B]\nWe provide Nokturno \"as is\", free of charge and with no warranty of functionality, availability or of what third-party sources contain. You are responsible for what you play and download with Nokturno.\n\nTo the extent permitted by law, we are not liable for damage arising from using Nokturno or from being unable to use it, for the content, availability and terms of third-party services, or for how you use Nokturno. Liability that cannot be excluded by law is not affected.\n\nWe may restrict or end access to the server at any time, especially if these terms are breached.\n\n[B]6. Personal data[/B]\nWhich data Nokturno sends, why, how long we keep it and how to ask for its deletion is described at nokturno.stream/privacy.\n\n[B]7. Governing law[/B]\nThese terms are governed by the law of the Czech Republic. If you are a consumer habitually resident in another country, you keep the protection the law of that country gives you.\n\n[B]8. Changes to these terms[/B]\nEvery version has a number and a date. We will announce significant changes in the add-on, and Kodi and Home Assistant will ask for your consent again.\n\n[B]9. Contacts[/B]\n- reporting content: abuse@nokturno.stream (procedure at nokturno.stream/abuse)\n- personal data: privacy@nokturno.stream\n- everything else: kontakt@nokturno.stream\n- help with the add-on: the help pages and Discord (not for legal matters)"
+msgstr "[B]Podmínky použití Nokturna[/B]\nVerze 3 · platí od 30. 9. 2026\n\n[B]1. Co je Nokturno[/B]\nNokturno je doplněk pro Kodi a Home Assistant. Je to přehrávač a vyhledávač nad tvým vlastním úložištěm (například WebDAV) i nad úložišti a katalogy třetích stran, které si v nastavení zapneš (WebShare, Sosáč, HellSpy, Sledujteto, FastShare / Sdilej.cz, Přehraj.to, CZtor, Luna). Titulky hledá na OpenSubtitles. Které zdroje používáš, rozhoduješ ty. Nokturno je zdarma, bez reklam a bez placených funkcí.\n\n[B]2. Jak hledání funguje[/B]\nNokturno se zapnutých zdrojů zeptá na název nebo identifikátor titulu a ukáže soubory, které zdroje vrátí. Soubory leží na serverech těchto služeb, nahráli je jejich uživatelé a přehrávač si je stahuje přímo odtud. Nokturno žádný film, seriál ani jiné dílo nehostuje a nešíří.\n\nNokturno neověřuje právní status jednotlivých souborů. Nezjišťuje, kdo soubor nahrál, ani jestli k tomu měl souhlas nositele práv. To, že je soubor ve výsledcích, tedy neznamená, že ho smíš legálně přehrát.\n\nHledání probíhá na tvém zařízení a s tvými účty. Server Nokturna soubory nehledá. Poskytuje údaje o titulech (katalogy, TV program, doporučení), klíče k rozhraním služeb s údaji o titulech a titulky a synchronizaci mezi tvými zařízeními.\n\n[B]3. Co smíš a co ne[/B]\n- Používej Nokturno jen k obsahu, ke kterému máš právo – vlastní nahrávky, díla s volnou licencí, obsah, ke kterému máš licenci nebo jiný právní titul. Přehrávat nebo stahovat autorsky chráněné dílo bez souhlasu nositele práv je zakázáno.\n- Nokturno nepoužívej k porušování práv jiných ani k šíření obsahu, ke kterému nemáš právo.\n- Když se připojíš ke službě třetí strany, platí pro tebe i její podmínky. Nokturno ti nedává žádná práva k obsahu těchto služeb.\n- Nesdílej svoje účty ke zdrojům s dalšími lidmi, pokud to podmínky zdroje nedovolují.\n- Neposílej na server Nokturna automatizované dotazy, neobcházej limity a blokace a nenabízej přístup přes Nokturno jako placenou službu.\n\n[B]4. Nahlášení obsahu a blokace[/B]\nSoubor fyzicky smaže jen služba, na které leží. Nositelům práv proto doporučujeme nahlásit ho přímo tam (kontakty jsou na konci).\n\nNahlásit ho můžeš i nám. Co má žádost obsahovat a jak ji vyřizujeme, najdeš na nokturno.stream/abuse, žádost pošli na abuse@nokturno.stream. Na úplnou žádost odpovíme a titul nebo soubor ve výsledcích Nokturna zablokujeme do 48 hodin. Blokace se do doplňku dostane se seznamem ze serveru, do starších verzí až po aktualizaci.\n\n[B]5. Bez záruky a omezení odpovědnosti[/B]\nNokturno poskytujeme „tak, jak je“, zdarma a bez záruky funkčnosti, dostupnosti i toho, co obsahují zdroje třetích stran. Za to, co s Nokturnem přehráváš a stahuješ, odpovídáš ty.\n\nV rozsahu, který právo dovoluje, neodpovídáme za škodu vzniklou používáním Nokturna nebo tím, že ho používat nejde, za obsah, dostupnost a podmínky služeb třetích stran ani za to, jak Nokturno používáš. Odpovědnost, kterou zákon vyloučit nedovoluje, tím není dotčena.\n\nPřístup k serveru můžeme kdykoli omezit nebo ukončit, zejména při porušení těchto podmínek.\n\n[B]6. Osobní údaje[/B]\nJaké údaje Nokturno posílá, proč, jak dlouho je uchováváme a jak si o jejich výmaz řekneš, najdeš na nokturno.stream/privacy.\n\n[B]7. Rozhodné právo[/B]\nTyto podmínky se řídí právem České republiky. Pokud jsi spotřebitel s obvyklým bydlištěm v jiném státě, nepřicházíš tím o ochranu, kterou ti dává právo tohoto státu.\n\n[B]8. Změny podmínek[/B]\nKaždá verze má číslo a datum. O podstatné změně dáme vědět v doplňku a Kodi i Home Assistant si vyžádají nový souhlas.\n\n[B]9. Kontakty[/B]\n- nahlášení obsahu: abuse@nokturno.stream (postup na nokturno.stream/abuse)\n- osobní údaje: privacy@nokturno.stream\n- ostatní: kontakt@nokturno.stream\n- pomoc s doplňkem: nápověda a Discord (ne pro právní věci)"
+
+msgctxt "#30730"
+msgid "I confirm I will use Nokturno only for content I have the right to, and I agree to the terms of use (version 3)."
+msgstr "Potvrzuji, že budu Nokturno používat jen k obsahu, ke kterému mám právo, a souhlasím s podmínkami použití (verze 3)."
+
+msgctxt "#30732"
+msgid "I don't agree"
+msgstr "Nesouhlasím"
+
+msgctxt "#30733"
+msgid "First accept the legal notice in the Nokturno menu."
+msgstr "Nejdřív v menu Nokturna odsouhlas právní upozornění."
+
+
+msgctxt "#30734"
+msgid "[B]Reporting directly to the source[/B]\n- WebShare – abuse@webshare.cz\n- Sosáč / Streamuj.tv – streamuj.tv/advertise (DMCA)\n- HellSpy – hellspy.to/contact\n- Sledujteto – sledujteto.cz/nahlasit-nelegalni-soubor\n- FastShare – fastshare.cz/abuse\n- Sdilej.cz – abuse@sdilej.cz\n- Přehraj.to – prehrajto.cz/nahlasit-nelegalni-soubor\n- CZtor – contact via cztor.com/kontakt\n- OpenSubtitles – copyright@opensubtitles.org (DMCA)"
+msgstr "[B]Nahlášení přímo u zdroje[/B]\n- WebShare – abuse@webshare.cz\n- Sosáč / Streamuj.tv – streamuj.tv/advertise (DMCA)\n- HellSpy – hellspy.to/contact\n- Sledujteto – sledujteto.cz/nahlasit-nelegalni-soubor\n- FastShare – fastshare.cz/abuse\n- Sdilej.cz – abuse@sdilej.cz\n- Přehraj.to – prehrajto.cz/nahlasit-nelegalni-soubor\n- CZtor – kontakt na cztor.com/kontakt\n- OpenSubtitles – copyright@opensubtitles.org (DMCA)"
+
+
+msgctxt "#30735"
+msgid "Terms of use"
+msgstr "Podmínky použití"
+
+
+msgctxt "#30736"
+msgid "I agree to the terms of use"
+msgstr "Souhlasím s podmínkami použití"
+
+
+msgctxt "#30738"
+msgid "Show the terms"
+msgstr "Zobrazit podmínky"
+
+
+msgctxt "#30741"
+msgid "Unavailable streams: %s – hidden"
+msgstr "Nedostupné streamy: %s – skryto"
+
+msgctxt "#30742"
+msgid "Pause source"
+msgstr "Uspat zdroj"
+
+msgctxt "#30743"
+msgid "10 minutes"
+msgstr "10 minut"
+
+msgctxt "#30744"
+msgid "1 hour"
+msgstr "1 hodina"
+
+msgctxt "#30745"
+msgid "12 hours"
+msgstr "12 hodin"
+
+msgctxt "#30746"
+msgid "Cancel pause"
+msgstr "Zrušit uspání"
+
+msgctxt "#30747"
+msgid "%s paused for %s"
+msgstr "%s uspán na %s"
+
+msgctxt "#30748"
+msgid "I agree"
+msgstr "Souhlasím"
+
+msgctxt "#30749"
+msgid "Do you agree to the terms of use above?"
+msgstr "Souhlasíš s podmínkami použití výše?"
+
+msgctxt "#30800"
+msgid "SyncWatch"
+msgstr "SyncWatch"
+
+msgctxt "#30801"
+msgid "Watch one film or episode together on several devices – each on their own, but at the same moment.[CR][CR][B]1.[/B] One person creates a group and becomes its leader. They get a code, e.g. SW-7K2Q-9MFX.[CR][B]2.[/B] The others (up to 4 more devices) enter the code in SyncWatch → Join with code. They wait until the leader plays something.[CR][B]3.[/B] The leader plays a film in Nokturno as usual. The same stream starts on the other devices by itself – playback begins once it has loaded everywhere.[CR][B]4.[/B] Pause, play and seeking by anyone apply to everyone. When someone is buffering, the others wait.[CR][CR]Everyone plays exactly the same stream – same quality, audio and length – each through their own account at the source. Whoever has no account at the leader's source cannot play it.[CR]The group ends when nobody joins it for 5 minutes, or when the leader ends it. The server cannot see what you watch – it is encrypted with the group code."
+msgstr "Sledujte jeden film nebo díl společně na víc zařízeních – každý u sebe, ale ve stejnou chvíli.[CR][CR][B]1.[/B] Jeden založí skupinu a stane se vedoucím. Dostane kód, například SW-7K2Q-9MFX.[CR][B]2.[/B] Ostatní (nejvýš 4 další zařízení) zadají kód v SyncWatch → Připojit se kódem. Čekají, až vedoucí něco pustí.[CR][B]3.[/B] Vedoucí pustí film normálně v Nokturnu. Stejný stream se sám spustí i u ostatních – začne se, až se načte všem.[CR][B]4.[/B] Pauza, přehrávání a přetáčení od kohokoli platí pro všechny. Když se někomu načítá, ostatní počkají.[CR][CR]Všichni pustí přesně tentýž stream – stejnou kvalitu, zvuk i délku – každý přes svůj vlastní účet u zdroje. Kdo účet u zdroje vedoucího nemá, stream se mu nespustí.[CR]Skupina zanikne, když se k ní 5 minut nikdo nepřipojí, nebo když ji vedoucí ukončí. Co sledujete, server nevidí – je to zašifrované kódem skupiny."
+
+msgctxt "#30802"
+msgid "Got it"
+msgstr "Rozumím"
+
+msgctxt "#30803"
+msgid "Got it, don't show again"
+msgstr "Rozumím, příště nezobrazovat"
+
+msgctxt "#30804"
+msgid "leader"
+msgstr "vedoucí"
+
+msgctxt "#30805"
+msgid "member"
+msgstr "člen"
+
+msgctxt "#30806"
+msgid "connected: %d"
+msgstr "připojeno: %d"
+
+msgctxt "#30807"
+msgid "Close the group to more devices"
+msgstr "Zavřít skupinu pro další zařízení"
+
+msgctxt "#30808"
+msgid "Open the group to more devices"
+msgstr "Otevřít skupinu pro další zařízení"
+
+msgctxt "#30809"
+msgid "End watching for everyone"
+msgstr "Ukončit sledování pro všechny"
+
+msgctxt "#30810"
+msgid "Leave the group"
+msgstr "Opustit skupinu"
+
+msgctxt "#30811"
+msgid "Create a group (I'll lead)"
+msgstr "Založit skupinu (budu vedoucí)"
+
+msgctxt "#30812"
+msgid "Join with code"
+msgstr "Připojit se kódem"
+
+msgctxt "#30813"
+msgid "How SyncWatch works"
+msgstr "Jak SyncWatch funguje"
+
+msgctxt "#30814"
+msgid "The SyncWatch server is not responding, try again in a moment."
+msgstr "Server SyncWatch neodpovídá, zkus to za chvíli."
+
+msgctxt "#30815"
+msgid "Group code (SW-XXXX-XXXX)"
+msgstr "Kód skupiny (SW-XXXX-XXXX)"
+
+msgctxt "#30816"
+msgid "The code is not valid. It has eight characters, e.g. SW-7K2Q-9MFX."
+msgstr "Kód nemá správný tvar. Má osm znaků, třeba SW-7K2Q-9MFX."
+
+msgctxt "#30817"
+msgid "End watching? The group will end for everyone else too."
+msgstr "Ukončit sledování? Skupina skončí i všem ostatním."
+
+msgctxt "#30818"
+msgid "Leave the group? The others will keep watching."
+msgstr "Opustit skupinu? Ostatní budou sledovat dál."
+
+msgctxt "#30819"
+msgid "SyncWatch ended"
+msgstr "SyncWatch ukončen"
+
+msgctxt "#30820"
+msgid "The group is closed, nobody else can join"
+msgstr "Skupina je zavřená, nikdo další se nepřipojí"
+
+msgctxt "#30821"
+msgid "The group is open to more devices"
+msgstr "Skupina je otevřená pro další zařízení"
+
+msgctxt "#30822"
+msgid "Group code"
+msgstr "Kód skupiny"
+
+msgctxt "#30823"
+msgid "On another Kodi: Nokturno → SyncWatch → Join with code."
+msgstr "Na dalším Kodi: Nokturno → SyncWatch → Připojit se kódem."
+
+msgctxt "#30824"
+msgid "Waiting for the broadcast…"
+msgstr "Čekám na vysílání…"
+
+msgctxt "#30825"
+msgid "Group %s – when the leader plays something, it will start here too."
+msgstr "Skupina %s – až vedoucí něco pustí, spustí se to i tady."
+
+msgctxt "#30826"
+msgid "Back closes the window. Then play a film in Nokturno – it starts for everyone."
+msgstr "Zpět zavře okno. Pak pusť film v Nokturnu – spustí se všem."
+
+msgctxt "#30827"
+msgid "Back closes the window, you stay in the group. You can leave in the SyncWatch menu."
+msgstr "Zpět zavře okno, ve skupině zůstaneš. Odejít jde v menu SyncWatch."
+
+msgctxt "#30828"
+msgid "this device"
+msgstr "toto zařízení"
+
+msgctxt "#30829"
+msgid "disconnected"
+msgstr "odpojené"
+
+msgctxt "#30830"
+msgid "Connecting…"
+msgstr "Připojuji…"
+
+msgctxt "#30831"
+msgid "Nobody has joined yet – the code expires in %s"
+msgstr "Zatím se nikdo nepřipojil – kód zanikne za %s"
+
+msgctxt "#30832"
+msgid "Now playing"
+msgstr "Hraje se"
+
+msgctxt "#30833"
+msgid "SyncWatch ended: %s"
+msgstr "SyncWatch skončil: %s"
+
+msgctxt "#30834"
+msgid "The leader's stream cannot be played here (%s). An account at the same source is needed."
+msgstr "Stream vedoucího tady nejde přehrát (%s). Je potřeba účet u stejného zdroje."
+
+msgctxt "#30835"
+msgid "Back to the film: %s"
+msgstr "Vrátit se do filmu: %s"
+
+msgctxt "#30840"
+msgid "Pause for everyone"
+msgstr "Pauza pro všechny"
+
+msgctxt "#30841"
+msgid "%(who)s: paused"
+msgstr "%(who)s: pauza"
+
+msgctxt "#30842"
+msgid "%(who)s: playing again"
+msgstr "%(who)s: přehrávání pokračuje"
+
+msgctxt "#30843"
+msgid "%(who)s: jumped to %(pos)s"
+msgstr "%(who)s: přetočeno na %(pos)s"
+
+msgctxt "#30844"
+msgid "%(who)s: loading, waiting"
+msgstr "%(who)s: načítá se, čekáme"
+
+msgctxt "#30845"
+msgid "%(who)s: playback ended"
+msgstr "%(who)s: přehrávání skončilo"
+
+msgctxt "#30846"
+msgid "Starting: %(title)s"
+msgstr "Spouštím: %(title)s"
+
+msgctxt "#30847"
+msgid "Waiting for the stream to load for the others…"
+msgstr "Čekám, až se stream načte u ostatních…"
+
+msgctxt "#30848"
+msgid "Starting without: %(names)s"
+msgstr "Pouštím bez: %(names)s"
+
+msgctxt "#30849"
+msgid "The stream could not be started"
+msgstr "Stream se nepodařilo spustit"
+
+msgctxt "#30850"
+msgid "You are playing a different version – times may not match exactly"
+msgstr "Hraješ jinou verzi – časy nemusí přesně sedět"
+
+msgctxt "#30851"
+msgid "You are playing something else – the group waits for the next title from the leader"
+msgstr "Hraješ něco jiného – skupina čeká na další titul od vedoucího"
+
+msgctxt "#30852"
+msgid "This can't be shared with the others (it is not a Nokturno title)"
+msgstr "Toto se ostatním pustit nedá (není to titul z Nokturna)"
+
+msgctxt "#30853"
+msgid "You stopped playback, the others keep watching. You can return in SyncWatch"
+msgstr "Přehrávání je zastavené, ostatní sledují dál. Vrátit se jde v SyncWatch"
+
+msgctxt "#30860"
+msgid "Apply the last filter automatically"
+msgstr "Automaticky použít poslední filtr"
+
+msgctxt "#30861"
+msgid "The stream selection opens with the filter you set last time. If it would leave no stream for a title, all streams are shown."
+msgstr "Výběr streamu se otevře rovnou s naposledy použitým filtrem. Když by u titulu nenechal žádný stream, ukážou se všechny."
+
+msgctxt "#30862"
+msgid "Use this storage"
+msgstr "Používat toto úložiště"
+
+msgctxt "#30863"
+msgid "A disabled storage stays filled in, it is just not searched and not shown in the menu."
+msgstr "Vypnuté úložiště zůstane vyplněné, jen se v něm nehledá a v menu se neukáže."
+
+msgctxt "#30900"
+msgid "Watchlist"
+msgstr "Hlídané"
+
+msgctxt "#30901"
+msgid "Watch for new episodes"
+msgstr "Hlídat nové díly"
+
+msgctxt "#30902"
+msgid "Stop watching for new episodes"
+msgstr "Přestat hlídat nové díly"
+
+msgctxt "#30903"
+msgid "Watch until available"
+msgstr "Hlídat, až bude k dispozici"
+
+msgctxt "#30904"
+msgid "Stop watching"
+msgstr "Přestat hlídat"
+
+msgctxt "#30905"
+msgid "Keep checking"
+msgstr "Kontrolovat dál"
+
+msgctxt "#30906"
+msgid "Stop checking"
+msgstr "Nekontrolovat dál"
+
+msgctxt "#30907"
+msgid "Mark new episode as seen"
+msgstr "Označit nový díl jako viděný"
+
+msgctxt "#30908"
+msgid "new episode"
+msgstr "nový díl"
+
+msgctxt "#30909"
+msgid "can be played"
+msgstr "lze pustit"
+
+msgctxt "#30910"
+msgid "not yet"
+msgstr "zatím ne"
+
+msgctxt "#30911"
+msgid "watching"
+msgstr "hlídá se"
+
+msgctxt "#30912"
+msgid "torrent only"
+msgstr "jen torrent"
+
+msgctxt "#30913"
+msgid "New episode to watch"
+msgstr "Nový díl ke sledování"
+
+msgctxt "#30914"
+msgid "Now available: %s"
+msgstr "Už je k dispozici: %s"
+
+msgctxt "#30915"
+msgid "New source: %s"
+msgstr "Přibyl zdroj: %s"
+
+msgctxt "#30916"
+msgid "Added to the watchlist"
+msgstr "Přidáno do Hlídaných"
+
+msgctxt "#30917"
+msgid "Removed from the watchlist"
+msgstr "Odebráno z Hlídaných"
+
+msgctxt "#30918"
+msgid "Check now"
+msgstr "Zkontrolovat teď"
+
+msgctxt "#30919"
+msgid "Sync Watchlist"
+msgstr "Synchronizovat Hlídané"
+
+msgctxt "#30920"
+msgid "Checking the watchlist…"
+msgstr "Kontroluji Hlídané…"
+
+msgctxt "#30924"
+msgid "Let you know when it is available?[CR]The title goes to the watchlist and Nokturno checks it once a day."
+msgstr "Ozvat se, až bude k dispozici?[CR]Titul se zařadí do Hlídaných a Nokturno ho jednou denně zkontroluje."
+
+msgctxt "#30925"
+msgid "Let you know when the episode is available?[CR]The series goes to the watchlist and Nokturno checks it every six hours."
+msgstr "Ozvat se, až díl bude k dispozici?[CR]Seriál se zařadí do Hlídaných a Nokturno ho kontroluje každých šest hodin."
+
+msgctxt "#30926"
+msgid "Account from"
+msgstr "Účet z"
+
+msgctxt "#30927"
+msgid "Sdilej.cz has the same files as FastShare, only the account is separate. Choose the site where you have your account and credit."
+msgstr "Sdilej.cz má stejné soubory jako FastShare, jen účet je samostatný. Vyber web, kde máš účet a kredit."
+
+msgctxt "#30928"
+msgid "Sdilej.cz"
+msgstr "Sdilej.cz"
+
+msgctxt "#30929"
+msgid "TMDb Helper language"
+msgstr "Jazyk TMDb Helperu"
+
+msgctxt "#30930"
+msgid "TMDb Helper has its own language setting and does not follow Kodi, so the movie details page and its widgets are in English.[CR]Switch TMDb Helper to Kodi's language?"
+msgstr "TMDb Helper má vlastní nastavení jazyka a nepřebírá ho z Kodi, takže detail filmu a jeho widgety jsou anglicky.[CR]Přepnout TMDb Helper do jazyka Kodi?"
+
+msgctxt "#30931"
+msgid "Hide 3D streams"
+msgstr "Skrýt 3D streamy"
+
+msgctxt "#30932"
+msgid "3D files (by name: 3D, H-SBS, Half-OU, MVC, or by the MKV header) are never shown, not even when there is no other stream."
+msgstr "3D soubory (podle názvu: 3D, H-SBS, Half-OU, MVC, nebo podle hlavičky MKV) se nezobrazí nikdy, ani když jiný stream není."
+
+msgctxt "#30933"
+msgid "WebShare account without VIP – downloads at only a few kB/s."
+msgstr "Účet WebShare nemá VIP – stahování jen pár kB/s."
+
+msgctxt "#30934"
+msgid "Measures your connection speed and sets Max. bitrate from it. Takes under a minute."
+msgstr "Změří rychlost připojení a podle ní nastaví Max. datový tok. Trvá necelou minutu."
+
+msgctxt "#30935"
+msgid "Deletes saved catalogues, search results and stream lists, they load again next time. Settings, My list and history are not deleted."
+msgstr "Smaže uložené katalogy, výsledky hledání a seznamy streamů, příště se načtou znovu. Nastavení, Můj seznam ani historie se nemažou."
+
+msgctxt "#30936"
+msgid "Tries every enabled source and sign-in and shows what works."
+msgstr "Zkusí každý zapnutý zdroj i přihlášení a ukáže, co funguje."
+
+msgctxt "#30937"
+msgid "The Play button on a movie details page (TMDb Helper, Arctic Fuse and other skins) then searches for streams in Nokturno."
+msgstr "Tlačítko Přehrát v detailu filmu (TMDb Helper, Arctic Fuse a další skiny) pak hledá streamy v Nokturnu."
+
+msgctxt "#30938"
+msgid "Shows a code that you enter at trakt.tv/activate."
+msgstr "Ukáže kód, který zadáš na trakt.tv/activate."
+
+msgctxt "#30939"
+msgid "The watched mark and the point where playback stopped."
+msgstr "Příznak zhlédnuto a místo, kde se přehrávání zastavilo."
+
+msgctxt "#30940"
+msgid "Watched series and titles including Keep checking. The check is then not repeated on every device."
+msgstr "Hlídané seriály a tituly včetně Kontrolovat dál. Kontrola se pak nedělá na každém zařízení znovu."
+
+msgctxt "#30941"
+msgid "This Kodi stops syncing, the data saved here stays."
+msgstr "Toto Kodi se přestane synchronizovat, uložená data zůstanou."
+
+msgctxt "#30942"
+msgid "Working…"
+msgstr "Pracuji…"
+
+msgctxt "#30943"
+msgid "Without a group it creates one and shows the code. With an existing group it opens joining again for 30 minutes so another device can join. Keep the code – without it the data cannot be read and cannot be recovered."
+msgstr "Bez skupiny ji založí a ukáže kód. U existující skupiny znovu otevře připojení na 30 minut, aby se mohlo přidat další zařízení. Kód si uschovej – bez něj data nikdo nepřečte a nejdou obnovit."
+
+msgctxt "#30944"
+msgid "Custom catalogs"
+msgstr "Vlastní katalogy"
+
+msgctxt "#30945"
+msgid "New catalog"
+msgstr "Nový katalog"
+
+msgctxt "#30946"
+msgid "Edit catalog"
+msgstr "Upravit katalog"
+
+msgctxt "#30947"
+msgid "Delete catalog"
+msgstr "Smazat katalog"
+
+msgctxt "#30948"
+msgid "Genres (none = all)"
+msgstr "Žánry (nic = všechny)"
+
+msgctxt "#30949"
+msgid "Original language"
+msgstr "Původní jazyk"
+
+msgctxt "#30950"
+msgid "Any"
+msgstr "Jakýkoli"
+
+msgctxt "#30951"
+msgid "From year (empty = no limit)"
+msgstr "Od roku (prázdné = bez omezení)"
+
+msgctxt "#30952"
+msgid "To year (empty = no limit)"
+msgstr "Do roku (prázdné = bez omezení)"
+
+msgctxt "#30953"
+msgid "Sort by"
+msgstr "Řadit podle"
+
+msgctxt "#30954"
+msgid "Popularity"
+msgstr "Oblíbenosti"
+
+msgctxt "#30955"
+msgid "Rating"
+msgstr "Hodnocení"
+
+msgctxt "#30956"
+msgid "Release date"
+msgstr "Data vydání"
+
+msgctxt "#30957"
+msgid "Catalog name"
+msgstr "Název katalogu"
+
+msgctxt "#30958"
+msgid "Delete catalog %s?"
+msgstr "Smazat katalog %s?"
+
+msgctxt "#30959"
+msgid "The catalog could not be loaded. Try again later."
+msgstr "Katalog se nepodařilo načíst. Zkus to později."
+
+msgctxt "#30960"
+msgid "Czech"
+msgstr "Čeština"
+
+msgctxt "#30961"
+msgid "Slovak"
+msgstr "Slovenština"
+
+msgctxt "#30962"
+msgid "Czech or Slovak"
+msgstr "Čeština nebo slovenština"
+
+msgctxt "#30963"
+msgid "English"
+msgstr "Angličtina"
+
+msgctxt "#30964"
+msgid "German"
+msgstr "Němčina"
+
+msgctxt "#30965"
+msgid "French"
+msgstr "Francouzština"
+
+msgctxt "#30966"
+msgid "Spanish"
+msgstr "Španělština"
+
+msgctxt "#30967"
+msgid "Italian"
+msgstr "Italština"
+
+msgctxt "#30968"
+msgid "Polish"
+msgstr "Polština"
+
+msgctxt "#30969"
+msgid "Hungarian"
+msgstr "Maďarština"
+
+msgctxt "#30970"
+msgid "Korean"
+msgstr "Korejština"
+
+msgctxt "#30971"
+msgid "Japanese"
+msgstr "Japonština"
+
+msgctxt "#30972"
+msgid "Custom catalog"
+msgstr "Vlastní katalog"
+
+msgctxt "#30973"
+msgid "Titles must have"
+msgstr "Tituly musí mít"
+
+msgctxt "#30974"
+msgid "all selected genres"
+msgstr "všechny vybrané žánry"
+
+msgctxt "#30975"
+msgid "at least one selected genre"
+msgstr "aspoň jeden vybraný žánr"
+
+msgctxt "#30976"
+msgid "Fairy tales"
+msgstr "Pohádky"
+
+msgctxt "#30977"
+msgid "Discord (fastest reply): discord.gg/ChmMPmDDEj"
+msgstr "Discord (nejrychlejší odpověď): discord.gg/ChmMPmDDEj"
+
+msgctxt "#30979"
+msgid "Episode list"
+msgstr "Seznam dílů"
+
+msgctxt "#30980"
+msgid "All seasons"
+msgstr "Všechny série"
+
+msgctxt "#30981"
+msgid "Custom list"
+msgstr "Vlastní seznam"
+
+msgctxt "#30982"
+msgid "List address (JSON)"
+msgstr "Adresa seznamu (JSON)"
+
+msgctxt "#30983"
+msgid "Request header 1"
+msgstr "Hlavička požadavku 1"
+
+msgctxt "#30984"
+msgid "Request header 2"
+msgstr "Hlavička požadavku 2"
+
+msgctxt "#30985"
+msgid "The custom list could not be loaded."
+msgstr "Vlastní seznam nejde načíst."
+
+msgctxt "#30986"
+msgid "Showing the last known version."
+msgstr "Ukazuje se poslední známý stav."
+
+msgctxt "#30987"
+msgid "Address of a JSON file with the list. It appears in the main menu. You are responsible for the content of the list."
+msgstr "Adresa JSON souboru se seznamem. Položka se objeví v hlavním menu. Za obsah seznamu odpovídáš ty."
+
+msgctxt "#30988"
+msgid "Optional, in the form Name: value. Sent when the list is loaded."
+msgstr "Nepovinné, ve tvaru Název: hodnota. Pošle se při načtení seznamu."

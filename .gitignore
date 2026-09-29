@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+*.zip
+!repo/**/*.zip
+!repo-beta/**/*.zip
