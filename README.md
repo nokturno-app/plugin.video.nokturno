@@ -6,7 +6,7 @@ Podrobný návod (instalace, nastavení každého zdroje, používání, řešen
 
 Nokturno je přehrávač a vyhledávač pro Kodi a Home Assistant. Přehrává soubory z tvého vlastního úložiště (WebDAV, NAS) i z úložišť a katalogů třetích stran, které si v nastavení zapneš (WebShare, Sosáč, HellSpy, Sledujteto, FastShare / Sdilej.cz, Přehraj.to, CZtor, Luna), titulky hledá na OpenSubtitles. Doplní popisy a pamatuje si, kde jsi skončil. Samo žádný obsah nehostuje ani nešíří a neověřuje, jestli je soubor na cizím úložišti legální. Za to, co přehráváš, odpovídáš ty – používej ho jen k obsahu, ke kterému máš právo.
 
-> **Patří k sobě:** Nokturno je i jako [**integrace pro Home Assistant**](https://github.com/nokturno-app/nokturno-ha) (HACS, přehrává právě přes tenhle doplněk). Obě stojí na společném jádru.
+> **Patří k sobě:** Nokturno je i jako [**integrace pro Home Assistant**](https://github.com/nokturno-app/nokturno-ha) (HACS, přehrává právě přes tenhle doplněk) a jako [**aplikace pro Stremio a Nuvio**](https://github.com/nokturno-app/nokturno-stremio-app), kterou si spustíš u sebe na počítači, NASu nebo Android TV boxu. Všechny stojí na společném jádru.
 
 ## Rychlý start
 
