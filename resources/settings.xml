@@ -1125,20 +1125,6 @@
           </constraints>
           <control type="button" format="action"/>
         </setting>
-        <setting id="info_forum_kodi" type="action" label="30701">
-          <level>0</level>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
-          <control type="button" format="action"/>
-        </setting>
-        <setting id="info_forum_stremio" type="action" label="30702">
-          <level>0</level>
-          <constraints>
-            <allowempty>true</allowempty>
-          </constraints>
-          <control type="button" format="action"/>
-        </setting>
       </group>
       <group id="info5" label="30728">
         <setting id="info_terms" type="action" label="30728">

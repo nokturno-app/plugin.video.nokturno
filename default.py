@@ -5616,8 +5616,7 @@ def watch_status(rec, flagged):
     if rec.get("streams"):
         if flagged:
             return f"[COLOR {WATCH_NEW}]{L(30905, 'Kontrolovat dál').lower()}[/COLOR]"
-        text = L(30912, "jen torrent") if rec.get("torrent") else L(30909, "lze pustit")
-        return f"[COLOR {WATCH_OK}]{text}[/COLOR]"
+        return f"[COLOR {WATCH_OK}]{L(30909, 'lze pustit')}[/COLOR]"
     if not rec.get("checked"):
         return ""
     return f"[COLOR {GREY}]{L(30911, 'hlídá se') if rec.get('pending') else L(30910, 'zatím ne')}[/COLOR]"

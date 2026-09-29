@@ -2000,14 +2000,6 @@ msgctxt "#30700"
 msgid "Where to ask"
 msgstr "Hol lehet kérdezni"
 
-msgctxt "#30701"
-msgid "Kodi forum: xbmc-kodi.cz"
-msgstr "Kodi fórum: xbmc-kodi.cz"
-
-msgctxt "#30702"
-msgid "Stremio forum: stremio.cz/d/240"
-msgstr "Stremio fórum: stremio.cz/d/240"
-
 msgctxt "#30703"
 msgid "Version"
 msgstr "Verzió"
@@ -2436,10 +2428,6 @@ msgstr "még nem"
 msgctxt "#30911"
 msgid "watching"
 msgstr "figyelés alatt"
-
-msgctxt "#30912"
-msgid "torrent only"
-msgstr "csak torrent"
 
 msgctxt "#30913"
 msgid "New episode to watch"

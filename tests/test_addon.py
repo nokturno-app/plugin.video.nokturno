@@ -176,11 +176,11 @@ class TestNastaveni(unittest.TestCase):
         self.assertNotIn('type="string"', info, "textové pole jde přepsat")
         self.assertNotIn('type="label"', info)
         self.assertNotIn('type="edit"', info)
-        self.assertEqual(info.count('<control type="button" format="action"/>'), 7)   # +1 Discord v Kde se ptát, −1 příspěvek (2026-09-28), −1 Facebook (9.0.0)
+        self.assertEqual(info.count('<control type="button" format="action"/>'), 5)   # −2 fóra xbmc-kodi.cz a stremio.cz, +1 Discord v Kde se ptát, −1 příspěvek (2026-09-28), −1 Facebook (9.0.0)
         self.assertEqual(info.count("<data>"), 2)      # verze s id a právní upozornění
         self.assertNotIn('id="info_donate"', info)
         for klic in ("info_web", "info_family", "info_install",
-                     "info_forum_kodi", "info_forum_stremio", "info_terms"):
+                     "info_discord", "info_terms"):
             self.assertIn('id="%s"' % klic, info)
 
     def test_info_ukaze_verzi_a_id(self):
@@ -5433,7 +5433,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 113)   # −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled
+        self.assertEqual(len(volby), 111)   # −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):
