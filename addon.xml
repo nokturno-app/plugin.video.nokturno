@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="9.2.0" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="9.2.1" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>9.2.0 – Ikona a místo v menu u vlastních seznamů.
+    <news>9.2.1 – Bez ukázek a krátkých videí ve výběru streamu.
+9.2.0 – Ikona a místo v menu u vlastních seznamů.
 9.1.0 – Až tři vlastní seznamy v nastavení Zdroje a účty.
 9.0.0 – Opravy chyb.</news>
   </extension>

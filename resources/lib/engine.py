@@ -1930,6 +1930,41 @@ class Engine:
             self.last_timings["špatná délka"] = len(streams) - len(kept)
         return kept
 
+    JUNK_NAME_RE = re.compile(r"(?<![a-z0-9])(trailer|teaser|tlr|trl|tsr|youtube)(?![a-z0-9])", re.I)
+    SHORT_MOVIE_MIN_S = 20 * 60   # kratší soubor za celý film nepovažujeme…
+    SHORT_MOVIE_RATIO = 0.4       # …a u delších filmů ani pod 40 % oficiální stopáže
+
+    def _drop_junk(self, streams, meta):
+        """Ukázky a videa z YouTube místo filmu: `trailer`, `teaser`, `tlr`, `trl`, `tsr`
+        nebo `youtube` jako samostatné slovo v názvu souboru (stremio.cz/xbmc, 2026-09-30:
+        „Avengers Doomsday (2026)_TEASER-4_…", „… - Trailer [4K Ultra HD].mkv"). Slovo,
+        které je i v názvu titulu (Trailer Park Boys), se nepočítá."""
+        own = " ".join(str((meta or {}).get(k) or "") for k in ("name", "original_name", "_orig"))
+        own_words = {m.group(1).lower() for m in self.JUNK_NAME_RE.finditer(own)}
+        kept = []
+        for s in streams:
+            name = s.get("_ws_name") or s.get("label") or ""
+            words = {m.group(1).lower() for m in self.JUNK_NAME_RE.finditer(name)} - own_words
+            if not words:
+                kept.append(s)
+        if len(kept) != len(streams):
+            self.last_timings["ukázky"] = self.last_timings.get("ukázky", 0) + len(streams) - len(kept)
+        return kept
+
+    def _drop_short(self, streams, meta):
+        """Film: vyřadí soubory se známou délkou kratší než 40 % oficiální stopáže, nejméně
+        20 minut — dvouminutové ukázky a klipy pod názvem filmu. Délku zdroj posílá při
+        hledání (HellSpy, Přehraj.to…) nebo ji dá hlavička souboru (`_fill_audio`);
+        neznámá délka nevadí. Bez stopáže titulu se nezahazuje nic."""
+        minutes = runtime_minutes((meta or {}).get("runtime"))
+        if not minutes:
+            return streams
+        limit = max(self.SHORT_MOVIE_MIN_S, minutes * 60 * self.SHORT_MOVIE_RATIO)
+        kept = [s for s in streams if not 0 < (s.get("duration") or s.get("_duration") or 0) < limit]
+        if len(kept) != len(streams):
+            self.last_timings["krátké"] = self.last_timings.get("krátké", 0) + len(streams) - len(kept)
+        return kept
+
     def _drop_dead(self, streams):
         """Streamy, jejichž soubor teď nejde stáhnout, do běžného výpisu nepatří.
 
@@ -2875,6 +2910,10 @@ class Engine:
         self._check_stop()
         if video:
             found = self._drop_wrong_length(found, video)
+        if strict:
+            found = self._drop_junk(found, meta)
+            if not video:
+                found = self._drop_short(found, meta)
         ranked = sort(found)
         if self._opt("merge_streams", False):
             # verze, mezi kterými by uživatel nevybíral, jsou jeden řádek — a hlavičky
@@ -2890,6 +2929,8 @@ class Engine:
             assume_origin_language(with_audio, (meta or {}).get("country"))
         if strict:
             with_audio = self._drop_dead(with_audio)
+            if not video and probe_audio:   # délka z hlaviček, které se právě dočetly
+                with_audio = self._drop_short(with_audio, meta)
         ordered = self._finish(sort, with_audio, length_basis(meta, video))
         if on_progress and done[0] < total:
             done[0] = total
