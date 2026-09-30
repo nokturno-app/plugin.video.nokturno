@@ -2798,3 +2798,11 @@ msgstr "Herci"
 msgctxt "#30881"
 msgid "Folder"
 msgstr "Složka"
+
+msgctxt "#30991"
+msgid "Hide cinema recordings"
+msgstr "Skrýt nahrávky z kina"
+
+msgctxt "#30992"
+msgid "Streams marked CAM, HDCAM, TS, telesync or screener are hidden. If only a cinema recording exists so far, it is shown so the list is not empty."
+msgstr "Streamy označené CAM, HDCAM, TS, telesync nebo screener se skryjí. Když zatím existuje jen nahrávka z kina, zobrazí se, aby výběr nezůstal prázdný."

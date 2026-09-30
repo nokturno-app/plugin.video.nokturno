@@ -789,6 +789,7 @@ def engine_options():
         "sort_streams": STREAM_ORDERS[int(setting("sort_streams", "0"))],
         "hide_sd": on("hide_sd", "false"),
         "hide_3d": on("hide_3d", "false"),
+        "hide_lowq": on("hide_lowq", "true"),
         "pref_surround": on("pref_surround", "false"),
         "max_bitrate_mbps": setting("max_bitrate_mbps", "0"),
         "audio_probe": setting("audio_probe", str(AUDIO_PROBE_MAX)),

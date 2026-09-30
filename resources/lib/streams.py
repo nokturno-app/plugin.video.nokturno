@@ -272,6 +272,18 @@ def stream_3d(s):
     return bool(STEREO_3D_RE.search(text))
 
 
+# nahrávky z kina a obrazovky: krátké zkratky jen velkými písmeny (nechytí běžná slova a názvy), dlouhé i malými
+LOWQ_SHORT_RE = re.compile(r"(?<![A-Za-z0-9])(?:HD)?(?:CAM|TS|TC|SCR|R5)(?:Rip)?(?![A-Za-z0-9])")
+LOWQ_LONG_RE = re.compile(r"(?<![A-Za-z0-9])(?:(?:hq|hd)cam|camrip|telesync|telecine|screener|dvdscr|workprint)(?![A-Za-z0-9])",
+                          re.IGNORECASE)
+
+
+def stream_lowq(s):
+    """Nahrávka z kina nebo obrazovky (CAM, telesync, screener…) podle popisku nebo názvu souboru."""
+    text = " ".join(str(s.get(k) or "") for k in ("label", "_ws_name", "name"))
+    return bool(LOWQ_SHORT_RE.search(text) or LOWQ_LONG_RE.search(text))
+
+
 def merge_key(s):
     """Co uživatel při výběru streamu opravdu řeší: kvalita, jazyky zvuku a titulků,
     prostorový zvuk a HDR. Velikost se porovnává zvlášť, s tolerancí."""
@@ -323,7 +335,7 @@ def expand_groups(streams):
 
 
 def arrange(streams, pref_lang="", hide_sd=False, max_size_gb=0.0, order="source", pref_surround=False,
-            hide_3d=False, max_bitrate=0.0, keep_smallest=False):
+            hide_3d=False, max_bitrate=0.0, keep_smallest=False, hide_lowq=False):
     """Vyfiltruje a seřadí streamy; když by filtr nic nenechal, vrátí původní pořadí.
 
     Strop datového toku: známý tok streamu (`bitrate`) rozhoduje, velikost proti
@@ -342,6 +354,14 @@ def arrange(streams, pref_lang="", hide_sd=False, max_size_gb=0.0, order="source
         for s in streams:
             if s.get("_alts"):
                 s["_alts"] = [a for a in s["_alts"] if not stream_3d(a)]
+    if hide_lowq:
+        # nahrávky z kina/obrazovky se schovají, ale když by nezbylo nic (nový film jen v CAMu), zůstanou
+        cisté = [s for s in streams if not stream_lowq(s)]
+        if cisté:
+            streams = cisté
+            for s in streams:
+                if s.get("_alts"):
+                    s["_alts"] = [a for a in s["_alts"] if not stream_lowq(a)] or s["_alts"]
     def too_big(s):
         if max_bitrate and s.get("bitrate"):
             return s["bitrate"] > max_bitrate

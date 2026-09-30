@@ -59,6 +59,7 @@ DISCOVER_PARAMS = {
     "year_to": re.compile(r"^(19|20)[0-9]{2}$"),
     "sort_by": re.compile(r"^(popularity|vote_average|primary_release_date)\.desc$"),
     "vote_average_gte": re.compile(r"^[0-9](\.[0-9])?$"),
+    "vote_count_gte": re.compile(r"^[0-9]{1,5}$"),
 }
 TV_TTL = 30 * 60
 OS_KEY_TTL = 7 * 86400   # klíč se nemění; při výměně se rozejde nejvýš na týden
