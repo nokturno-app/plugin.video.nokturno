@@ -6303,14 +6303,14 @@ def list_hq(apis, ctype, genre=None):
     index = STORE.load(HQ_INDEX_KEY, {}) or {}
     if index.get("sig") != hq_index.signature(*hq_definition()):
         index = {}   # jiná definice = index neplatný
-    if not genre:   # nastavení a nápověda jsou ne-složky: klik je spustí s handle −1, výpis se nekreslí
+    if not genre:   # nastavení, dávka a nápověda jsou složky jen kvůli vzhledu (ikona jako u žánrů); router je obalí `_tlacitko`
         polozky = (index.get("items") or {}).values()
         hotovo = sum(1 for v in polozky if v.get("ok") is not None)
-        action_item(_swf(30889, "Nastavit: %s", hq_summary()), build_url(action="hq_setup"),
-                    icon="DefaultAddonProgram.png", thumb=True)
-        action_item(_swf(30897, "Spustit dávku nyní – ověřeno %s z %s", hotovo, len(polozky)),
-                    build_url(action="hq_batch"), icon="DefaultAddonsUpdates.png", thumb=True)
-        action_item(L(30891, "Jak to funguje"), build_url(action="hq_info"), icon="DefaultIconInfo.png", thumb=True)
+        folder_item(_swf(30889, "Nastavit: %s", hq_summary()), build_url(action="hq_setup"),
+                    icon="DefaultAddonProgram.png")
+        folder_item(_swf(30897, "Spustit dávku nyní – ověřeno %s z %s", hotovo, len(polozky)),
+                    build_url(action="hq_batch"), icon="DefaultAddonsUpdates.png")
+        folder_item(L(30891, "Jak to funguje"), build_url(action="hq_info"), icon="DefaultIconInfo.png")
     items = hq_index.visible(index, None if genre in (None, "", "*") else genre)
     if not items:
         xbmcgui.Window(10000).setProperty(HQ_TRIGGER_PROP, "1")

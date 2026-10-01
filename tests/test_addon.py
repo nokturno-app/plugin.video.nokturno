@@ -3082,11 +3082,11 @@ class TestVysokaKvalita(unittest.TestCase):
                 xbmcaddon.settings.pop("hq_enabled", None)
             self.assertEqual("hq" in [params_of(u).get("action") for u in xbmcplugin.urls()], ocek)
 
-    def test_nastaveni_a_info_jsou_ne_slozky(self):
+    def test_nastaveni_a_info_maji_vzhled_slozky(self):
         self.naplnit()
         default.list_hq({}, "movie")
         self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()][:3], ["hq_setup", "hq_batch", "hq_info"])
-        self.assertEqual([it[3] for it in xbmcplugin.items[:2]], [False, False])
+        self.assertEqual([it[3] for it in xbmcplugin.items[:3]], [True, True, True])   # vzhled jako žánry; spuštění přes _tlacitko
         xbmcplugin.reset()
         default.list_hq({}, "movie", "*")
         self.assertNotIn("hq_setup", [params_of(u).get("action") for u in xbmcplugin.urls()])
