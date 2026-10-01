@@ -228,6 +228,7 @@ HQ_INDEX_KEY = "hq_index"
 HQ_SEEN_DAYS = 14
 HQ_TRIGGER_PROP = "nokturno.hq.trigger"   # menu otevřené s prázdným indexem popožene službu
 HQ_POOL_MAX = 200
+HQ_MANUAL_SIZE = 20                         # ruční „Spustit dávku nyní“ ověří víc titulů než dávka služby
 HQ_RANKS = (0, 3, 3.5, 4)                   # jakákoli, Full HD, 2K, 4K (`quality_rank` v jádru)
 HQ_AUDIO = ("", "CZ", "SK", "EN")           # index 0 = jakýkoli; stejné pořadí má i `hq_subs`
 HQ_QUALITY_LABELS = ("", "Full HD", "2K", "4K")
@@ -6219,12 +6220,6 @@ def hq_setup():
     xbmc.executebuiltin("Container.Refresh")
 
 
-def hq_batch():
-    """Spustí dávku ověřování hned (služba vlastnost okna vidí do pár vteřin)."""
-    xbmcgui.Window(10000).setProperty(HQ_TRIGGER_PROP, "1")
-    notify(L(30898, "Dávka ověřování se spustí za pár vteřin."), xbmcgui.NOTIFICATION_INFO, 4000)
-
-
 def hq_info():
     xbmcgui.Dialog().textviewer(L(30891, "Jak to funguje"), L(30892, "Seznam vychází z populárních, nejsledovanějších "
                                 "a nejlépe hodnocených filmů. Na pozadí se kontroluje, které z nich mají stream podle "
@@ -6256,8 +6251,11 @@ def hq_pool(apis):
     return pool[:HQ_POOL_MAX]
 
 
-def hq_refresh(apis):
-    """Jedna dávka ověřování pro index (volá služba přes `action=hq_refresh`); bez UI, bez modálu."""
+def hq_refresh(apis, progress=False):
+    """Jedna dávka ověřování pro index. Služba ji volá přes `action=hq_refresh` (bez UI, bez modálu);
+    `progress=True` je ruční „Spustit dávku nyní" – větší dávka s ukazatelem v rohu (`DialogProgressBG`)."""
+    bar = None
+    hotovo = shoda = 0
     try:
         if should_stop():
             return
@@ -6272,11 +6270,18 @@ def hq_refresh(apis):
                 index.clear()
                 index["sig"] = sig
             hq_index.merge_pool(index, pool, now)
-            batch = hq_index.next_batch(index, now)
+            batch = hq_index.next_batch(index, now, size=HQ_MANUAL_SIZE if progress else 8)
+            names = {m: (index["items"].get(m, {}).get("meta") or {}).get("name") or m for m in batch}
         engine = engine_of(apis)
-        for mid in batch:
+        if progress and batch:
+            bar = xbmcgui.DialogProgressBG()
+            bar.create(L(30993, "Filmy ve vysoké kvalitě"), "")
+        for pos, mid in enumerate(batch):
             if should_stop():
                 break
+            if bar:
+                bar.update(int(pos * 100 / len(batch)),
+                           message=_swf(30899, "Ověřuji %s z %s – %s", pos + 1, len(batch), names[mid]))
             try:
                 with engine.background():
                     result = engine.classify_quality("movie", mid, min_q, surround, audio, subs)
@@ -6286,8 +6291,18 @@ def hq_refresh(apis):
             with STORE.updating(HQ_INDEX_KEY, {}) as index:
                 if index.get("sig") == sig:
                     hq_index.record(index, mid, result, int(time.time()))
+            if result is not None:
+                hotovo += 1
+                shoda += bool(result)
     except Errors as e:
         log_error(f"hq_refresh: {e}")
+    finally:
+        if bar:
+            bar.close()
+    if progress:
+        notify(_swf(30898, "Dávka hotová – ověřeno %s, vyhovuje %s", hotovo, shoda), xbmcgui.NOTIFICATION_INFO, 4000)
+        xbmc.executebuiltin("Container.Refresh")
+        return
     xbmcplugin.endOfDirectory(HANDLE, succeeded=True, cacheToDisc=False)
 
 
@@ -7351,7 +7366,7 @@ def router(query):
         elif action == "hq_info":
             _tlacitko(hq_info)
         elif action == "hq_batch":
-            _tlacitko(hq_batch)
+            _tlacitko(lambda: hq_refresh(apis, progress=True))
         elif action == "similar":
             list_similar(apis, p.get("type", "movie"), p.get("id", ""))
         elif action == "tv":

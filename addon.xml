@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="9.6.0~beta3" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="9.6.0~beta4" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>9.6.0~beta3 – Filmy ve vysoké kvalitě: seznam se udržuje na pozadí sám, i když ho neotevíráš, dávku ověřování jde spustit hned, položky nastavení mají ikony.
+    <news>9.6.0~beta4 – Filmy ve vysoké kvalitě: ověřování se zastaví u prvního vyhovujícího streamu (rychlejší), Spustit dávku nyní ukazuje průběh v rohu a na konci výsledek.
+9.6.0~beta3 – Filmy ve vysoké kvalitě: seznam se udržuje na pozadí sám, i když ho neotevíráš, dávku ověřování jde spustit hned, položky nastavení mají ikony.
 9.6.0~beta2 – Filmy ve vysoké kvalitě: parametry (kvalita, kanály, jazyk zvuku, titulky, i „jakékoli“) se nastavují přímo z menu, položku jde skrýt, přibyla nápověda a seznam leží pod Nejlépe hodnocené.
 9.6.0~beta1 – Filmy ve vysoké kvalitě: seznam z populárních a nejsledovanějších filmů, které mají stream podle tvé definice (kvalita, 5.1, jazyk zvuku), rozdělený podle žánrů. Ověřuje se na pozadí.
 9.5.4 – Rychlejší hledání streamů: pomalý zdroj už seznam nezdržuje, loudavé přehrání zkusí souběžně další kopii.

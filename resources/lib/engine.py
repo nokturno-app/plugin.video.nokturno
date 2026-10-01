@@ -2687,6 +2687,18 @@ class Engine:
                f"{self._streams_cache_key(ctype, item_id)}")
 
         def _spocitat():
+            # rychlá cesta: kolo zdrojů skončí u prvního streamu, který by definici splnil bez ohledu
+            # na 5.1; ověří se jen hlavička toho jednoho (nejvýš tří) souborů, ne všech desítek
+            def volne(s):
+                return self.quality_match(s, min_quality, False, audio, subs)
+            rychle = self.raw_streams(ctype, item_id, strict=True, probe_audio=False, failures=[],
+                                      stop_when=lambda st: any(volne(s) for s in st or []))
+            kandidati = sorted((s for s in rychle or [] if volne(s)),
+                               key=lambda s: -(s.get("quality_rank") or 0))[:3]
+            for kand in kandidati:
+                self._fill_audio([kand])   # opraví jazyk i kanály podle skutečné hlavičky
+                if self.quality_match(kand, min_quality, surround, audio, subs):
+                    return True
             failures = []
             streams = self.raw_streams(ctype, item_id, strict=True, probe_audio=True, failures=failures)
             if any(self.quality_match(s, min_quality, surround, audio, subs) for s in streams):
