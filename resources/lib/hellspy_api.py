@@ -20,6 +20,7 @@ import urllib.parse
 import urllib.request
 
 from streams import clean_file_name
+from keepalive import urlopen as pooled_urlopen
 
 API = "https://api.hellspy.to/gw/"
 TIMEOUT = 20
@@ -98,7 +99,7 @@ class HellspyApi:
         url = API + path + (("?" + urllib.parse.urlencode(params)) if params else "")
         req = urllib.request.Request(url, headers={"Accept": "application/json", "User-Agent": UA})
         try:
-            with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+            with pooled_urlopen(req, timeout=TIMEOUT) as resp:
                 return json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             if e.code == 429:

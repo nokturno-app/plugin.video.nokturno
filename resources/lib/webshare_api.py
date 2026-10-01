@@ -13,9 +13,11 @@ import urllib.request
 import xml.etree.ElementTree as ET
 
 from streams import clean_file_name
+from keepalive import urlopen as pooled_urlopen
 
 API = "https://webshare.cz/api/"
-TIMEOUT = 40
+# běžně 0,3–2 s; 40 s znamenalo, že zaseknutý server držel přehrání (rozklíčování odkazu) půl minuty
+TIMEOUT = 20
 ITOA64 = "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 SORTS = ("", "recent", "rating", "largest", "smallest")
 SEARCH_TTL = 12 * 3600  # cache hledání jde smazat ručně — akce „Vymazat cache API“
@@ -95,7 +97,7 @@ class WebshareApi:
             "User-Agent": "Nokturno (+https://github.com/nokturno-app/nokturno-core)",
         })
         try:
-            with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+            with pooled_urlopen(req, timeout=TIMEOUT) as resp:
                 root = ET.fromstring(resp.read())
         except Exception as e:  # noqa: BLE001
             raise WebshareError(f"{endpoint}: {e}") from e

@@ -25,7 +25,7 @@ def _imdb(metas):
 
 
 TOKEN_RE = re.compile(r"(e1\.[A-Za-z0-9_\-]+)")
-TIMEOUT = 40
+TIMEOUT = 25             # studená Luna (scraping) odpoví za ~6 s, déle už nejspíš neodpoví vůbec
 CONNECT_TIMEOUT = 5      # server, který za pět vteřin nepřijme spojení, neodpoví ani za čtyřicet
 DOWN_TTL = 300           # po nedostupnosti se Luna pět minut nevolá — jinak každý výpis čeká na timeout znovu
 _DOWN_ERRNO = {errno.ETIMEDOUT, errno.ECONNREFUSED, errno.EHOSTUNREACH, errno.ENETUNREACH, errno.ECONNRESET}

@@ -5764,6 +5764,95 @@ class TestPrehraniPadneNaJinyZdroj(unittest.TestCase):
                 default.play({}, "movie", "tt1")
 
 
+class TestSoubeznyZaloznik(unittest.TestCase):
+    """Zdroj, který neodpovídá, držel přehrání po celý timeout (20–25 s) a teprve potom se
+    zkusila další verze. Tatáž verze souboru (vybraný stream + sloučené kopie z jiných zdrojů)
+    se teď po pár vteřinách rozklíčuje souběžně a bere se, co přijde dřív."""
+
+    def setUp(self):
+        reset_kodi()
+        import functools
+        import hedge
+        # `after` je výchozí argument fixovaný při definici — pro test se zkracuje obalem
+        self.rychly = mock.patch.object(default, "first_success", functools.partial(hedge.first_success, after=0.05))
+        self.rychly.start()
+        self.addCleanup(self.rychly.stop)
+        store = service.Store(tempfile.mkdtemp())
+        self.store = mock.patch.object(default, "STORE", store)
+        self.store.start()
+        self.addCleanup(self.store.stop)
+
+    def test_skupina_jen_z_ruznych_zdroju(self):
+        self.assertEqual(default.hedge_group(["ws:1", "hs:2", "pt:3"], 3), 3)
+        self.assertEqual(default.hedge_group(["ws:1", "hs:2", "hs:3"], 3), 2, "druhý odkaz téhož zdroje ne")
+        self.assertEqual(default.hedge_group(["fs:1", "fs:2"], 2), 1)
+        self.assertEqual(default.hedge_group(["ws:1", "hs:2"], 1), 1, "bez sloučených kopií se nic souběžně nezkouší")
+
+    def test_verze_souboru_je_stream_i_jeho_kopie(self):
+        stream = {"url": "ws:1", "_alts": [{"url": "hs:2"}, {"url": "ws:1"}, {"url": None}]}
+        self.assertEqual(default.version_urls(stream), ["ws:1", "hs:2"])
+
+    def test_loudajici_se_zdroj_dostane_zalozniho(self):
+        def resolve(apis, url):
+            if url == "ws:1":
+                time.sleep(1.0)
+                return "https://cdn/ws"
+            return "https://cdn/hs"
+        started = time.monotonic()
+        with mock.patch.object(default, "resolve_url", side_effect=resolve):
+            used, link = default.resolve_first({}, ["ws:1", "hs:2"], same=2)
+        self.assertEqual((used, link), ("hs:2", "https://cdn/hs"))
+        self.assertLess(time.monotonic() - started, 0.7)
+
+    def test_bez_same_se_zkousi_po_jednom(self):
+        volani = []
+
+        def resolve(apis, url):
+            volani.append(url)
+            time.sleep(0.2)
+            return "https://cdn/" + url
+        with mock.patch.object(default, "resolve_url", side_effect=resolve):
+            used, _link = default.resolve_first({}, ["ws:1", "hs:2"])
+        self.assertEqual(used, "ws:1")
+        self.assertEqual(volani, ["ws:1"], "jiná verze než vybraná se nezkouší souběžně")
+
+    def test_jina_verze_az_po_selhani(self):
+        def resolve(apis, url):
+            if url == "ws:1":
+                raise WebshareError("pryč")
+            return "https://cdn/" + url
+        with mock.patch.object(default, "resolve_url", side_effect=resolve):
+            used, _link = default.resolve_first({}, ["ws:1", "hs:9"], same=1)
+        self.assertEqual(used, "hs:9")
+
+    def test_selhani_se_pocita_jen_za_vybrany(self):
+        import usage
+
+        def resolve(apis, url):
+            if url in ("fs:1", "hs:2"):
+                raise FastshareError("kredit")
+            return "https://cdn/" + url
+        with mock.patch.object(default, "resolve_url", side_effect=resolve):
+            used, _link = default.resolve_first({}, ["fs:1", "hs:2", "pt:3"], same=3)
+        self.assertEqual(used, "pt:3")
+        self.assertEqual(usage.payload(usage.take(default.STORE))["cnt"], {"play_fail:fs": 1, "play_ok:pt": 1})
+
+    def test_play_posle_kopie_jako_jednu_verzi(self):
+        streams = [{"url": "ws:1", "label": "Film.1080p.CZ.mkv", "source": "ws",
+                    "_alts": [{"url": "hs:2", "label": "Film.1080p.CZ.mkv", "source": "hs"}]},
+                   {"url": "pt:9", "label": "Film.720p.mkv", "source": "pt"}]
+        zadane = []
+
+        def resolve_first(apis, urls, same=1):
+            zadane.append((list(urls), same))
+            return urls[0], "https://cdn/x"
+        with mock.patch.object(default, "load_meta", return_value=({"name": "Film", "year": 2026}, None)), \
+             mock.patch.object(default, "collect_streams", return_value=streams), \
+             mock.patch.object(default, "resolve_first", side_effect=resolve_first):
+            default.play({}, "movie", "tt0133093")
+        self.assertEqual(zadane, [(["ws:1", "hs:2", "pt:9"], 2)])
+
+
 class TestNotifikaceONedostupnychStreamech(unittest.TestCase):
     """Detekce nedostupných streamů (2026-09-22): `play()` po hledání upozorní na
     skryté streamy stejně jako na přeskočený zdroj — notifikací, nikdy modálem

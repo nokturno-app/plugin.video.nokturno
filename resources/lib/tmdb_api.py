@@ -21,6 +21,7 @@ import urllib.request
 _IMDB_RE = re.compile(r"^tt\d{1,12}$")
 _TMDB_ID_RE = re.compile(r"^tmdb:(\d{1,10})$")
 from concurrent.futures import ThreadPoolExecutor
+from keepalive import urlopen as pooled_urlopen
 
 BASE = "https://api.themoviedb.org/3"
 IMG = "https://image.tmdb.org/t/p/w500"
@@ -70,7 +71,7 @@ class TmdbApi:
         url = f"{BASE}{path}?{urllib.parse.urlencode(params)}"
         req = urllib.request.Request(url, headers={"User-Agent": "Nokturno"})
         try:
-            with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+            with pooled_urlopen(req, timeout=TIMEOUT) as resp:
                 return json.loads(resp.read().decode("utf-8"))
         except urllib.error.HTTPError as e:
             if e.code == 401:

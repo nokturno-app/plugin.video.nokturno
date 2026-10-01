@@ -14,6 +14,7 @@ import json
 import re
 import urllib.parse
 import urllib.request
+from keepalive import urlopen as pooled_urlopen
 
 
 def _imdb(metas):
@@ -47,7 +48,7 @@ class CinemetaApi:
     def _get(self, url):
         req = urllib.request.Request(url, headers={"User-Agent": "Nokturno (+https://github.com/nokturno-app/nokturno-core)"})
         try:
-            with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+            with pooled_urlopen(req, timeout=TIMEOUT) as resp:
                 return json.loads(resp.read().decode("utf-8"))
         except Exception as e:  # noqa: BLE001
             raise CinemetaError(f"{e} ({url})") from e

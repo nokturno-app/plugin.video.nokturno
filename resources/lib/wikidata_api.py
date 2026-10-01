@@ -14,6 +14,7 @@ Wikimedia chce popisný User-Agent. Výsledek si jádro cachuje (30 dní).
 import json
 import urllib.parse
 import urllib.request
+from keepalive import urlopen as pooled_urlopen
 
 API = "https://www.wikidata.org/w/api.php"
 TIMEOUT = 10
@@ -30,7 +31,7 @@ def _get(**params):
     url = API + "?" + urllib.parse.urlencode({**params, "format": "json"})
     req = urllib.request.Request(url, headers={"User-Agent": UA, "Accept": "application/json"})
     try:
-        with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+        with pooled_urlopen(req, timeout=TIMEOUT) as resp:
             return json.loads(resp.read().decode("utf-8"))
     except Exception as err:  # noqa: BLE001 – síť, DNS, rozsypaný JSON
         raise WikidataError(str(err)[:120]) from err

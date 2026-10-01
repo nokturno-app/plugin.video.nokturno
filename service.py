@@ -48,6 +48,7 @@ from sosac_direct import SosacDirect  # noqa: E402
 from stats import COLLECT_URL, Stats  # noqa: E402
 from crash import CRASH_URL, CrashReporter  # noqa: E402
 import accounts as accounts_lib  # noqa: E402
+import keepalive  # noqa: E402
 import usage  # noqa: E402
 from storage_api import StorageApi, parse_ref  # noqa: E402
 from store import Store, migrate_profile  # noqa: E402
@@ -1500,4 +1501,5 @@ def main():
 
 
 if __name__ == "__main__":
+    keepalive.enable()   # spojení k API zdrojů se drží mezi dotazy (testy volají main() přímo, tam zůstává vypnuté)
     main()

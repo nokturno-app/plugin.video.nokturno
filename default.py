@@ -81,6 +81,8 @@ import mylist  # noqa: E402 – vedle default.py, vlastní seznam z JSON
 import kodi_sources  # noqa: E402 – vedle default.py, sdílený výčet zdrojů do statistik
 from engine import AUDIO_PROBE_MAX, DEFAULT_RUNTIME_S, Engine, NokturnoError, runtime_minutes  # noqa: E402
 from abort import Aborted  # noqa: E402
+from hedge import first_success  # noqa: E402
+import keepalive  # noqa: E402
 from crash import CrashReporter  # noqa: E402
 
 ADDON = xbmcaddon.Addon()
@@ -590,6 +592,16 @@ def alts_param(stream):
 PLAY_FALLBACKS = 5
 
 
+def version_urls(stream):
+    """Odkazy téže verze souboru: stream a jeho sloučené kopie (v pořadí `play_candidates`)."""
+    out = []
+    for s in [stream] + list(stream.get("_alts") or []):
+        url = s.get("url")
+        if url and url not in out:
+            out.append(url)
+    return out
+
+
 def play_candidates(chosen, streams, limit=PLAY_FALLBACKS):
     """Dvojice (odkaz, stream) k přehrání v pořadí: zvolený stream, jeho sloučené
     kopie, pak ostatní nálezy i s jejich kopiemi. Stream u odkazu je ten, ze kterého
@@ -612,27 +624,47 @@ def play_candidates(chosen, streams, limit=PLAY_FALLBACKS):
     return poradi[:max(limit, 1)]
 
 
-def resolve_first(apis, urls):
+def url_scheme(url):
+    """Zdroj odkazu (`ws`, `hs`, `fs`, …) — klíč do statistik a pravidlo pro souběžné pokusy."""
+    return re.sub(r"[^a-z0-9]", "", (url or "").split(":", 1)[0].lower())[:12] or "x"
+
+
+def hedge_group(urls, same):
+    """Kolik prvních odkazů smí běžet souběžně: jen z `same` prvních (tatáž verze souboru)
+    a jen z různých zdrojů — dvě rozklíčování téhož zdroje najednou by si šlapala na účet
+    a token (WebShare)."""
+    seen = []
+    for url in urls[:same]:
+        scheme = url_scheme(url)
+        if scheme in seen:
+            break
+        seen.append(scheme)
+    return len(seen)
+
+
+def resolve_first(apis, urls, same=1):
     """Rozklíčovat první odkaz, který jde — sloučené verze jsou tentýž film jinde. Vrátí
     (reference, odkaz); když nejde žádný, vyhodí chybu toho prvního.
+
+    `same` = kolik prvních odkazů je tatáž verze souboru (vybraný stream a jeho sloučené kopie).
+    Loudá-li se první déle než pár vteřin (zdroj neodpovídá), rozklíčuje se souběžně i další
+    z nich a bere se, co přijde dřív (`hedge.first_success`). Jiná verze se zkouší až po selhání.
 
     Do statistik jde nejvýš jedno selhání na přehrání: jen za vybraný (první) odkaz.
     Záložní pokusy (`play_candidates`, až 5) by jinak jedno přehrání s vadným účtem
     započítaly několikrát."""
-    first = None
-    for url in urls:
-        scheme = re.sub(r"[^a-z0-9]", "", (url or "").split(":", 1)[0].lower())[:12] or "x"
-        try:
-            link = resolve_url(apis, url)
-        except Errors as e:
-            if first is None:
-                usage.count(STORE, "play_fail:" + scheme)
-            xbmc.log(f"[{ADDON_ID}] stream nejde přehrát, zkouším další verzi: {e}", xbmc.LOGINFO)
-            first = first or e
-            continue
-        usage.count(STORE, "play_ok:" + scheme)
-        return url, link
-    raise first or NokturnoError(L(30102))
+    urls = list(urls)
+    if not urls:
+        raise NokturnoError(L(30102))
+
+    def failed(i, url, err):
+        if i == 0:
+            usage.count(STORE, "play_fail:" + url_scheme(url))
+        xbmc.log(f"[{ADDON_ID}] stream nejde přehrát, zkouším další verzi: {err}", xbmc.LOGINFO)
+    used, link = first_success(urls, lambda url: resolve_url(apis, url), group=hedge_group(urls, same),
+                               errors=Errors, on_fail=failed)
+    usage.count(STORE, "play_ok:" + url_scheme(used))
+    return used, link
 
 
 def resolve_url(apis, url):
@@ -1784,9 +1816,12 @@ def collect_streams(apis, ctype, item_id, meta, alt=None, progress=None, strict=
 
 def describe_timings(t):
     """Jeden řádek do logu: kolik která fáze hledání streamů trvala (`Engine.last_timings`)."""
+    # kam se u čtení hlaviček ztrácí čas (`Engine._fill_audio`): ze serveru / čtení / pozadí / zpracování
+    detail = t.get("hlavičky detail") or {}
+    kde = f" [{', '.join(f'{k} {v:.2f}' for k, v in detail.items())}]" if detail else ""
     if t.get("cache"):
         druh = " (starší, obnovuje se na pozadí)" if t.get("stará cache") else " (částečná)" if t.get("částečná cache") else ""
-        return (f"z cache{druh}, celkem {t.get('celkem', 0)} s · hlavičky {t.get('hlavičky', 0)}"
+        return (f"z cache{druh}, celkem {t.get('celkem', 0)} s · hlavičky {t.get('hlavičky', 0)}{kde}"
                 f" ({t.get('hlaviček', 0)}, nedočteno {t.get('hlaviček nedočteno', 0)}) · {t.get('streamů', 0)} streamů")
     def poradi(kv):
         """Zdroj, který nestihl rozpočet, má místo času značku „>20s“ (`str`) — řadí se
@@ -1797,8 +1832,10 @@ def describe_timings(t):
     zdroje = ", ".join(f"{k} {v}" for k, v in sorted((t.get("zdroje") or {}).items(), key=poradi))
     return (f"celkem {t.get('celkem', 0)} s · hlavní {t.get('hlavni', 0)} · souběžně {t.get('souběžně', 0)}"
             f" ({zdroje}){' · znovu česky' if t.get('znovu česky') else ''} · úložiště navíc {t.get('úložiště navíc', 0)}"
-            f" · hlavičky {t.get('hlavičky', 0)} ({t.get('hlaviček', 0)}, nedočteno {t.get('hlaviček nedočteno', 0)},"
-            f" na pozadí {t.get('hlavičky na pozadí', 0)}) · {t.get('streamů', 0)} streamů (sloučeno {t.get('sloučeno', 0)})")
+            f" · hlavičky {t.get('hlavičky', 0)}{kde} ({t.get('hlaviček', 0)}, nedočteno {t.get('hlaviček nedočteno', 0)},"
+            f" na pozadí {t.get('hlavičky na pozadí', 0)}, předčteno {t.get('předčteno', 0)})"
+            f"{' · pozdě: ' + ', '.join(t['pozdě']) if t.get('pozdě') else ''}"
+            f" · {t.get('streamů', 0)} streamů (sloučeno {t.get('sloučeno', 0)})")
 
 
 def storage_first(streams):
@@ -6558,7 +6595,8 @@ def play(apis, ctype, item_id, series_id=None, url=None, alt=None, subs="", pref
         try:
             # sloučené verze (`alts`) jsou tentýž film jinde — zkusí se, než se hledá znovu
             # u SyncWatch jen tentýž soubor, `alts` se ignorují
-            url, resolved_path = resolve_first(apis, [url] + [a for a in (alts or "").split("|") if a and not sw])
+            same_urls = [url] + [a for a in (alts or "").split("|") if a and not sw]
+            url, resolved_path = resolve_first(apis, same_urls, same=len(same_urls))
         except Errors as e:
             if sw:
                 # SyncWatch: jen přesně tentýž stream jako vedoucí (stejná kvalita, zvuk i délka),
@@ -6627,7 +6665,7 @@ def play(apis, ctype, item_id, series_id=None, url=None, alt=None, subs="", pref
     if not resolved_path:
         # nejen zvolený stream a jeho sloučené kopie, ale i další nálezy — viz PLAY_FALLBACKS
         poradi = play_candidates(chosen, streams)
-        used, resolved_path = resolve_first(apis, [u for u, _ in poradi])
+        used, resolved_path = resolve_first(apis, [u for u, _ in poradi], same=len(version_urls(chosen)))
         if used != chosen["url"]:
             chosen = next(s for u, s in poradi if u == used)
     li = xbmcgui.ListItem(label=title, path=resolved_path)
@@ -7278,4 +7316,5 @@ def main(query):
 
 
 if __name__ == "__main__":
+    keepalive.enable()   # spojení k API zdrojů se drží mezi dotazy (testy volají main() přímo, tam zůstává vypnuté)
     main(sys.argv[2] if len(sys.argv) > 2 else "")

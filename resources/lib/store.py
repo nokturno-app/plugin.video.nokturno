@@ -567,7 +567,9 @@ class Store:
                     with open(tmp, "w", encoding="utf-8") as f:
                         json.dump(data, f, ensure_ascii=False)
                     os.replace(tmp, path)
-                except OSError:
+                except (OSError, TypeError, ValueError):
+                    # zápis do cache je bonus: plný disk i data, která nejdou serializovat (`set`), nesmí
+                    # shodit hledání, na které se čeká (Office 2026-10-01: TypeError z částečného seznamu)
                     try:
                         os.remove(tmp)
                     except OSError:

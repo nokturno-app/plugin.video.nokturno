@@ -9,6 +9,7 @@ import json
 import threading
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError, as_completed
+from keepalive import urlopen as pooled_urlopen
 
 CINEMETA = "https://v3-cinemeta.strem.io/meta/{ctype}/{imdb}.json"
 TTL = 30 * 86400
@@ -44,7 +45,7 @@ FIELDS = ("description", "runtime", "director", "writer", "cast", "app_extras", 
 def _cinemeta(ctype, imdb):
     req = urllib.request.Request(CINEMETA.format(ctype=ctype, imdb=imdb),
                                  headers={"User-Agent": "Nokturno (+https://github.com/nokturno-app/nokturno-core)"})
-    with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
+    with pooled_urlopen(req, timeout=TIMEOUT) as resp:
         return json.loads(resp.read().decode("utf-8")).get("meta") or {}
 
 

@@ -60,6 +60,14 @@ EPISODE_ANY_RE = re.compile(r"(?<![a-z0-9])s\d{1,2}\s?e\d{1,2}(?!\d)|(?<!\d)\d{1
 AUDIO_PROBE_MAX = 24          # u kolika streamů se ještě vyplatí číst hlavičku souboru
 ENRICH_PROGRESS_ESTIMATE = 10  # počáteční odhad délky enrichu, než search() zjistí skutečný počet
 AUDIO_TTL = 30 * 24 * 3600    # obsah souboru se nemění, stačí zjistit jednou
+# Hlavička, ze které nic nevzešlo (`probe()` bez zvuku, rozlišení i velikosti), se do `media:` nezapisuje —
+# jenže pak se celé čtení opakovalo při každém otevření titulu: odkaz se rozklíčoval (WebShare = dotaz na
+# API) a soubor se stahoval, než se opět neúspěšně vzdal. Na Office 2026-10-01 dva takové soubory u Matrixu
+# držely „hlavičky z cache“ na 0,5–3 s místo 0,05 s (strop `PROBE_DEADLINE`). Neúspěch si proto
+# pamatuje vlastní záznam `mediafail:`: soubor, který nešel stáhnout (smazaný, hostitel dole), pár minut
+# — vypadne ze seznamu, ať se nečeká znovu — a nerozpoznaný kontejner dlouho, ten se nezmění.
+MEDIA_FAIL_TTL = 300
+MEDIA_UNKNOWN_TTL = 12 * 3600
 # Hlavičky souborů, které smí do společného úložiště (`Engine.shared`): jeden ident je
 # tentýž soubor pro každého. Přehraj.to a Sledujteto ne — s Premium se hraje původní
 # soubor, bez něj překódovaný (jiné rozlišení, jiná délka), ident je přitom stejný.
@@ -111,6 +119,19 @@ SOURCE_DEADLINE = 20.0
 # `/stream/` na produkci byl 31,4 s. Druhé kolo tedy dostane, co ze zbytku zbylo, nejméně
 # ale `MIN_ROUND_DEADLINE`, ať se rychlému zdroji nezavřou dveře těsně před cílem.
 MIN_ROUND_DEADLINE = 2.0
+# Měkký rozpočet zdroje (s od začátku kola), jen u hledání, na které někdo čeká (`raw_streams`: `strict` + `probe_audio`,
+# ne obnova na pozadí a ne Hlídané): výpis se nezdržuje kvůli zdroji, který je pomalý, i když ještě neselhal. Čeká se,
+# dokud rozpočet má aspoň jeden ze zdrojů, které zbývají; Přehraj.to bez účtu (HTML scraping, rozestup 1,5 s mezi
+# dotazy) bývá nejpomalejší (Office 2026-10-01: 5,3 s při ostatních do 2,5 s). Opozdilec se nehlásí jako výpadek,
+# doběhne na pozadí a jakmile skončí, seznam v cache se obnoví (`_refresh_streams_later`). Hlavní zdroj
+# (Luna/Sosáč) má jen tvrdý `SOURCE_DEADLINE`.
+SOURCE_SOFT_DEADLINE = 8.0
+SOURCE_SOFT_BUDGETS = {"Přehraj.to": 4.0}
+LATE_REFRESH_DELAY = 0.5
+# Hlavičky souborů se začnou číst, jakmile zdroj odpoví, ne až po posledním (`Engine._preread`): na pomalejší zdroje se
+# čeká tak jako tak, a `_fill_audio` pak najde nejlepší kandidáty hotové v cache. Nejvýš tolik z jednoho zdroje
+# (celkem `AUDIO_PROBE_MAX`) — vybírá se podle výsledného řazení, co nevyjde, dočte `_fill_audio` jako dřív.
+PREREAD_PER_SOURCE = 6
 # Kolik se drží zařazení titulu pro jazykové katalogy (`classify_langs()`) — dub/subs/nic.
 # S `probe_audio=False` se streamy schválně necachují (neověřené hlavičky by na 72 h
 # zablokovaly skutečný dialog streamů), takže by bez týhle cache zahřívání po 6 h
@@ -1776,6 +1797,38 @@ class Engine:
     def _probe_url(stream):
         return str(stream.get("url") or "")
 
+    def _preread(self, pool, streams, sort, taken, limit):
+        """Začne číst hlavičky nejlepších streamů zdroje, který právě odpověděl (`PREREAD_PER_SOURCE`, celkem
+        `limit`). Běží na pozadí do `media:`, kam se `_fill_audio` později jen podívá. Nikdy nic neshodí."""
+        try:
+            room = min(limit, AUDIO_PROBE_MAX) - len(taken)
+            if room <= 0:
+                return
+            schemes = ("hs:", "ws:", "streamuj:", "dav:", "pt:")   # jako `_fill_audio`, bez FastShare (kredit)
+            candidates = [s for s in streams if not s.get("_tracks") and self._probe_url(s).startswith(schemes)]
+            for stream in candidates:
+                parse_stream(stream)
+            urls = []
+            ranked = sort(candidates)
+            if self._opt("merge_streams", False):
+                # hlavičku má smysl číst jen u zástupce skupiny stejných verzí; na kopiích, `group_streams` mění
+                # vstup (`_alts`) a seznam, který jde do cache, se sloučit nesmí (nese `set` a zdvojí se slučování)
+                ranked = group_streams([dict(s) for s in ranked])
+            for stream in ranked:
+                url = self._probe_url(stream)
+                if url and url not in taken and url not in urls:
+                    urls.append(url)
+                if len(urls) >= min(room, PREREAD_PER_SOURCE):
+                    break
+            if not urls:
+                return
+            taken.update(urls)
+            self._media_hints(urls)
+            for url in urls:
+                pool.submit(self._media_from_file, url)
+        except Exception as err:  # noqa: BLE001 – předčítání je bonus, výpis nesmí shodit
+            _LOGGER.debug("předčítání hlaviček: %s", err)
+
     def _media_from_file(self, url):
         """Co se o souboru dá přečíst z jeho hlavičky. Prázdné, když to nejde.
 
@@ -1784,14 +1837,19 @@ class Engine:
         na chvíli pamatuje jako mrtvého (`deadhost`), ať se u dalšího streamu ze
         stejného stroje nečeká na timeout znovu.
         """
+        store = self.shared if url.startswith(SHARED_MEDIA) else self.store
+
         def load():
             if self.should_stop():
                 return {}   # doběh na pozadí po `PROBE_DEADLINE` — hostitel končí, nezačínat; není to selhání
+            known = self._media_failure(store, url)
+            if known is not None:
+                return known
             try:
                 adresa = self.resolve(url)
             except Exception as err:  # noqa: BLE001 – vypršelý odkaz, odhlášený účet, mrtvý zdroj
                 _LOGGER.debug("hlavička %s: %s", url[:28], err)
-                return {"unreachable": True}
+                return self._media_failed(store, url, {"unreachable": True})
             host = deadhost.host_of(adresa)
             if deadhost.is_dead(host, self.store):
                 return {"unreachable": True}
@@ -1799,15 +1857,34 @@ class Engine:
                 info = probe_media(adresa)
             except Exception as err:  # noqa: BLE001 – čtení hlavičky je bonus, nikdy nesmí shodit výpis
                 _LOGGER.debug("hlavička %s: %s", url[:28], err)
-                return {"unreachable": True}
+                return self._media_failed(store, url, {"unreachable": True})
             if info.get("unreachable"):
                 deadhost.mark_dead(host, self.store)
-            return info
+            return info if self._media_usable(info) else self._media_failed(store, url, info)
         # `probe()` při selhání vrací slovník s nulami — ten se nesmí pamatovat 30 dní,
         # jinak stream po jednom timeoutu měsíc nemá zvuk ani rozlišení
-        store = self.shared if url.startswith(SHARED_MEDIA) else self.store
-        return store.cached_if(f"media:{url}", AUDIO_TTL, load,
-                               ok=lambda d: bool(d.get("audio") or d.get("height") or d.get("size"))) or {}
+        return store.cached_if(f"media:{url}", AUDIO_TTL, load, ok=self._media_usable) or {}
+
+    @staticmethod
+    def _media_usable(info):
+        return bool(info.get("audio") or info.get("height") or info.get("size"))
+
+    @staticmethod
+    def _media_failure(store, url):
+        """Zapamatovaný neúspěch čtení hlavičky (`MEDIA_FAIL_TTL` / `MEDIA_UNKNOWN_TTL`), jinak `None`."""
+        data = store.peek_cached(f"mediafail:{url}", MEDIA_UNKNOWN_TTL)
+        if not data:
+            return None
+        ttl = MEDIA_FAIL_TTL if data.get("unreachable") else MEDIA_UNKNOWN_TTL
+        if time.time() - float(data.get("_ts") or 0) >= ttl:
+            return None
+        return {k: v for k, v in data.items() if k != "_ts"}
+
+    @staticmethod
+    def _media_failed(store, url, info):
+        """Zapíše neúspěšné čtení hlavičky (`mediafail:`) a vrátí `info` beze změny."""
+        store.cached_if(f"mediafail:{url}", MEDIA_UNKNOWN_TTL, lambda: dict(info, _ts=time.time()), fresh=True)
+        return info
 
     def _media_hints(self, urls):
         """Hlavičky souborů ze společné cache serveru (`DashApi.media`) do vlastní cache
@@ -1888,7 +1965,10 @@ class Engine:
         rest = [self._probe_url(s) for s in ordered[limit:]] + [
             s["url"] for s in background if not s.get("_tracks") and str(s.get("url") or "").startswith(schemes)]
         # hlavičky, které už někdo přečetl, ze serveru — jeden dotaz místo desítek čtení
+        t_hints = time.monotonic()
         self._media_hints([self._probe_url(s) for s in todo] + rest)
+        detail = {"hints": time.monotonic() - t_hints}
+        self.last_timings["hlavičky detail"] = detail
         # skutečný počet čtených hlaviček bývá výrazně nižší než limit —
         # ukazatel průběhu si podle něj dopočítá reálné 100 %, ne odhad
         if on_count:
@@ -1904,6 +1984,7 @@ class Engine:
         # hostitel končí — `gather()` se mezi tím ptá `should_stop()` a při přerušení
         # nezačaté hlavičky zruší (viz `lib/abort.py`)
         pool = ThreadPoolExecutor(max_workers=PROBE_WORKERS)
+        t_read = time.monotonic()
         futures = {pool.submit(self._media_from_file, self._probe_url(s)): s for s in todo}
         results = {}
 
@@ -1916,8 +1997,12 @@ class Engine:
             if on_audio_progress:
                 on_audio_progress(probed, total)
         gather(pool, list(futures), self.should_stop, on_done=hotovo, deadline=PROBE_DEADLINE)
+        detail["čtení"] = time.monotonic() - t_read
         self.last_timings["hlaviček nedočteno"] = len(todo) - len(results)
+        t_bg = time.monotonic()
         self._probe_in_background(rest)
+        detail["pozadí"] = time.monotonic() - t_bg
+        t_apply = time.monotonic()
         for stream, info in ((s, results.get(id(s))) for s in todo):
             if info is None:
                 continue        # nedočteno v PROBE_DEADLINE — neznámé, ne mrtvé
@@ -1953,6 +2038,7 @@ class Engine:
                 # Sosáč velikost vůbec neříká, server ji ale poslal v Content-Range
                 # při stejném dotazu na hlavičku, který se dělal pro zvuk
                 stream["size_gb"] = info["size"] / 2 ** 30
+        detail["zpracování"] = time.monotonic() - t_apply
         return streams
 
     WRONG_LENGTH_MIN_S = 80 * 60   # kratší soubor za film pod cizím názvem nepovažujeme
@@ -2667,6 +2753,15 @@ class Engine:
         výsledek se nesmí dostat do 72h cache streamů.
         """
         failures = [] if failures is None else failures
+        late = []   # zdroje, které nestihly měkký rozpočet — nejsou výpadek, seznam se jen necachuje na 72 h
+        # měkké rozpočty jen tam, kde někdo čeká a výsledek jde do cache (viz `SOURCE_SOFT_DEADLINE`)
+        soft = bool(strict and probe_audio and not stop_when and not refresh
+                    and not getattr(self._tl, "background", False))
+        try:
+            preread_limit = min(int(self._opt("audio_probe", AUDIO_PROBE_MAX) or 0), AUDIO_PROBE_MAX)
+        except (TypeError, ValueError):
+            preread_limit = AUDIO_PROBE_MAX
+        preread = soft and preread_limit > 0   # předčítání hlaviček jen tam, kde se na výpis čeká a hlavičky se čtou
         total = self.STREAM_SOURCE_STEPS + AUDIO_PROBE_MAX
         done = [0]
         # časy fází v sekundách od začátku — `last_timings`, volající je může zalogovat
@@ -2694,13 +2789,29 @@ class Engine:
 
         meta, video = meta_video if meta_video else self.meta(ctype, item_id, series_id)
         loaded = (meta, video)   # obnova na pozadí nenačítá metadata znovu — `_fetch_streams` níž `meta` mění
+        cache_key = self._streams_cache_key(ctype, item_id, alt)
+
+        def obnovit():
+            self._refresh_streams_later(cache_key, ctype, item_id, alt, series_id, loaded)
         base_id = split_episode_id(item_id)[0]
         include_search = bool(self._opt("search_streams", True))
 
         def _fetch_streams():
+            # fond pro předčítání hlaviček (`_preread`) musí skončit při každém odchodu, i při přerušení —
+            # nečinná vlákna by držela hostitele (Kodi na ně čeká při vypínání)
+            pre = ThreadPoolExecutor(max_workers=PROBE_WORKERS) if preread else None
+            try:
+                return _fetch_inner(pre)
+            finally:
+                if pre is not None:
+                    pre.shutdown(wait=False)
+
+        def _fetch_inner(pre):
             nonlocal meta
             timings["cache"] = False
             self._check_stop()
+            taken = set()   # adresy, jejichž hlavička se už předčítá
+            sort_pre = self._sorter(length_basis(meta, video)) if pre is not None else None
             primary_label = "Sosáč" if is_sosac_id(base_id) else "Luna"
 
             def primary():
@@ -2770,6 +2881,21 @@ class Engine:
             # `stop_when` bere v potaz jen mimo cachovanou cestu (viz `_fetch_streams()` volání níž)
             stop_when_ = None if (strict and probe_audio) else stop_when
 
+            def rozpocet(label, zbytek):
+                if not soft or label == primary_label:
+                    return zbytek
+                return min(zbytek, SOURCE_SOFT_BUDGETS.get(label, SOURCE_SOFT_DEADLINE))
+
+            def dohnat(future):
+                """Opozdilec doběhl: seznam v cache se obnoví, ať ho má i další otevření titulu.
+
+                S malým odkladem: kdyby opozdilec skončil, dokud hlavní hledání ještě drží zámek klíče
+                cache, obnova by od `Store.cached_if` dostala jeho (neúplný) výsledek místo vlastního."""
+                if not future.cancelled() and future.exception() is None:
+                    timer = threading.Timer(LATE_REFRESH_DELAY, obnovit)
+                    timer.daemon = True
+                    timer.start()
+
             def kolo(ulohy):
                 """Jedna souběžná dávka: vrátí `{label: výsledek}`. Zdroje jsou nezávislé
                 a každý má vlastní timeouty (15–40 s) — za sebou byl studený výpis 8–15
@@ -2792,6 +2918,8 @@ class Engine:
                 pool = ThreadPoolExecutor(max_workers=len(ulohy))
                 futures = [pool.submit(bezpecne, label, fetch) for label, fetch in ulohy]
                 label_by_future = dict(zip(futures, (label for label, _fetch in ulohy)))
+                rozpocty = {f: rozpocet(label_by_future[f], zbytek) for f in futures}
+                zacatek = time.monotonic()
                 stopped = [False]
 
                 def hotovo(future):
@@ -2801,6 +2929,9 @@ class Engine:
                     streams = future.result()
                     if on_source_done and label not in SUBS_TASKS:
                         on_source_done(label, len(streams))
+                    if pre is not None and streams and label not in SUBS_TASKS:
+                        self._preread(pre, streams, sort_pre, taken, preread_limit)
+                        timings["předčteno"] = len(taken)
                     if stop_when_ and label not in SUBS_TASKS:
                         for stream in streams:
                             parse_stream(stream)
@@ -2809,7 +2940,8 @@ class Engine:
                             return True
                     return False
                 out = {}
-                for future in gather(pool, futures, self.should_stop, on_done=hotovo, deadline=zbytek):
+                for future in gather(pool, futures, self.should_stop, on_done=hotovo,
+                                     deadline=lambda pending: max(rozpocty[f] for f in pending)):
                     label = label_by_future[future]
                     if future.done() and not future.cancelled():
                         out[label] = future.result()
@@ -2817,6 +2949,14 @@ class Engine:
                     out[label] = []
                     if stopped[0]:
                         timings["zdroje"][label] = "stop"
+                        continue
+                    if time.monotonic() - zacatek < zbytek - 0.05:
+                        # skončilo to měkkým rozpočtem, ne tvrdým deadlinem: žádný výpadek, doběhne a obnoví seznam
+                        timings["zdroje"][label] = f">{rozpocty[future]:.0f}s"
+                        late.append(label)
+                        _LOGGER.info("streamy %s: %s je pomalý (>%.0f s), bere se bez něj a doplní se na pozadí",
+                                     item_id, label, rozpocty[future])
+                        future.add_done_callback(dohnat)
                         continue
                     timings["zdroje"][label] = f">{zbytek:.0f}s"
                     if label not in SUBS_TASKS:
@@ -2853,6 +2993,8 @@ class Engine:
                     ulohy = ostatni(meta)
                     vysledky = kolo(ulohy)
             timings["souběžně"] = since(mark)
+            if late:
+                timings["pozdě"] = list(late)
             subs = vysledky.get(SUBS_TASK) or []
             osubs = vysledky.get(OSUB_TASK) or []
             found = found + slozit(vysledky, ulohy)
@@ -2894,7 +3036,6 @@ class Engine:
 
         # „streams2“: seznamy uložené před doplněním českých názvů z Wikidat byly u titulů
         # bez Luny/TMDB ořezané přísným filtrem — nový klíč je jednorázově obnoví
-        cache_key = self._streams_cache_key(ctype, item_id, alt)
         # vlastní úložiště mimo 72h cache streamů — nový soubor se má ukázat hned,
         # jak ho uvidí seznam úložiště (ten si drží vlastní hodinovou paměť). S
         # `probe_audio=False` (hromadná klasifikace) se přeskakuje úplně — cizí
@@ -2921,9 +3062,7 @@ class Engine:
         storage_future = storage_pool.submit(_run_storage)
         try:
             if strict and probe_audio:
-                found = self._cached_streams(
-                    cache_key, _fetch_streams, failures, timings, refresh,
-                    lambda: self._refresh_streams_later(cache_key, ctype, item_id, alt, series_id, loaded))
+                found = self._cached_streams(cache_key, _fetch_streams, failures, late, timings, refresh, obnovit)
             else:
                 self._yield_to_foreground()
                 found = _fetch_streams()
@@ -2989,11 +3128,11 @@ class Engine:
         timings["celkem"] = since()
         return ordered
 
-    def _cached_streams(self, cache_key, fetch, failures, timings, refresh, again):
+    def _cached_streams(self, cache_key, fetch, failures, late, timings, refresh, again):
         """Seznam streamů titulu z cache, jinak z `fetch()` (hledání napříč zdroji).
 
-        Pořadí: platný záznam (72 h) → částečný (10 min — některý zdroj minule neodpověděl,
-        takže se hned nehledá znovu) → starý záznam (do 14 dní, jen s volbou `stale_streams`:
+        Pořadí: platný záznam (72 h) → částečný (10 min — některý zdroj minule neodpověděl nebo
+        nestihl měkký rozpočet, takže se hned nehledá znovu) → starý záznam (do 14 dní, jen s volbou `stale_streams`:
         ukáže se hned a `again()` ho na pozadí obnoví) → hledání. Ve vlákně `fresher()`
         (kontrola Hlídaných) se z cache čte jen přes `cached_if`, který omezení stáří zná;
         tam se krátký ani starý záznam nepoužije. `refresh` / volba `fresh` cache nečtou."""
@@ -3016,8 +3155,8 @@ class Engine:
                     return data
         self._yield_to_foreground()   # před zámkem klíče, ne pod ním: hlavní hledání téhož titulu by čekalo
         found = store.cached_if(cache_key, STREAMS_CACHE_TTL, fetch,
-                                ok=lambda data: bool(data) and not failures, fresh=refresh)
-        if found and failures:
+                                ok=lambda data: bool(data) and not failures and not late, fresh=refresh)
+        if found and (failures or late):
             store.cached_if(partial_key, STREAMS_PARTIAL_TTL, lambda: found, fresh=True)
         return found
 

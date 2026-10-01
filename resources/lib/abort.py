@@ -62,11 +62,19 @@ def gather(pool, futures, should_stop, on_done=None, poll=STOP_POLL, deadline=No
     z nichž některé nemusí být hotové (volající se ptá `Future.done()`). Nic se neruší —
     executor se zavře bez čekání a rozběhnuté i čekající úlohy doběhnou na pozadí
     (čtení hlaviček si výsledek uloží do cache pro příště). `on_done` se pro ně už nevolá.
+    Může to být i funkce `deadline(pending) -> s | None`: volá se před každým čekáním
+    s množinou ještě nehotových úloh, takže každá z nich smí mít vlastní rozpočet
+    (čeká se, dokud ho má aspoň jedna z těch, co zbývají).
     """
     pending = set(futures)
-    end = None if deadline is None else time.monotonic() + deadline
+    started = time.monotonic()
+
+    def limit():
+        seconds = deadline(pending) if callable(deadline) else deadline
+        return None if seconds is None else started + seconds
     try:
         while pending:
+            end = limit()
             left = poll if end is None else min(poll, end - time.monotonic())
             if left <= 0:
                 pool.shutdown(wait=False)
