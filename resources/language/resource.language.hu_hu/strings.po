@@ -2890,8 +2890,8 @@ msgid "Run a batch now – checked %s of %s"
 msgstr "Kör indítása most – ellenőrizve: %s / %s"
 
 msgctxt "#30898"
-msgid "Batch done – checked %s, matching %s"
-msgstr "Kör kész – ellenőrizve: %s, megfelel: %s"
+msgid "Batch done – checked %s, matching %s (in the list: %s in total)"
+msgstr "Kör kész – ellenőrizve: %s, megfelel: %s (a listában összesen: %s)"
 
 msgctxt "#30899"
 msgid "Checking %s of %s – %s"

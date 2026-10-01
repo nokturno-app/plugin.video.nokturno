@@ -2892,8 +2892,8 @@ msgid "Run a batch now – checked %s of %s"
 msgstr "Spustit dávku nyní – ověřeno %s z %s"
 
 msgctxt "#30898"
-msgid "Batch done – checked %s, matching %s"
-msgstr "Dávka hotová – ověřeno %s, vyhovuje %s"
+msgid "Batch done – checked %s, matching %s (in the list: %s in total)"
+msgstr "Dávka hotová – ověřeno %s, vyhovuje %s (v seznamu celkem %s)"
 
 msgctxt "#30899"
 msgid "Checking %s of %s – %s"

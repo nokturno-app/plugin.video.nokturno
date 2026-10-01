@@ -2892,7 +2892,7 @@ msgid "Run a batch now – checked %s of %s"
 msgstr ""
 
 msgctxt "#30898"
-msgid "Batch done – checked %s, matching %s"
+msgid "Batch done – checked %s, matching %s (in the list: %s in total)"
 msgstr ""
 
 msgctxt "#30899"

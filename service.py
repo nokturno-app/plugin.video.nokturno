@@ -1157,7 +1157,7 @@ def _hq_url(size):
 
 def _hq_run(monitor, count, progress):
     """Ověří až `count` titulů, vždy jeden přes plugin a s odstupem — plugin běží v jednom interpretu,
-    takže dlouhý běh by držel všechna ostatní kliknutí v menu. Vrací (ověřeno, vyhovuje)."""
+    takže dlouhý běh by držel všechna ostatní kliknutí v menu. Vrací (ověřeno, z toho vyhovuje, v seznamu celkem)."""
     store = Store(PROFILE)
     index = store.reload("hq_index", {}) or {}
     ted = int(time.time())
@@ -1187,10 +1187,11 @@ def _hq_run(monitor, count, progress):
     finally:
         if bar:
             bar.close()
-    after = store.reload("hq_index", {}) or {}
-    ok = sum(1 for e in (after.get("items") or {}).values() if e.get("ok") is True)
-    done = sum(1 for e in (after.get("items") or {}).values() if e.get("ok") is not None) - before
-    return max(done, 0), ok
+    after = (store.reload("hq_index", {}) or {}).get("items") or {}
+    done = max(sum(1 for e in after.values() if e.get("ok") is not None) - before, 0)
+    matched = sum(1 for mid in ids if (after.get(mid) or {}).get("ok") is True)   # mezi právě ověřenými
+    total = sum(1 for e in after.values() if e.get("ok") is True)                # v seznamu celkem
+    return done, matched, total
 
 
 def hq_worker(monitor):
@@ -1221,10 +1222,10 @@ def hq_worker(monitor):
             win.clearProperty(HQ_MANUAL_PROP)
             waited = 0
             if manual:
-                done, ok = _hq_run(monitor, int(manual) if manual.isdigit() else 20, progress=True)
+                done, matched, total = _hq_run(monitor, int(manual) if manual.isdigit() else 20, progress=True)
                 xbmcgui.Dialog().notification(
                     L(30993, "Filmy ve vysoké kvalitě"),
-                    L(30898, "Dávka hotová – ověřeno %s, vyhovuje %s") % (done, ok), xbmcgui.NOTIFICATION_INFO, 4000)
+                    L(30898, "Dávka hotová – ověřeno %s, vyhovuje %s (v seznamu celkem %s)") % (done, matched, total), xbmcgui.NOTIFICATION_INFO, 4000)
             else:
                 _hq_run(monitor, 8, progress=False)
         except Exception as e:  # noqa: BLE001 – vlákno nesmí spadnout
