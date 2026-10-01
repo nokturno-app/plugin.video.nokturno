@@ -20,6 +20,7 @@ import struct
 import urllib.parse
 import urllib.request
 
+from keepalive import available as _keepalive_available, fetch as _keepalive_fetch
 from safe_redirect import OPENER as _SAFE_OPENER
 
 HEAD = 128 * 1024      # začátek souboru: na Matrosku i AVI bohatě stačí
@@ -72,16 +73,23 @@ def fetch_sized(url, start=None, end=None, length=HEAD, opener=None):
         last = end if end is not None else start + length - 1
         rng, want = f"bytes={start}-{last}", last - start + 1
     url, extra = split_headers(url)
-    req = urllib.request.Request(url, headers={"Range": rng, "User-Agent": UA, **extra})
-    # bez vlastního openeru přes ten, který při přesměrování na cizí host nepošle
-    # Authorization/Cookie z odkazu za svislítkem (lib/safe_redirect.py)
-    opened = opener.urlopen(req, timeout=TIMEOUT) if opener else _SAFE_OPENER.open(req, timeout=TIMEOUT)
-    with opened as resp:
-        status = getattr(resp, "status", None) or resp.getcode()
-        # číst jen výřez: server, který Range neumí, pošle celý soubor se stavem 200
-        # a `read()` bez limitu by tahal desítky GB do paměti (ARM box s 2 GB)
-        data = resp.read(want + 1)
-        content_range = resp.headers.get("Content-Range", "")
+    hdrs = {"Range": rng, "User-Agent": UA, **extra}
+    if opener is None and _keepalive_available():
+        # znovu použité spojení na host (lib/keepalive.py), jinak by každý výřez
+        # stál nové TCP + TLS
+        status, data, rh = _keepalive_fetch(url, hdrs, TIMEOUT, want)
+        content_range = rh.get("Content-Range", "")
+    else:
+        req = urllib.request.Request(url, headers=hdrs)
+        # bez vlastního openeru přes ten, který při přesměrování na cizí host nepošle
+        # Authorization/Cookie z odkazu za svislítkem (lib/safe_redirect.py)
+        opened = opener.urlopen(req, timeout=TIMEOUT) if opener else _SAFE_OPENER.open(req, timeout=TIMEOUT)
+        with opened as resp:
+            status = getattr(resp, "status", None) or resp.getcode()
+            # číst jen výřez: server, který Range neumí, pošle celý soubor se stavem 200
+            # a `read()` bez limitu by tahal desítky GB do paměti (ARM box s 2 GB)
+            data = resp.read(want + 1)
+            content_range = resp.headers.get("Content-Range", "")
     if status != 206 and len(data) > want:
         # bez výřezu nemá odpověď smysl — u „konce souboru" by to byl začátek
         return b"", 0
