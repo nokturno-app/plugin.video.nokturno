@@ -2668,24 +2668,28 @@ class Engine:
         return self.store.cached_if(key, ttl, _spocitat, ok=lambda d: bool(d.get("n")))
 
     @staticmethod
-    def quality_match(stream, min_quality=4, surround=False, audio="CZ"):
-        """Odpovídá stream definici „vysoká kvalita“? 3D se vyřazuje vždy; 5.1 vyžaduje ověřené `channels`."""
+    def quality_match(stream, min_quality=4, surround=False, audio="CZ", subs=""):
+        """Odpovídá stream definici „vysoká kvalita“? 3D se vyřazuje vždy; 5.1 vyžaduje ověřené `channels`;
+        prázdný `audio`/`subs` a `min_quality` 0 = na parametru nezáleží."""
         if (stream.get("quality_rank") or 0) < min_quality or stream_3d(stream):
             return False
         if audio and audio not in (stream.get("langs") or ()):
             return False
+        if subs and subs not in (stream.get("subs") or ()):
+            return False
         return not surround or bool(is_surround(stream, audio))
 
-    def classify_quality(self, ctype, item_id, min_quality=4, surround=False, audio="CZ", ttl=QUALITY_CLASS_TTL):
+    def classify_quality(self, ctype, item_id, min_quality=4, surround=False, audio="CZ", subs="",
+                         ttl=QUALITY_CLASS_TTL):
         """Má titul aspoň jeden stream odpovídající definici? `True`/`False`, `None` = zdroje
         nedoběhly (výpadek) nebo nic nevrátily – nic se neukládá a volající to zkusí později."""
-        key = (f"qualclass1:{ctype}:{item_id}:{min_quality}:{int(bool(surround))}:{audio}:"
+        key = (f"qualclass2:{ctype}:{item_id}:{min_quality}:{int(bool(surround))}:{audio}:{subs}:"
                f"{self._streams_cache_key(ctype, item_id)}")
 
         def _spocitat():
             failures = []
             streams = self.raw_streams(ctype, item_id, strict=True, probe_audio=True, failures=failures)
-            if any(self.quality_match(s, min_quality, surround, audio) for s in streams):
+            if any(self.quality_match(s, min_quality, surround, audio, subs) for s in streams):
                 return True
             return None if failures or not streams else False
 

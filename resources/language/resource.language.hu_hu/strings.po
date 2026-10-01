@@ -2814,12 +2814,8 @@ msgid "Minimum quality"
 msgstr "Minimális minőség"
 
 msgctxt "#30995"
-msgid "Defines which movies appear in the list: at least one stream must have the minimum quality, and – if enabled – surround sound (5.1 or more) in the chosen audio language. 3D versions never count. The list is verified in the background, so it grows gradually."
-msgstr "Meghatározza, mely filmek jelennek meg a listában: legalább egy streamnek el kell érnie a minimális minőséget, és – ha be van kapcsolva – térhatású hangot (5.1 vagy több) kell tartalmaznia a kiválasztott hangnyelven. A 3D változatok soha nem számítanak. A lista a háttérben ellenőrződik, ezért fokozatosan bővül."
-
-msgctxt "#30996"
-msgid "Require surround sound (5.1 or more)"
-msgstr "Térhatású hang megkövetelése (5.1 vagy több)"
+msgid "Defines which movies appear in the list. “Any” means the parameter does not matter. Full description: open Movies in high quality → How it works."
+msgstr "Meghatározza, mely filmek jelennek meg a listában. A „Bármilyen” azt jelenti, hogy az adott paraméter nem számít. Teljes leírás: nyisd meg a Filmek magas minőségben → Hogyan működik elemet."
 
 msgctxt "#30997"
 msgid "Audio language for high quality"
@@ -2828,3 +2824,63 @@ msgstr "Hangnyelv a magas minőséghez"
 msgctxt "#30998"
 msgid "The list is being prepared – movies are verified in the background."
 msgstr "A lista készül – a filmek a háttérben ellenőrződnek."
+
+msgctxt "#30882"
+msgid "Show the item in the Movies menu"
+msgstr "Elem megjelenítése a Filmek menüben"
+
+msgctxt "#30883"
+msgid "Audio channels"
+msgstr "Hangcsatornák"
+
+msgctxt "#30884"
+msgid "Subtitles"
+msgstr "Feliratok"
+
+msgctxt "#30885"
+msgid "Any quality"
+msgstr "Bármilyen"
+
+msgctxt "#30886"
+msgid "Any channels"
+msgstr "Bármennyi"
+
+msgctxt "#30887"
+msgid "Any subtitles"
+msgstr "Bármilyen"
+
+msgctxt "#30888"
+msgid "5.1 or more"
+msgstr "5.1 vagy több"
+
+msgctxt "#30889"
+msgid "Set: %s"
+msgstr "Beállítás: %s"
+
+msgctxt "#30890"
+msgid "%s · %s · audio %s · subtitles %s"
+msgstr "%s · %s · hang %s · felirat %s"
+
+msgctxt "#30891"
+msgid "How it works"
+msgstr "Hogyan működik"
+
+msgctxt "#30892"
+msgid "The list is built from popular, most watched and top rated movies.\nIn the background, the add-on checks which of them have a stream matching your parameters: quality, audio channels, audio language and subtitles. File headers are read for that, so the first fill takes hours.\nNew movies are added, those that no longer match disappear, and the check repeats after a few days.\nChanging the parameters recalculates the list.\n“Any” means the parameter does not matter.\nAudio language and subtitles are taken from the stream information. 3D versions are never shown.\nThe list is kept up to date only while you open it (for 14 days after the last time)."
+msgstr "A lista a népszerű, a legnézettebb és a legjobban értékelt filmekből készül.\nA háttérben a kiegészítő ellenőrzi, melyeknek van a paramétereidnek megfelelő streamje: minőség, hangcsatornák, hangnyelv és felirat. Ehhez a fájlok fejlécét olvassa, ezért az első feltöltés órákig tart.\nAz új filmek bekerülnek, a már nem megfelelők eltűnnek, az ellenőrzés néhány naponta ismétlődik.\nA paraméterek módosítása újraszámolja a listát.\nA „Bármilyen” azt jelenti, hogy az adott paraméter nem számít.\nA hangnyelv és a feliratok a stream adataiból származnak. A 3D változatok soha nem jelennek meg.\nA lista csak akkor frissül, ha megnyitod (az utolsó megnyitástól számított 14 napig)."
+
+msgctxt "#30893"
+msgid "Saved – the list is recalculated in the background."
+msgstr "Mentve – a lista a háttérben újraszámolódik."
+
+msgctxt "#30894"
+msgid "Yes"
+msgstr "Igen"
+
+msgctxt "#30895"
+msgid "No"
+msgstr "Nem"
+
+msgctxt "#30896"
+msgid "The item is hidden from the Movies menu. You can show it again in Settings → Playback."
+msgstr "Az elem el van rejtve a Filmek menüből. A Beállítások → Lejátszás alatt újra bekapcsolhatod."

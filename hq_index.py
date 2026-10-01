@@ -7,8 +7,8 @@ RECHECK_AFTER = 3 * 86400
 RETRY_AFTER = 1800          # po selhání zkusit znovu za 30 min (`record`)
 
 
-def signature(min_q, surround, audio):
-    return f"{min_q}:{int(bool(surround))}:{audio or ''}"
+def signature(min_q, surround, audio, subs=""):
+    return f"{min_q}:{int(bool(surround))}:{audio or ''}:{subs or ''}"
 
 
 def merge_pool(index, pool_metas, now):

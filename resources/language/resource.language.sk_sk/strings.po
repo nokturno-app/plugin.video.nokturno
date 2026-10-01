@@ -2816,12 +2816,8 @@ msgid "Minimum quality"
 msgstr "Minimálna kvalita"
 
 msgctxt "#30995"
-msgid "Defines which movies appear in the list: at least one stream must have the minimum quality, and – if enabled – surround sound (5.1 or more) in the chosen audio language. 3D versions never count. The list is verified in the background, so it grows gradually."
-msgstr "Určuje, ktoré filmy sa v zozname objavia: aspoň jeden stream musí mať minimálnu kvalitu a – ak je zapnuté – priestorový zvuk (5.1 a viac) vo zvolenom jazyku zvuku. 3D verzie sa nepočítajú nikdy. Zoznam sa overuje na pozadí, takže pribúda postupne."
-
-msgctxt "#30996"
-msgid "Require surround sound (5.1 or more)"
-msgstr "Vyžadovať priestorový zvuk (5.1 a viac)"
+msgid "Defines which movies appear in the list. “Any” means the parameter does not matter. Full description: open Movies in high quality → How it works."
+msgstr "Určuje, ktoré filmy sa v zozname objavia. „Ľubovoľné“ znamená, že na parametri nezáleží. Úplný popis: otvor Filmy vo vysokej kvalite → Ako to funguje."
 
 msgctxt "#30997"
 msgid "Audio language for high quality"
@@ -2830,3 +2826,63 @@ msgstr "Jazyk zvuku pre vysokú kvalitu"
 msgctxt "#30998"
 msgid "The list is being prepared – movies are verified in the background."
 msgstr "Zoznam sa pripravuje – filmy sa overujú na pozadí."
+
+msgctxt "#30882"
+msgid "Show the item in the Movies menu"
+msgstr "Zobraziť položku v menu Filmy"
+
+msgctxt "#30883"
+msgid "Audio channels"
+msgstr "Kanály zvuku"
+
+msgctxt "#30884"
+msgid "Subtitles"
+msgstr "Titulky"
+
+msgctxt "#30885"
+msgid "Any quality"
+msgstr "Ľubovoľná"
+
+msgctxt "#30886"
+msgid "Any channels"
+msgstr "Ľubovoľné"
+
+msgctxt "#30887"
+msgid "Any subtitles"
+msgstr "Ľubovoľné"
+
+msgctxt "#30888"
+msgid "5.1 or more"
+msgstr "5.1 a viac"
+
+msgctxt "#30889"
+msgid "Set: %s"
+msgstr "Nastaviť: %s"
+
+msgctxt "#30890"
+msgid "%s · %s · audio %s · subtitles %s"
+msgstr "%s · %s · zvuk %s · titulky %s"
+
+msgctxt "#30891"
+msgid "How it works"
+msgstr "Ako to funguje"
+
+msgctxt "#30892"
+msgid "The list is built from popular, most watched and top rated movies.\nIn the background, the add-on checks which of them have a stream matching your parameters: quality, audio channels, audio language and subtitles. File headers are read for that, so the first fill takes hours.\nNew movies are added, those that no longer match disappear, and the check repeats after a few days.\nChanging the parameters recalculates the list.\n“Any” means the parameter does not matter.\nAudio language and subtitles are taken from the stream information. 3D versions are never shown.\nThe list is kept up to date only while you open it (for 14 days after the last time)."
+msgstr "Zoznam vychádza z populárnych, najsledovanejších a najlepšie hodnotených filmov.\nNa pozadí sa kontroluje, ktoré z nich majú stream podľa tvojich parametrov: kvalita, kanály zvuku, jazyk zvuku a titulky. Číta sa na to hlavičky súborov, takže prvé naplnenie trvá hodiny.\nNové filmy pribúdajú, nevyhovujúce miznú a kontrola sa opakuje po pár dňoch.\nZmena parametrov zoznam prepočíta.\n„Ľubovoľné“ znamená, že na parametri nezáleží.\nJazyk zvuku a titulky sa berú z informácií o streame. 3D verzie sa nezobrazujú nikdy.\nZoznam sa udržiava len vtedy, keď ho otváraš (14 dní od posledného otvorenia)."
+
+msgctxt "#30893"
+msgid "Saved – the list is recalculated in the background."
+msgstr "Uložené – zoznam sa prepočíta na pozadí."
+
+msgctxt "#30894"
+msgid "Yes"
+msgstr "Áno"
+
+msgctxt "#30895"
+msgid "No"
+msgstr "Nie"
+
+msgctxt "#30896"
+msgid "The item is hidden from the Movies menu. You can show it again in Settings → Playback."
+msgstr "Položka je skrytá. Znova ju zapneš v Nastaveniach → Prehrávanie."

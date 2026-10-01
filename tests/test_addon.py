@@ -3022,7 +3022,7 @@ class TestVysokaKvalita(unittest.TestCase):
         self.naplnit()
         default.list_hq({}, "movie")
         akce = [params_of(u) for u in xbmcplugin.urls()]
-        self.assertEqual([a.get("genre") for a in akce], ["*", "Akční", "Drama"])
+        self.assertEqual([a.get("genre") for a in akce if a.get("action") == "hq"], ["*", "Akční", "Drama"])
         self.assertFalse(xbmcgui.notifications)
 
     def test_zanr_a_vse(self):
@@ -3037,18 +3037,18 @@ class TestVysokaKvalita(unittest.TestCase):
         default.STORE.save(default.HQ_INDEX_KEY, {})
         oks = len(xbmcgui.oks)
         default.list_hq({}, "movie")
-        self.assertEqual(xbmcplugin.urls(), [])
+        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["hq_setup", "hq_info"])
         self.assertEqual(len(xbmcgui.notifications), 1)
         self.assertEqual(len(xbmcgui.oks), oks)
 
     def test_jina_definice_index_zneplatni(self):
         self.naplnit()
-        xbmcaddon.settings["hq_surround"] = "false"
+        xbmcaddon.settings["hq_channels"] = "0"
         try:
             default.list_hq({}, "movie")
         finally:
-            xbmcaddon.settings.pop("hq_surround", None)
-        self.assertEqual(xbmcplugin.urls(), [])
+            xbmcaddon.settings.pop("hq_channels", None)
+        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["hq_setup", "hq_info"])
 
     def test_polozka_jen_v_menu_filmu(self):
         for typ, ocek in (("movie", True), ("series", False)):
@@ -3059,8 +3059,55 @@ class TestVysokaKvalita(unittest.TestCase):
     def test_retezce_ve_ctyrech_jazycich(self):
         for lang in ("cs_cz", "sk_sk", "en_gb", "hu_hu"):
             po = (LANG_DIR / f"resource.language.{lang}" / "strings.po").read_text(encoding="utf-8")
-            for sid in range(30993, 30999):
+            for sid in [30993, 30994, 30995, 30997, 30998] + list(range(30882, 30897)):
                 self.assertIn(f'msgctxt "#{sid}"', po, (lang, sid))
+
+    def test_definice_jakakoli(self):
+        self.assertEqual(default.hq_definition(), (4, True, "CZ", ""))
+        for k, v in (("hq_min_quality", "0"), ("hq_channels", "0"), ("hq_audio", "0"), ("hq_subs", "2")):
+            xbmcaddon.settings[k] = v
+        try:
+            self.assertEqual(default.hq_definition(), (0, False, "", "SK"))
+        finally:
+            for k in ("hq_min_quality", "hq_channels", "hq_audio", "hq_subs"):
+                xbmcaddon.settings.pop(k, None)
+
+    def test_polozka_v_menu_podle_hq_enabled(self):
+        for hodnota, ocek in (("false", False), ("true", True)):
+            xbmcaddon.settings["hq_enabled"] = hodnota
+            xbmcplugin.reset()
+            try:
+                default.browse_menu({}, "movie")
+            finally:
+                xbmcaddon.settings.pop("hq_enabled", None)
+            self.assertEqual("hq" in [params_of(u).get("action") for u in xbmcplugin.urls()], ocek)
+
+    def test_nastaveni_a_info_jsou_ne_slozky(self):
+        self.naplnit()
+        default.list_hq({}, "movie")
+        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()][:2], ["hq_setup", "hq_info"])
+        self.assertEqual([it[3] for it in xbmcplugin.items[:2]], [False, False])
+        xbmcplugin.reset()
+        default.list_hq({}, "movie", "*")
+        self.assertNotIn("hq_setup", [params_of(u).get("action") for u in xbmcplugin.urls()])
+
+    def test_setup_ulozi_volby_a_zpet_nic(self):
+        volby = iter([2, 1, 3, 2, 1])   # 2K, 5.1+, EN, SK titulky, skrýt
+        with mock.patch.object(xbmcgui.Dialog, "select", lambda self, *a, **k: next(volby)):
+            default.hq_setup()
+        self.assertEqual([xbmcaddon.settings.get(k) for k in ("hq_min_quality", "hq_channels", "hq_audio", "hq_subs",
+                                                              "hq_enabled")], ["2", "1", "3", "2", "false"])
+        self.assertTrue(xbmcgui.Window(10000).getProperty(default.HQ_TRIGGER_PROP))
+        for k in ("hq_min_quality", "hq_channels", "hq_audio", "hq_subs", "hq_enabled"):
+            xbmcaddon.settings.pop(k, None)
+        volby = iter([1, 0, -1])   # Zpět ve třetím kroku
+        with mock.patch.object(xbmcgui.Dialog, "select", lambda self, *a, **k: next(volby)):
+            default.hq_setup()
+        self.assertIsNone(xbmcaddon.settings.get("hq_min_quality"))
+
+    def test_info_textviewer(self):
+        default.hq_info()
+        self.assertEqual(len(xbmcgui.textviewers), 1)
 
 
 
@@ -5605,7 +5652,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 127)   # +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě)
+        self.assertEqual(len(volby), 129)   # +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):

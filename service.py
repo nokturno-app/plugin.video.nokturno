@@ -1165,6 +1165,8 @@ def hq_worker(monitor):
         try:
             if QUITTING.is_set() or xbmc.Player().isPlaying() or not terms_ok():
                 continue
+            if xbmcaddon.Addon().getSetting("hq_enabled") == "false":   # položka vypnutá = nic se neověřuje
+                continue
             store = Store(PROFILE)
             offline = (store.reload(accounts_lib.OFFLINE, {}) or {}).get("ts", 0)
             if offline and time.time() - float(offline) < accounts_lib.OFFLINE_TTL:

@@ -228,8 +228,9 @@ HQ_INDEX_KEY = "hq_index"
 HQ_SEEN_DAYS = 14
 HQ_TRIGGER_PROP = "nokturno.hq.trigger"   # menu otevřené s prázdným indexem popožene službu
 HQ_POOL_MAX = 200
-HQ_RANKS = (3, 3.5, 4)                      # Full HD, 2K, 4K (`quality_rank` v jádru)
-HQ_AUDIO = ("", "CZ", "SK", "EN")
+HQ_RANKS = (0, 3, 3.5, 4)                   # jakákoli, Full HD, 2K, 4K (`quality_rank` v jádru)
+HQ_AUDIO = ("", "CZ", "SK", "EN")           # index 0 = jakýkoli; stejné pořadí má i `hq_subs`
+HQ_QUALITY_LABELS = ("", "Full HD", "2K", "4K")
 # O kolik dřív než vyprší cache ji zahřívání přepočítá — musí být aspoň interval
 # zahřívání (`service.WARM_EVERY`, 2,5 h), jinak kolo jen přečte platnou cache a nechá
 # ji vypršet mezi dvěma koly (6.2.2 nález 29).
@@ -4914,9 +4915,9 @@ def browse_menu(apis, ctype):
         if genre:
             params["genre"] = genre
         folder_item(label, build_url(**params), icon=icon)
-        if ctype == "movie" and cid == TREND_CATALOG_ID:
-            folder_item(L(30993, "Filmy ve vysoké kvalitě"), build_url(action="hq", type="movie"),
-                        icon="DefaultMovies.png")
+    if ctype == "movie" and on("hq_enabled"):   # hned pod „Nejlépe hodnocené“
+        folder_item(L(30993, "Filmy ve vysoké kvalitě"), build_url(action="hq", type="movie"),
+                    icon="DefaultMovies.png")
     folder_item(L(30944, "Vlastní katalogy"), build_url(action="mycats", type=ctype),
                 icon="DefaultVideoPlaylists.png")
     # „Náhodný film/seriál" je ne-složka: klik ji Kodi spustí jako skript s handle −1
@@ -6170,14 +6171,58 @@ def foryou_items(apis, ctype, seeds):
 
 
 def hq_definition():
-    """(min. kvalita, prostorový zvuk, jazyk zvuku) z nastavení."""
+    """(min. kvalita, prostorový zvuk, jazyk zvuku, jazyk titulků) z nastavení; „jakákoli" = 0 / False / ""."""
     def idx(key, default, size):
         try:
             return max(0, min(size - 1, int(setting(key, default))))
         except ValueError:
             return int(default)
-    return (HQ_RANKS[idx("hq_min_quality", "2", len(HQ_RANKS))], on("hq_surround", "true"),
-            HQ_AUDIO[idx("hq_audio", "1", len(HQ_AUDIO))])
+    return (HQ_RANKS[idx("hq_min_quality", "3", len(HQ_RANKS))], idx("hq_channels", "1", 2) == 1,
+            HQ_AUDIO[idx("hq_audio", "1", len(HQ_AUDIO))], HQ_AUDIO[idx("hq_subs", "0", len(HQ_AUDIO))])
+
+
+def hq_summary():
+    """Krátké shrnutí definice pro popisek položky (vejde se na řádek skinu)."""
+    q, surround, audio, subs = hq_definition()
+    return _swf(30890, "%s · %s · zvuk %s · titulky %s", HQ_QUALITY_LABELS[HQ_RANKS.index(q)] or "–",
+                "5.1+" if surround else "–", audio or "–", subs or "–")
+
+
+def hq_setup():
+    """Modal z menu: kvalita, kanály, jazyk zvuku, titulky, zobrazení položky. Zpět v kterémkoli kroku = nic se neuloží."""
+    any_ = L(30111, "Libovolný")
+    langs = [L(30112, "Čeština"), L(30113, "Slovenština"), L(30114, "Angličtina")]
+    steps = (
+        ("hq_min_quality", L(30994, "Minimální kvalita"), [L(30885, "Libovolná"), "Full HD", "2K", "4K"], 3),
+        ("hq_channels", L(30883, "Kanály zvuku"), [L(30886, "Libovolné"), L(30888, "5.1 a víc")], 1),
+        ("hq_audio", L(30997, "Jazyk zvuku"), [any_] + langs, 1),
+        ("hq_subs", L(30884, "Titulky"), [L(30887, "Libovolné")] + langs, 0),
+        ("hq_enabled", L(30882, "Zobrazit položku v menu Filmy"), [L(30894, "Ano"), L(30895, "Ne")], 0),
+    )
+    chosen = {}
+    for key, heading, options, default in steps:
+        try:
+            cur = int(setting(key, str(default)))
+        except ValueError:
+            cur = default
+        if key == "hq_enabled":
+            cur = 1 if setting(key) == "false" else 0
+        pick = xbmcgui.Dialog().select(heading, options, preselect=max(0, min(len(options) - 1, cur)))
+        if pick < 0:
+            return
+        chosen[key] = pick
+    for key, pick in chosen.items():
+        ADDON.setSetting(key, ("false" if pick else "true") if key == "hq_enabled" else str(pick))
+    xbmcgui.Window(10000).setProperty(HQ_TRIGGER_PROP, "1")
+    notify(L(30896, "Položka je skrytá. Znovu ji zapneš v Nastavení → Přehrávání.") if chosen["hq_enabled"]
+           else L(30893, "Uloženo – seznam se přepočítá na pozadí."), xbmcgui.NOTIFICATION_INFO, 4000)
+    xbmc.executebuiltin("Container.Refresh")
+
+
+def hq_info():
+    xbmcgui.Dialog().textviewer(L(30891, "Jak to funguje"), L(30892, "Seznam vychází z populárních, nejsledovanějších "
+                                "a nejlépe hodnocených filmů. Na pozadí se kontroluje, které z nich mají stream podle "
+                                "tvých parametrů."))
 
 
 def hq_pool(apis):
@@ -6210,8 +6255,8 @@ def hq_refresh(apis):
     try:
         if should_stop():
             return
-        min_q, surround, audio = hq_definition()
-        sig = hq_index.signature(min_q, surround, audio)
+        min_q, surround, audio, subs = hq_definition()
+        sig = hq_index.signature(min_q, surround, audio, subs)
         pool = hq_pool(apis)
         if not pool:   # bez sítě/zdrojů index nechat být
             return
@@ -6228,7 +6273,7 @@ def hq_refresh(apis):
                 break
             try:
                 with engine.background():
-                    result = engine.classify_quality("movie", mid, min_q, surround, audio)
+                    result = engine.classify_quality("movie", mid, min_q, surround, audio, subs)
             except Errors as e:
                 log_error(f"hq {mid}: {e}")
                 result = None
@@ -6244,6 +6289,9 @@ def list_hq(apis, ctype, genre=None):
     """„Filmy ve vysoké kvalitě" – jen čte index; bez genre „Vše" + žánry s aspoň jedním filmem."""
     note_hq_open()
     set_content("movies")
+    if not genre:   # nastavení a nápověda jsou ne-složky: klik je spustí s handle −1, výpis se nekreslí
+        action_item(_swf(30889, "Nastavit: %s", hq_summary()), build_url(action="hq_setup"), icon="DefaultAddonService.png")
+        action_item(L(30891, "Jak to funguje"), build_url(action="hq_info"), icon="DefaultIconInfo.png")
     index = STORE.load(HQ_INDEX_KEY, {}) or {}
     if index.get("sig") != hq_index.signature(*hq_definition()):
         index = {}   # jiná definice = index neplatný
@@ -7287,6 +7335,10 @@ def router(query):
             list_hq(apis, p.get("type", "movie"), p.get("genre"))
         elif action == "hq_refresh":
             hq_refresh(apis)
+        elif action == "hq_setup":
+            _tlacitko(hq_setup)
+        elif action == "hq_info":
+            _tlacitko(hq_info)
         elif action == "similar":
             list_similar(apis, p.get("type", "movie"), p.get("id", ""))
         elif action == "tv":
@@ -7388,6 +7440,7 @@ def _close(action):
 MARKS_SKIP = frozenset((
     # přehrání a streamy
     "play", "play_ws", "play_hs", "play_dav", "title", "title_download", "prefetch", "hq_refresh",
+    "hq_setup", "hq_info",
     "download", "download_ws", "download_hs", "toggle_fav", "streams", "streams_filter",
     "dav_browse", "tv_pick", "page",
     # akce bez výpisu titulů (tlačítka v nastavení, hledání, stahování, Trakt, CZtor…)
