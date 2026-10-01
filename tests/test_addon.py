@@ -2998,6 +2998,72 @@ class TestPraceNaPozadiKodi(unittest.TestCase):
         self.assertNotIn("starší", default.describe_timings(zaklad))
 
 
+class TestVysokaKvalita(unittest.TestCase):
+    """„Filmy ve vysoké kvalitě" (index na pozadí): menu čte jen index, nikdy síť ani modál."""
+
+    def setUp(self):
+        reset_kodi()
+        default.STORE.save("wizard_done", True)
+        default.STORE.save("favourites", [])
+        default.STORE.save("watched", {})
+
+    def naplnit(self):
+        import hq_index
+        sig = hq_index.signature(*default.hq_definition())
+        idx = {"sig": sig}
+        hq_index.merge_pool(idx, [meta_item("tt1", genres=["Akční"]), meta_item("tt2", genres=["Drama"]),
+                                  meta_item("tt3", genres=["Akční"])], 0)
+        hq_index.record(idx, "tt1", True, 1)
+        hq_index.record(idx, "tt2", True, 1)
+        hq_index.record(idx, "tt3", False, 1)
+        default.STORE.save(default.HQ_INDEX_KEY, idx)
+
+    def test_koren_bere_jen_ok_filmy_a_zanry(self):
+        self.naplnit()
+        default.list_hq({}, "movie")
+        akce = [params_of(u) for u in xbmcplugin.urls()]
+        self.assertEqual([a.get("genre") for a in akce], ["*", "Akční", "Drama"])
+        self.assertFalse(xbmcgui.notifications)
+
+    def test_zanr_a_vse(self):
+        self.naplnit()
+        default.list_hq({}, "movie", "Akční")
+        self.assertEqual([params_of(u).get("id") for u in xbmcplugin.urls()], ["tt1"])
+        xbmcplugin.reset()
+        default.list_hq({}, "movie", "*")
+        self.assertEqual([params_of(u).get("id") for u in xbmcplugin.urls()], ["tt1", "tt2"])
+
+    def test_prazdny_index_notifikace_bez_modalu(self):
+        default.STORE.save(default.HQ_INDEX_KEY, {})
+        oks = len(xbmcgui.oks)
+        default.list_hq({}, "movie")
+        self.assertEqual(xbmcplugin.urls(), [])
+        self.assertEqual(len(xbmcgui.notifications), 1)
+        self.assertEqual(len(xbmcgui.oks), oks)
+
+    def test_jina_definice_index_zneplatni(self):
+        self.naplnit()
+        xbmcaddon.settings["hq_surround"] = "false"
+        try:
+            default.list_hq({}, "movie")
+        finally:
+            xbmcaddon.settings.pop("hq_surround", None)
+        self.assertEqual(xbmcplugin.urls(), [])
+
+    def test_polozka_jen_v_menu_filmu(self):
+        for typ, ocek in (("movie", True), ("series", False)):
+            xbmcplugin.reset()
+            default.browse_menu({}, typ)
+            self.assertEqual("hq" in [params_of(u).get("action") for u in xbmcplugin.urls()], ocek)
+
+    def test_retezce_ve_ctyrech_jazycich(self):
+        for lang in ("cs_cz", "sk_sk", "en_gb", "hu_hu"):
+            po = (LANG_DIR / f"resource.language.{lang}" / "strings.po").read_text(encoding="utf-8")
+            for sid in range(30993, 30999):
+                self.assertIn(f'msgctxt "#{sid}"', po, (lang, sid))
+
+
+
 if __name__ == "__main__":
     unittest.main()
 
@@ -5539,7 +5605,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 124)   # +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled
+        self.assertEqual(len(volby), 127)   # +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě)
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):

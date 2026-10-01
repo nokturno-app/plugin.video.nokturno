@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="9.5.4" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="9.6.0~beta1" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>9.5.4 – Rychlejší hledání streamů: pomalý zdroj už seznam nezdržuje, loudavé přehrání zkusí souběžně další kopii.
+    <news>9.6.0~beta1 – Filmy ve vysoké kvalitě: seznam z populárních a nejsledovanějších filmů, které mají stream podle tvé definice (kvalita, 5.1, jazyk zvuku), rozdělený podle žánrů. Ověřuje se na pozadí.
+9.5.4 – Rychlejší hledání streamů: pomalý zdroj už seznam nezdržuje, loudavé přehrání zkusí souběžně další kopii.
 9.5.3 – Rychlejší otevírání dříve zobrazených titulů.
 9.5.1 – Drobné opravy.
 9.4.0 – Skrytí nahrávek z kina (CAM, telesync) ve výběru streamu, jde vypnout v nastavení.

@@ -2806,3 +2806,27 @@ msgstr "Skryť nahrávky z kina"
 msgctxt "#30992"
 msgid "Streams marked CAM, HDCAM, TS, telesync or screener are hidden. If only a cinema recording exists so far, it is shown so the list is not empty."
 msgstr "Streamy označené CAM, HDCAM, TS, telesync alebo screener sa skryjú. Ak zatiaľ existuje len nahrávka z kina, zobrazí sa, aby výber nezostal prázdny."
+
+msgctxt "#30993"
+msgid "Movies in high quality"
+msgstr "Filmy vo vysokej kvalite"
+
+msgctxt "#30994"
+msgid "Minimum quality"
+msgstr "Minimálna kvalita"
+
+msgctxt "#30995"
+msgid "Defines which movies appear in the list: at least one stream must have the minimum quality, and – if enabled – surround sound (5.1 or more) in the chosen audio language. 3D versions never count. The list is verified in the background, so it grows gradually."
+msgstr "Určuje, ktoré filmy sa v zozname objavia: aspoň jeden stream musí mať minimálnu kvalitu a – ak je zapnuté – priestorový zvuk (5.1 a viac) vo zvolenom jazyku zvuku. 3D verzie sa nepočítajú nikdy. Zoznam sa overuje na pozadí, takže pribúda postupne."
+
+msgctxt "#30996"
+msgid "Require surround sound (5.1 or more)"
+msgstr "Vyžadovať priestorový zvuk (5.1 a viac)"
+
+msgctxt "#30997"
+msgid "Audio language for high quality"
+msgstr "Jazyk zvuku pre vysokú kvalitu"
+
+msgctxt "#30998"
+msgid "The list is being prepared – movies are verified in the background."
+msgstr "Zoznam sa pripravuje – filmy sa overujú na pozadí."

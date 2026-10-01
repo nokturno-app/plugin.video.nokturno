@@ -98,6 +98,11 @@ WARM_DELAY = 180          # po startu Kodi nechat nejdřív doběhnout skin a wi
 WARM_EVERY = int(2.5 * 3600)   # pod TTL žebříčků Sosáče (3 h); s WARM_PROP se cache obnoví i před vypršením
 WARM_PROP = "nokturno.warm"    # plugin při zahřívání cache API jen zapisuje, nečte (viz default.warming)
 WARM_RETRY = 10 * 60      # když se zrovna přehrává, zahřívání počká
+HQ_SEEN_KEY = "hq_seen"              # stejný literál jako v default.py (note_hq_open)
+HQ_SEEN_DAYS = 14
+HQ_TRIGGER_PROP = "nokturno.hq.trigger"   # stejný literál jako v default.py
+HQ_EVERY = 600            # dávka ověřování „Filmů ve vysoké kvalitě" po 10 minutách
+HQ_FIRST = 120
 FORYOU_SEEN_KEY = "foryou_seen"      # stejný literál jako v default.py (note_foryou_open)
 FORYOU_SEEN_DAYS = 14                # a stejná lhůta jako v default.py
 QUIT_PROP = "nokturno.quitting"   # stejný literál jako v default.py — Kodi končí, viz ServiceMonitor
@@ -1145,6 +1150,34 @@ def warmer(monitor):
             return
 
 
+def hq_worker(monitor):
+    """Vlákno: po dávkách ověřuje „Filmy ve vysoké kvalitě" (`action=hq_refresh`), jen když je
+    uživatel za posledních `HQ_SEEN_DAYS` dní otevřel, nehraje se a je síť. Menu popožene vlastnost okna."""
+    win = xbmcgui.Window(10000)
+    waited = HQ_EVERY - HQ_FIRST
+    while not monitor.abortRequested():
+        if monitor.waitForAbort(5):
+            return
+        waited += 5
+        trigger = bool(win.getProperty(HQ_TRIGGER_PROP))
+        if waited < HQ_EVERY and not trigger:
+            continue
+        try:
+            if QUITTING.is_set() or xbmc.Player().isPlaying() or not terms_ok():
+                continue
+            store = Store(PROFILE)
+            offline = (store.reload(accounts_lib.OFFLINE, {}) or {}).get("ts", 0)
+            if offline and time.time() - float(offline) < accounts_lib.OFFLINE_TTL:
+                continue
+            if time.time() - float(store.load(HQ_SEEN_KEY, 0) or 0) >= HQ_SEEN_DAYS * 86400:
+                continue
+            win.clearProperty(HQ_TRIGGER_PROP)
+            waited = 0
+            rpc_directory("plugin://plugin.video.nokturno/?action=hq_refresh")
+        except Exception as e:  # noqa: BLE001 – vlákno nesmí spadnout
+            log(f"hq_worker: {e}", xbmc.LOGWARNING)
+
+
 class ServiceMonitor(xbmc.Monitor):
     """`xbmc.Monitor`, který o konci Kodi ví hned, ne až když se k němu Kodi dostane.
 
@@ -1469,6 +1502,7 @@ def main():
     player.sw.start()
     Downloader(store, monitor).start()
     threading.Thread(target=warmer, args=(monitor,), daemon=True).start()
+    threading.Thread(target=hq_worker, args=(monitor,), daemon=True, name="nokturno-hq").start()
     syncer = Syncer(store)
     accounts_checker = AccountsChecker(store)
     watch_checker = WatchChecker(store)

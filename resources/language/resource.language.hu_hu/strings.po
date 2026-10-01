@@ -2804,3 +2804,27 @@ msgstr "Mozis felvételek elrejtése"
 msgctxt "#30992"
 msgid "Streams marked CAM, HDCAM, TS, telesync or screener are hidden. If only a cinema recording exists so far, it is shown so the list is not empty."
 msgstr "A CAM, HDCAM, TS, telesync vagy screener jelölésű streamek el vannak rejtve. Ha egyelőre csak mozis felvétel létezik, megjelenik, hogy a lista ne maradjon üres."
+
+msgctxt "#30993"
+msgid "Movies in high quality"
+msgstr "Filmek magas minőségben"
+
+msgctxt "#30994"
+msgid "Minimum quality"
+msgstr "Minimális minőség"
+
+msgctxt "#30995"
+msgid "Defines which movies appear in the list: at least one stream must have the minimum quality, and – if enabled – surround sound (5.1 or more) in the chosen audio language. 3D versions never count. The list is verified in the background, so it grows gradually."
+msgstr "Meghatározza, mely filmek jelennek meg a listában: legalább egy streamnek el kell érnie a minimális minőséget, és – ha be van kapcsolva – térhatású hangot (5.1 vagy több) kell tartalmaznia a kiválasztott hangnyelven. A 3D változatok soha nem számítanak. A lista a háttérben ellenőrződik, ezért fokozatosan bővül."
+
+msgctxt "#30996"
+msgid "Require surround sound (5.1 or more)"
+msgstr "Térhatású hang megkövetelése (5.1 vagy több)"
+
+msgctxt "#30997"
+msgid "Audio language for high quality"
+msgstr "Hangnyelv a magas minőséghez"
+
+msgctxt "#30998"
+msgid "The list is being prepared – movies are verified in the background."
+msgstr "A lista készül – a filmek a háttérben ellenőrződnek."

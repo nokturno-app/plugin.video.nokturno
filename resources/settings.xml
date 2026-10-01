@@ -929,6 +929,38 @@
           <control type="toggle"/>
         </setting>
       </group>
+      <group id="hq" label="30993">
+        <setting id="hq_min_quality" type="integer" label="30994" help="30995">
+          <level>0</level>
+          <default>2</default>
+          <constraints>
+            <options>
+              <option label="Full HD">0</option>
+              <option label="2K">1</option>
+              <option label="4K">2</option>
+            </options>
+          </constraints>
+          <control format="string" type="spinner"/>
+        </setting>
+        <setting id="hq_surround" type="boolean" label="30996" help="30995">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="hq_audio" type="integer" label="30997" help="30995">
+          <level>0</level>
+          <default>1</default>
+          <constraints>
+            <options>
+              <option label="30111">0</option>
+              <option label="30112">1</option>
+              <option label="30113">2</option>
+              <option label="30114">3</option>
+            </options>
+          </constraints>
+          <control format="string" type="spinner"/>
+        </setting>
+      </group>
       <group id="downloads" label="30071">
         <setting id="download_dir" type="path" label="30087" help="30323">
           <level>0</level>

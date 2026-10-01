@@ -53,6 +53,7 @@ from sosac_api import SosacError, is_sosac_id as _is_stremio_sosac_id  # noqa: E
 from sosac_direct import EXPORT as SOSAC_EXPORT, SosacDirect, is_direct_id  # noqa: E402
 from enrich import add_ratings, enrich, enrich_one, shutdown_pool as release_enrich  # noqa: E402
 import foryou  # noqa: E402
+import hq_index  # noqa: E402
 import usage  # noqa: E402
 import servers  # noqa: E402
 from hellspy_api import HellspyApi, HellspyError  # noqa: E402
@@ -220,6 +221,15 @@ ACCOUNTS_TRIGGER_PROP = "nokturno.accounts_trigger"   # stejný literál jako v 
 FORYOU_TTL = 24 * 3600
 FORYOU_SEEN_KEY = "foryou_seen"
 FORYOU_SEEN_DAYS = 14
+# „Filmy ve vysoké kvalitě" – trvalý index ověřený na pozadí (`hq_index`, `hq_refresh`);
+# menu čte jen index. Stejný literál `hq_seen` je v service.py.
+HQ_SEEN_KEY = "hq_seen"
+HQ_INDEX_KEY = "hq_index"
+HQ_SEEN_DAYS = 14
+HQ_TRIGGER_PROP = "nokturno.hq.trigger"   # menu otevřené s prázdným indexem popožene službu
+HQ_POOL_MAX = 200
+HQ_RANKS = (3, 3.5, 4)                      # Full HD, 2K, 4K (`quality_rank` v jádru)
+HQ_AUDIO = ("", "CZ", "SK", "EN")
 # O kolik dřív než vyprší cache ji zahřívání přepočítá — musí být aspoň interval
 # zahřívání (`service.WARM_EVERY`, 2,5 h), jinak kolo jen přečte platnou cache a nechá
 # ji vypršet mezi dvěma koly (6.2.2 nález 29).
@@ -482,6 +492,11 @@ def note_foryou_open(ctype):
     má služba seznam zahřívat na pozadí (viz `service.foryou_warm_urls`)."""
     with STORE.updating(FORYOU_SEEN_KEY, {}) as seen:
         seen[str(ctype)] = int(time.time())
+
+
+def note_hq_open():
+    """Zapamatuje otevření „Filmů ve vysoké kvalitě" – služba na pozadí ověřuje jen pro toho, kdo je otevřel."""
+    STORE.save(HQ_SEEN_KEY, int(time.time()))
 
 
 def foryou_wanted(ctype, days=FORYOU_SEEN_DAYS):
@@ -2759,6 +2774,12 @@ def _plain(text):
     return KODI_TAG_RE.sub(" ", text or "").strip()
 
 
+def _option_label(opt):
+    """Popisek volby: číslo = id řetězce, jinak doslovný text (např. „Full HD", „4K")."""
+    label = opt.get("label")
+    return _plain(L(int(label), opt.text)) if label.isdigit() else label
+
+
 def _group_fields(group):
     """Pole jedné skupiny `<group>` v `settings.xml`, ve tvaru pro formulář z mobilu."""
     fields = []
@@ -2800,7 +2821,7 @@ def _group_fields(group):
                              else "text")
         elif kind == "integer" and node.find("constraints/options") is not None:
             field["type"] = "choice"
-            field["options"] = [(opt.text, _plain(L(int(opt.get("label")), opt.text)) if opt.get("label")
+            field["options"] = [(opt.text, _option_label(opt) if opt.get("label")
                                  else opt.text) for opt in node.find("constraints/options")]
         elif kind == "integer" and node.find("constraints/maximum") is not None:
             low = int(node.findtext("constraints/minimum") or 0)
@@ -4893,6 +4914,9 @@ def browse_menu(apis, ctype):
         if genre:
             params["genre"] = genre
         folder_item(label, build_url(**params), icon=icon)
+        if ctype == "movie" and cid == TREND_CATALOG_ID:
+            folder_item(L(30993, "Filmy ve vysoké kvalitě"), build_url(action="hq", type="movie"),
+                        icon="DefaultMovies.png")
     folder_item(L(30944, "Vlastní katalogy"), build_url(action="mycats", type=ctype),
                 icon="DefaultVideoPlaylists.png")
     # „Náhodný film/seriál" je ne-složka: klik ji Kodi spustí jako skript s handle −1
@@ -6145,6 +6169,100 @@ def foryou_items(apis, ctype, seeds):
     return items
 
 
+def hq_definition():
+    """(min. kvalita, prostorový zvuk, jazyk zvuku) z nastavení."""
+    def idx(key, default, size):
+        try:
+            return max(0, min(size - 1, int(setting(key, default))))
+        except ValueError:
+            return int(default)
+    return (HQ_RANKS[idx("hq_min_quality", "2", len(HQ_RANKS))], on("hq_surround", "true"),
+            HQ_AUDIO[idx("hq_audio", "1", len(HQ_AUDIO))])
+
+
+def hq_pool(apis):
+    """Kandidáti: trend ∪ populární (5 stran) ∪ nejlépe hodnocené (3 strany), jen `tt` id, nejvýš `HQ_POOL_MAX`."""
+    pool, seen = [], set()
+
+    def add(metas):
+        for m in metas or []:
+            mid = str(m.get("id") or "")
+            if mid.startswith("tt") and mid not in seen:
+                seen.add(mid)
+                pool.append(m)
+
+    trend = apis.get("trend")
+    if trend:
+        add(trend.catalog("movie", TREND_CATALOG_ID))
+    src, cid = random_source(apis, "movie")
+    if src:
+        for n in range(5):
+            add(apis[src].catalog("movie", cid, skip=PAGE * n))
+    tops = {"tmdb": "top_rated", "luna": "tmdb.top_rated_movie", "cinemeta": "imdbRating"}
+    for n in range(3):
+        if src:
+            add(apis[src].catalog("movie", tops[src], skip=PAGE * n))
+    return pool[:HQ_POOL_MAX]
+
+
+def hq_refresh(apis):
+    """Jedna dávka ověřování pro index (volá služba přes `action=hq_refresh`); bez UI, bez modálu."""
+    try:
+        if should_stop():
+            return
+        min_q, surround, audio = hq_definition()
+        sig = hq_index.signature(min_q, surround, audio)
+        pool = hq_pool(apis)
+        if not pool:   # bez sítě/zdrojů index nechat být
+            return
+        now = int(time.time())
+        with STORE.updating(HQ_INDEX_KEY, {}) as index:
+            if index.get("sig") != sig:
+                index.clear()
+                index["sig"] = sig
+            hq_index.merge_pool(index, pool, now)
+            batch = hq_index.next_batch(index, now)
+        engine = engine_of(apis)
+        for mid in batch:
+            if should_stop():
+                break
+            try:
+                with engine.background():
+                    result = engine.classify_quality("movie", mid, min_q, surround, audio)
+            except Errors as e:
+                log_error(f"hq {mid}: {e}")
+                result = None
+            with STORE.updating(HQ_INDEX_KEY, {}) as index:
+                if index.get("sig") == sig:
+                    hq_index.record(index, mid, result, int(time.time()))
+    except Errors as e:
+        log_error(f"hq_refresh: {e}")
+    xbmcplugin.endOfDirectory(HANDLE, succeeded=True, cacheToDisc=False)
+
+
+def list_hq(apis, ctype, genre=None):
+    """„Filmy ve vysoké kvalitě" – jen čte index; bez genre „Vše" + žánry s aspoň jedním filmem."""
+    note_hq_open()
+    set_content("movies")
+    index = STORE.load(HQ_INDEX_KEY, {}) or {}
+    if index.get("sig") != hq_index.signature(*hq_definition()):
+        index = {}   # jiná definice = index neplatný
+    items = hq_index.visible(index, None if genre in (None, "", "*") else genre)
+    if not items:
+        xbmcgui.Window(10000).setProperty(HQ_TRIGGER_PROP, "1")
+        notify(L(30998, "Seznam se připravuje – filmy se ověřují na pozadí."), xbmcgui.NOTIFICATION_INFO, 4000)
+    elif not genre:
+        folder_item(L(30020), build_url(action="hq", type=ctype, genre="*"), icon="DefaultVideoPlaylists.png")
+        for g in hq_index.genres_available(index):
+            folder_item(GENRE_LABELS.get(g, genre_label(g)), build_url(action="hq", type=ctype, genre=g),
+                        icon="DefaultGenre.png")
+        items = []
+    rate(items, "movie")
+    for m in items:
+        add_meta_item(m, "movie")
+    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
+
+
 def list_foryou(apis, ctype):
     """„Pro tebe" — doporučení k tomu, co uživatel dokoukal naposledy.
 
@@ -7165,6 +7283,10 @@ def router(query):
             browse_menu(apis, p.get("type", "movie"))
         elif action == "foryou":
             list_foryou(apis, p.get("type", "movie"))
+        elif action == "hq":
+            list_hq(apis, p.get("type", "movie"), p.get("genre"))
+        elif action == "hq_refresh":
+            hq_refresh(apis)
         elif action == "similar":
             list_similar(apis, p.get("type", "movie"), p.get("id", ""))
         elif action == "tv":
@@ -7265,7 +7387,7 @@ def _close(action):
 # zahřívání cache jinak platily čtení celé databáze (stovky řádků u velké knihovny) navíc.
 MARKS_SKIP = frozenset((
     # přehrání a streamy
-    "play", "play_ws", "play_hs", "play_dav", "title", "title_download", "prefetch",
+    "play", "play_ws", "play_hs", "play_dav", "title", "title_download", "prefetch", "hq_refresh",
     "download", "download_ws", "download_hs", "toggle_fav", "streams", "streams_filter",
     "dav_browse", "tv_pick", "page",
     # akce bez výpisu titulů (tlačítka v nastavení, hledání, stahování, Trakt, CZtor…)
