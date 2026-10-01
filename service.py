@@ -101,6 +101,7 @@ WARM_RETRY = 10 * 60      # když se zrovna přehrává, zahřívání počká
 HQ_SEEN_KEY = "hq_seen"              # stejný literál jako v default.py (note_hq_open)
 HQ_SEEN_DAYS = 14
 HQ_TRIGGER_PROP = "nokturno.hq.trigger"   # stejný literál jako v default.py
+HQ_MANUAL_PROP = "nokturno.hq.manual"     # stejný literál jako v default.py
 HQ_EVERY = 600            # dávka ověřování „Filmů ve vysoké kvalitě" po 10 minutách
 HQ_FIRST = 120
 FORYOU_SEEN_KEY = "foryou_seen"      # stejný literál jako v default.py (note_foryou_open)
@@ -1150,30 +1151,82 @@ def warmer(monitor):
             return
 
 
+def _hq_url(size):
+    return f"plugin://plugin.video.nokturno/?action=hq_refresh&size={size}"
+
+
+def _hq_run(monitor, count, progress):
+    """Ověří až `count` titulů, vždy jeden přes plugin a s odstupem — plugin běží v jednom interpretu,
+    takže dlouhý běh by držel všechna ostatní kliknutí v menu. Vrací (ověřeno, vyhovuje)."""
+    store = Store(PROFILE)
+    index = store.reload("hq_index", {}) or {}
+    ted = int(time.time())
+    due = []
+    for mid, e in (index.get("items") or {}).items():
+        if not e.get("ts") or ted - e["ts"] >= 3 * 86400:
+            due.append((e.get("ok") is not None, e.get("rank", 0) if e.get("ok") is None else e.get("ts") or 0, mid))
+    due.sort()
+    names = {mid: ((index["items"][mid].get("meta") or {}).get("name") or mid) for _a, _b, mid in due}
+    ids = [mid for _a, _b, mid in due][:count]
+    total = len(ids) or count
+    bar = None
+    if progress:
+        bar = xbmcgui.DialogProgressBG()
+        bar.create(L(30993, "Filmy ve vysoké kvalitě"), "")
+    before = sum(1 for e in (index.get("items") or {}).values() if e.get("ok") is not None)
+    try:
+        for pos in range(count):
+            if monitor.abortRequested() or QUITTING.is_set():
+                break
+            if bar and pos < len(ids):
+                bar.update(int(pos * 100 / total), message=(L(30899, "Ověřuji %s z %s – %s") %
+                                                             (pos + 1, total, names.get(ids[pos], ""))))
+            rpc_directory(_hq_url(1))
+            if monitor.waitForAbort(1):   # mezera, kterou projdou kliknutí uživatele
+                break
+    finally:
+        if bar:
+            bar.close()
+    after = store.reload("hq_index", {}) or {}
+    ok = sum(1 for e in (after.get("items") or {}).values() if e.get("ok") is True)
+    done = sum(1 for e in (after.get("items") or {}).values() if e.get("ok") is not None) - before
+    return max(done, 0), ok
+
+
 def hq_worker(monitor):
-    """Vlákno: po dávkách ověřuje „Filmy ve vysoké kvalitě" (`action=hq_refresh`), dokud je položka
-    zapnutá (i když ji uživatel neotevírá), nehraje se a je síť. Menu popožene vlastnost okna."""
+    """Vlákno: průběžně ověřuje „Filmy ve vysoké kvalitě" po dávkách (po jednom titulu, viz `_hq_run`),
+    dokud je položka zapnutá, nehraje se a je síť. Ruční dávku zadá vlastnost okna `HQ_MANUAL_PROP`,
+    první dávku po otevření prázdného seznamu `HQ_TRIGGER_PROP`."""
     win = xbmcgui.Window(10000)
     waited = HQ_EVERY - HQ_FIRST
     while not monitor.abortRequested():
         if monitor.waitForAbort(5):
             return
         waited += 5
+        manual = win.getProperty(HQ_MANUAL_PROP)
         trigger = bool(win.getProperty(HQ_TRIGGER_PROP))
-        if waited < HQ_EVERY and not trigger:
+        if waited < HQ_EVERY and not trigger and not manual:
             continue
         try:
             if QUITTING.is_set() or xbmc.Player().isPlaying() or not terms_ok():
                 continue
             if xbmcaddon.Addon().getSetting("hq_enabled") == "false":   # položka vypnutá = nic se neověřuje
+                win.clearProperty(HQ_MANUAL_PROP)
                 continue
             store = Store(PROFILE)
             offline = (store.reload(accounts_lib.OFFLINE, {}) or {}).get("ts", 0)
             if offline and time.time() - float(offline) < accounts_lib.OFFLINE_TTL:
                 continue
             win.clearProperty(HQ_TRIGGER_PROP)
+            win.clearProperty(HQ_MANUAL_PROP)
             waited = 0
-            rpc_directory("plugin://plugin.video.nokturno/?action=hq_refresh")
+            if manual:
+                done, ok = _hq_run(monitor, int(manual) if manual.isdigit() else 20, progress=True)
+                xbmcgui.Dialog().notification(
+                    L(30993, "Filmy ve vysoké kvalitě"),
+                    L(30898, "Dávka hotová – ověřeno %s, vyhovuje %s") % (done, ok), xbmcgui.NOTIFICATION_INFO, 4000)
+            else:
+                _hq_run(monitor, 8, progress=False)
         except Exception as e:  # noqa: BLE001 – vlákno nesmí spadnout
             log(f"hq_worker: {e}", xbmc.LOGWARNING)
 

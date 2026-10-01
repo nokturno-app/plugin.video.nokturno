@@ -228,6 +228,7 @@ HQ_INDEX_KEY = "hq_index"
 HQ_SEEN_DAYS = 14
 HQ_TRIGGER_PROP = "nokturno.hq.trigger"   # menu otevřené s prázdným indexem popožene službu
 HQ_POOL_MAX = 200
+HQ_MANUAL_PROP = "nokturno.hq.manual"       # stejný literál jako v service.py
 HQ_MANUAL_SIZE = 20                         # ruční „Spustit dávku nyní“ ověří víc titulů než dávka služby
 HQ_RANKS = (0, 3, 3.5, 4)                   # jakákoli, Full HD, 2K, 4K (`quality_rank` v jádru)
 HQ_AUDIO = ("", "CZ", "SK", "EN")           # index 0 = jakýkoli; stejné pořadí má i `hq_subs`
@@ -6220,6 +6221,12 @@ def hq_setup():
     xbmc.executebuiltin("Container.Refresh")
 
 
+def hq_batch():
+    """Ruční „Spustit dávku nyní": jen zadá úkol službě, ta ho dělá po jednom titulu s ukazatelem v rohu
+    a ostatní kliknutí v menu nechává projít."""
+    xbmcgui.Window(10000).setProperty(HQ_MANUAL_PROP, str(HQ_MANUAL_SIZE))
+
+
 def hq_info():
     xbmcgui.Dialog().textviewer(L(30891, "Jak to funguje"), L(30892, "Seznam vychází z populárních, nejsledovanějších "
                                 "a nejlépe hodnocených filmů. Na pozadí se kontroluje, které z nich mají stream podle "
@@ -6251,11 +6258,11 @@ def hq_pool(apis):
     return pool[:HQ_POOL_MAX]
 
 
-def hq_refresh(apis, progress=False):
-    """Jedna dávka ověřování pro index. Služba ji volá přes `action=hq_refresh` (bez UI, bez modálu);
-    `progress=True` je ruční „Spustit dávku nyní" – větší dávka s ukazatelem v rohu (`DialogProgressBG`)."""
-    bar = None
-    hotovo = shoda = 0
+def hq_refresh(apis, size=8):
+    """Ověří `size` nejpotřebnějších titulů pro index (volá služba přes `action=hq_refresh`); bez UI, bez modálu.
+
+    Služba ji volá po jednom titulu s odstupem: plugin běží v jednom interpretu (reuse invoker), takže dlouhý
+    běh by držel všechna ostatní kliknutí v menu, dokud nedoběhne."""
     try:
         if should_stop():
             return
@@ -6270,18 +6277,11 @@ def hq_refresh(apis, progress=False):
                 index.clear()
                 index["sig"] = sig
             hq_index.merge_pool(index, pool, now)
-            batch = hq_index.next_batch(index, now, size=HQ_MANUAL_SIZE if progress else 8)
-            names = {m: (index["items"].get(m, {}).get("meta") or {}).get("name") or m for m in batch}
+            batch = hq_index.next_batch(index, now, size=size)
         engine = engine_of(apis)
-        if progress and batch:
-            bar = xbmcgui.DialogProgressBG()
-            bar.create(L(30993, "Filmy ve vysoké kvalitě"), "")
-        for pos, mid in enumerate(batch):
+        for mid in batch:
             if should_stop():
                 break
-            if bar:
-                bar.update(int(pos * 100 / len(batch)),
-                           message=_swf(30899, "Ověřuji %s z %s – %s", pos + 1, len(batch), names[mid]))
             try:
                 with engine.background():
                     result = engine.classify_quality("movie", mid, min_q, surround, audio, subs)
@@ -6291,18 +6291,8 @@ def hq_refresh(apis, progress=False):
             with STORE.updating(HQ_INDEX_KEY, {}) as index:
                 if index.get("sig") == sig:
                     hq_index.record(index, mid, result, int(time.time()))
-            if result is not None:
-                hotovo += 1
-                shoda += bool(result)
     except Errors as e:
         log_error(f"hq_refresh: {e}")
-    finally:
-        if bar:
-            bar.close()
-    if progress:
-        notify(_swf(30898, "Dávka hotová – ověřeno %s, vyhovuje %s", hotovo, shoda), xbmcgui.NOTIFICATION_INFO, 4000)
-        xbmc.executebuiltin("Container.Refresh")
-        return
     xbmcplugin.endOfDirectory(HANDLE, succeeded=True, cacheToDisc=False)
 
 
@@ -7360,13 +7350,13 @@ def router(query):
         elif action == "hq":
             list_hq(apis, p.get("type", "movie"), p.get("genre"))
         elif action == "hq_refresh":
-            hq_refresh(apis)
+            hq_refresh(apis, size=max(1, min(20, int(p.get("size") or 8))))
         elif action == "hq_setup":
             _tlacitko(hq_setup)
         elif action == "hq_info":
             _tlacitko(hq_info)
         elif action == "hq_batch":
-            _tlacitko(lambda: hq_refresh(apis, progress=True))
+            _tlacitko(hq_batch)
         elif action == "similar":
             list_similar(apis, p.get("type", "movie"), p.get("id", ""))
         elif action == "tv":

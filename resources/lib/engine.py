@@ -137,6 +137,7 @@ PREREAD_PER_SOURCE = 6
 # zablokovaly skutečný dialog streamů), takže by bez týhle cache zahřívání po 6 h
 # pokaždé znovu prohledalo všech ~60 kandidátů od nuly.
 LANG_CLASS_TTL = 24 * 3600
+QUALITY_MIN_GB = {4: 4.0, 3.5: 2.5}   # nejmenší věrohodná velikost filmu v GB podle `quality_rank`
 QUALITY_CLASS_TTL = 3 * 24 * 3600
 # kolik dalších názvů (originál, anglický, český/slovenský z Wikidat) jde do fulltextových dotazů;
 # každý je u každého zdroje další HTTP dotaz (až 10 variant × 5 zdrojů = 45 dotazů na titul)
@@ -2671,7 +2672,12 @@ class Engine:
     def quality_match(stream, min_quality=4, surround=False, audio="CZ", subs=""):
         """Odpovídá stream definici „vysoká kvalita“? 3D se vyřazuje vždy; 5.1 vyžaduje ověřené `channels`;
         prázdný `audio`/`subs` a `min_quality` 0 = na parametru nezáleží."""
-        if (stream.get("quality_rank") or 0) < min_quality or stream_3d(stream):
+        rank = stream.get("quality_rank") or 0
+        if rank < min_quality or stream_3d(stream):
+            return False
+        # příliš malý soubor skutečné 4K/2K nebude (přepočtená 1080p, falešný popisek); neznámá velikost projde
+        size = stream.get("size_gb") or 0
+        if size and size < QUALITY_MIN_GB.get(rank, 0):
             return False
         if audio and audio not in (stream.get("langs") or ()):
             return False
