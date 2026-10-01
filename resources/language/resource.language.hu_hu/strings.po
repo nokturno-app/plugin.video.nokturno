@@ -2866,8 +2866,8 @@ msgid "How it works"
 msgstr "Hogyan működik"
 
 msgctxt "#30892"
-msgid "The list is built from popular, most watched and top rated movies.\nIn the background, the add-on checks which of them have a stream matching your parameters: quality, audio channels, audio language and subtitles. File headers are read for that, so the first fill takes hours.\nNew movies are added, those that no longer match disappear, and the check repeats after a few days.\nChanging the parameters recalculates the list.\n“Any” means the parameter does not matter.\nAudio language and subtitles are taken from the stream information. 3D versions are never shown.\nThe list is kept up to date only while you open it (for 14 days after the last time)."
-msgstr "A lista a népszerű, a legnézettebb és a legjobban értékelt filmekből készül.\nA háttérben a kiegészítő ellenőrzi, melyeknek van a paramétereidnek megfelelő streamje: minőség, hangcsatornák, hangnyelv és felirat. Ehhez a fájlok fejlécét olvassa, ezért az első feltöltés órákig tart.\nAz új filmek bekerülnek, a már nem megfelelők eltűnnek, az ellenőrzés néhány naponta ismétlődik.\nA paraméterek módosítása újraszámolja a listát.\nA „Bármilyen” azt jelenti, hogy az adott paraméter nem számít.\nA hangnyelv és a feliratok a stream adataiból származnak. A 3D változatok soha nem jelennek meg.\nA lista csak akkor frissül, ha megnyitod (az utolsó megnyitástól számított 14 napig)."
+msgid "The list is built from popular, most watched and top rated movies.\nIn the background, the add-on checks which of them have a stream matching your parameters: quality, audio channels, audio language and subtitles. File headers are read for that, so the first fill takes hours.\nNew movies are added, those that no longer match disappear, and the check repeats after a few days.\nChanging the parameters recalculates the list.\n“Any” means the parameter does not matter.\nAudio language and subtitles are taken from the stream information. 3D versions are never shown.\nThe list keeps itself up to date in the background even when you do not open it; you can start a check batch manually with Run a batch now.\nA hidden item can be shown again in Settings → Playback (Show item in the Movies menu)."
+msgstr "A lista a népszerű, a legnézettebb és a legjobban értékelt filmekből készül.\nA háttérben a kiegészítő ellenőrzi, melyeknek van a paramétereidnek megfelelő streamje: minőség, hangcsatornák, hangnyelv és felirat. Ehhez a fájlok fejlécét olvassa, ezért az első feltöltés órákig tart.\nAz új filmek bekerülnek, a már nem megfelelők eltűnnek, az ellenőrzés néhány naponta ismétlődik.\nA paraméterek módosítása újraszámolja a listát.\nA „Bármilyen” azt jelenti, hogy az adott paraméter nem számít.\nA hangnyelv és a feliratok a stream adataiból származnak. A 3D változatok soha nem jelennek meg.\nA lista a háttérben magától frissül, akkor is, ha nem nyitod meg; az ellenőrzési kört kézzel is elindíthatod a Kör indítása most elemmel.\nAz elrejtett elemet a Beállítások → Lejátszás alatt kapcsolhatod vissza (Elem megjelenítése a Filmek menüben)."
 
 msgctxt "#30893"
 msgid "Saved – the list is recalculated in the background."
@@ -2884,3 +2884,11 @@ msgstr "Nem"
 msgctxt "#30896"
 msgid "The item is hidden from the Movies menu. You can show it again in Settings → Playback."
 msgstr "Az elem el van rejtve a Filmek menüből. A Beállítások → Lejátszás alatt újra bekapcsolhatod."
+
+msgctxt "#30897"
+msgid "Run a batch now – checked %s of %s"
+msgstr "Kör indítása most – ellenőrizve: %s / %s"
+
+msgctxt "#30898"
+msgid "The check batch starts in a few seconds."
+msgstr "Az ellenőrzési kör néhány másodpercen belül elindul."

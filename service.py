@@ -1151,8 +1151,8 @@ def warmer(monitor):
 
 
 def hq_worker(monitor):
-    """Vlákno: po dávkách ověřuje „Filmy ve vysoké kvalitě" (`action=hq_refresh`), jen když je
-    uživatel za posledních `HQ_SEEN_DAYS` dní otevřel, nehraje se a je síť. Menu popožene vlastnost okna."""
+    """Vlákno: po dávkách ověřuje „Filmy ve vysoké kvalitě" (`action=hq_refresh`), dokud je položka
+    zapnutá (i když ji uživatel neotevírá), nehraje se a je síť. Menu popožene vlastnost okna."""
     win = xbmcgui.Window(10000)
     waited = HQ_EVERY - HQ_FIRST
     while not monitor.abortRequested():
@@ -1170,8 +1170,6 @@ def hq_worker(monitor):
             store = Store(PROFILE)
             offline = (store.reload(accounts_lib.OFFLINE, {}) or {}).get("ts", 0)
             if offline and time.time() - float(offline) < accounts_lib.OFFLINE_TTL:
-                continue
-            if time.time() - float(store.load(HQ_SEEN_KEY, 0) or 0) >= HQ_SEEN_DAYS * 86400:
                 continue
             win.clearProperty(HQ_TRIGGER_PROP)
             waited = 0

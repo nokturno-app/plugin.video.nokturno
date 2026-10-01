@@ -3037,7 +3037,7 @@ class TestVysokaKvalita(unittest.TestCase):
         default.STORE.save(default.HQ_INDEX_KEY, {})
         oks = len(xbmcgui.oks)
         default.list_hq({}, "movie")
-        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["hq_setup", "hq_info"])
+        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["hq_setup", "hq_batch", "hq_info"])
         self.assertEqual(len(xbmcgui.notifications), 1)
         self.assertEqual(len(xbmcgui.oks), oks)
 
@@ -3048,7 +3048,7 @@ class TestVysokaKvalita(unittest.TestCase):
             default.list_hq({}, "movie")
         finally:
             xbmcaddon.settings.pop("hq_channels", None)
-        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["hq_setup", "hq_info"])
+        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["hq_setup", "hq_batch", "hq_info"])
 
     def test_polozka_jen_v_menu_filmu(self):
         for typ, ocek in (("movie", True), ("series", False)):
@@ -3085,7 +3085,7 @@ class TestVysokaKvalita(unittest.TestCase):
     def test_nastaveni_a_info_jsou_ne_slozky(self):
         self.naplnit()
         default.list_hq({}, "movie")
-        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()][:2], ["hq_setup", "hq_info"])
+        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()][:3], ["hq_setup", "hq_batch", "hq_info"])
         self.assertEqual([it[3] for it in xbmcplugin.items[:2]], [False, False])
         xbmcplugin.reset()
         default.list_hq({}, "movie", "*")

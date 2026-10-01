@@ -1273,12 +1273,12 @@ def folder_item(label, url, icon=None, context=None):
     xbmcplugin.addDirectoryItem(HANDLE, url, li, isFolder=True)
 
 
-def action_item(label, url, icon=None, context=None):
+def action_item(label, url, icon=None, context=None, thumb=False):
     """Položka, která jen spustí akci s dialogem (nastavení, novinky, průvodce). Není složka —
     Kodi ji po kliknutí spustí s handle −1, takže se nekreslí žádný výpis a do kodi.log
     nepadá `GetDirectory - Error getting …` (to hlásí každý `endOfDirectory(succeeded=False)`)."""
     li = xbmcgui.ListItem(label=label)
-    li.setArt({"icon": icon or ICON})
+    li.setArt({"icon": icon or ICON, "thumb": icon or ICON} if thumb else {"icon": icon or ICON})
     if context:
         li.addContextMenuItems(context)
     xbmcplugin.addDirectoryItem(HANDLE, url, li, isFolder=False)
@@ -6219,6 +6219,12 @@ def hq_setup():
     xbmc.executebuiltin("Container.Refresh")
 
 
+def hq_batch():
+    """Spustí dávku ověřování hned (služba vlastnost okna vidí do pár vteřin)."""
+    xbmcgui.Window(10000).setProperty(HQ_TRIGGER_PROP, "1")
+    notify(L(30898, "Dávka ověřování se spustí za pár vteřin."), xbmcgui.NOTIFICATION_INFO, 4000)
+
+
 def hq_info():
     xbmcgui.Dialog().textviewer(L(30891, "Jak to funguje"), L(30892, "Seznam vychází z populárních, nejsledovanějších "
                                 "a nejlépe hodnocených filmů. Na pozadí se kontroluje, které z nich mají stream podle "
@@ -6288,13 +6294,18 @@ def hq_refresh(apis):
 def list_hq(apis, ctype, genre=None):
     """„Filmy ve vysoké kvalitě" – jen čte index; bez genre „Vše" + žánry s aspoň jedním filmem."""
     note_hq_open()
-    set_content("movies")
-    if not genre:   # nastavení a nápověda jsou ne-složky: klik je spustí s handle −1, výpis se nekreslí
-        action_item(_swf(30889, "Nastavit: %s", hq_summary()), build_url(action="hq_setup"), icon="DefaultAddonService.png")
-        action_item(L(30891, "Jak to funguje"), build_url(action="hq_info"), icon="DefaultIconInfo.png")
+    set_content("files" if not genre else "movies")   # kořen složky je seznam akcí s ikonami, ne plakáty
     index = STORE.load(HQ_INDEX_KEY, {}) or {}
     if index.get("sig") != hq_index.signature(*hq_definition()):
         index = {}   # jiná definice = index neplatný
+    if not genre:   # nastavení a nápověda jsou ne-složky: klik je spustí s handle −1, výpis se nekreslí
+        polozky = (index.get("items") or {}).values()
+        hotovo = sum(1 for v in polozky if v.get("ok") is not None)
+        action_item(_swf(30889, "Nastavit: %s", hq_summary()), build_url(action="hq_setup"),
+                    icon="DefaultAddonProgram.png", thumb=True)
+        action_item(_swf(30897, "Spustit dávku nyní – ověřeno %s z %s", hotovo, len(polozky)),
+                    build_url(action="hq_batch"), icon="DefaultAddonsUpdates.png", thumb=True)
+        action_item(L(30891, "Jak to funguje"), build_url(action="hq_info"), icon="DefaultIconInfo.png", thumb=True)
     items = hq_index.visible(index, None if genre in (None, "", "*") else genre)
     if not items:
         xbmcgui.Window(10000).setProperty(HQ_TRIGGER_PROP, "1")
@@ -7339,6 +7350,8 @@ def router(query):
             _tlacitko(hq_setup)
         elif action == "hq_info":
             _tlacitko(hq_info)
+        elif action == "hq_batch":
+            _tlacitko(hq_batch)
         elif action == "similar":
             list_similar(apis, p.get("type", "movie"), p.get("id", ""))
         elif action == "tv":
@@ -7440,7 +7453,7 @@ def _close(action):
 MARKS_SKIP = frozenset((
     # přehrání a streamy
     "play", "play_ws", "play_hs", "play_dav", "title", "title_download", "prefetch", "hq_refresh",
-    "hq_setup", "hq_info",
+    "hq_setup", "hq_info", "hq_batch",
     "download", "download_ws", "download_hs", "toggle_fav", "streams", "streams_filter",
     "dav_browse", "tv_pick", "page",
     # akce bez výpisu titulů (tlačítka v nastavení, hledání, stahování, Trakt, CZtor…)

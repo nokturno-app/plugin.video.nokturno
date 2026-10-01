@@ -2868,7 +2868,7 @@ msgid "How it works"
 msgstr ""
 
 msgctxt "#30892"
-msgid "The list is built from popular, most watched and top rated movies.\nIn the background, the add-on checks which of them have a stream matching your parameters: quality, audio channels, audio language and subtitles. File headers are read for that, so the first fill takes hours.\nNew movies are added, those that no longer match disappear, and the check repeats after a few days.\nChanging the parameters recalculates the list.\n“Any” means the parameter does not matter.\nAudio language and subtitles are taken from the stream information. 3D versions are never shown.\nThe list is kept up to date only while you open it (for 14 days after the last time)."
+msgid "The list is built from popular, most watched and top rated movies.\nIn the background, the add-on checks which of them have a stream matching your parameters: quality, audio channels, audio language and subtitles. File headers are read for that, so the first fill takes hours.\nNew movies are added, those that no longer match disappear, and the check repeats after a few days.\nChanging the parameters recalculates the list.\n“Any” means the parameter does not matter.\nAudio language and subtitles are taken from the stream information. 3D versions are never shown.\nThe list keeps itself up to date in the background even when you do not open it; you can start a check batch manually with Run a batch now.\nA hidden item can be shown again in Settings → Playback (Show item in the Movies menu)."
 msgstr ""
 
 msgctxt "#30893"
@@ -2885,4 +2885,12 @@ msgstr ""
 
 msgctxt "#30896"
 msgid "The item is hidden from the Movies menu. You can show it again in Settings → Playback."
+msgstr ""
+
+msgctxt "#30897"
+msgid "Run a batch now – checked %s of %s"
+msgstr ""
+
+msgctxt "#30898"
+msgid "The check batch starts in a few seconds."
 msgstr ""

@@ -2868,8 +2868,8 @@ msgid "How it works"
 msgstr "Ako to funguje"
 
 msgctxt "#30892"
-msgid "The list is built from popular, most watched and top rated movies.\nIn the background, the add-on checks which of them have a stream matching your parameters: quality, audio channels, audio language and subtitles. File headers are read for that, so the first fill takes hours.\nNew movies are added, those that no longer match disappear, and the check repeats after a few days.\nChanging the parameters recalculates the list.\n“Any” means the parameter does not matter.\nAudio language and subtitles are taken from the stream information. 3D versions are never shown.\nThe list is kept up to date only while you open it (for 14 days after the last time)."
-msgstr "Zoznam vychádza z populárnych, najsledovanejších a najlepšie hodnotených filmov.\nNa pozadí sa kontroluje, ktoré z nich majú stream podľa tvojich parametrov: kvalita, kanály zvuku, jazyk zvuku a titulky. Číta sa na to hlavičky súborov, takže prvé naplnenie trvá hodiny.\nNové filmy pribúdajú, nevyhovujúce miznú a kontrola sa opakuje po pár dňoch.\nZmena parametrov zoznam prepočíta.\n„Ľubovoľné“ znamená, že na parametri nezáleží.\nJazyk zvuku a titulky sa berú z informácií o streame. 3D verzie sa nezobrazujú nikdy.\nZoznam sa udržiava len vtedy, keď ho otváraš (14 dní od posledného otvorenia)."
+msgid "The list is built from popular, most watched and top rated movies.\nIn the background, the add-on checks which of them have a stream matching your parameters: quality, audio channels, audio language and subtitles. File headers are read for that, so the first fill takes hours.\nNew movies are added, those that no longer match disappear, and the check repeats after a few days.\nChanging the parameters recalculates the list.\n“Any” means the parameter does not matter.\nAudio language and subtitles are taken from the stream information. 3D versions are never shown.\nThe list keeps itself up to date in the background even when you do not open it; you can start a check batch manually with Run a batch now.\nA hidden item can be shown again in Settings → Playback (Show item in the Movies menu)."
+msgstr "Zoznam vychádza z populárnych, najsledovanejších a najlepšie hodnotených filmov.\nNa pozadí sa kontroluje, ktoré z nich majú stream podľa tvojich parametrov: kvalita, kanály zvuku, jazyk zvuku a titulky. Číta sa na to hlavičky súborov, takže prvé naplnenie trvá hodiny.\nNové filmy pribúdajú, nevyhovujúce miznú a kontrola sa opakuje po pár dňoch.\nZmena parametrov zoznam prepočíta.\n„Ľubovoľné“ znamená, že na parametri nezáleží.\nJazyk zvuku a titulky sa berú z informácií o streame. 3D verzie sa nezobrazujú nikdy.\nZoznam sa udržiava na pozadí sám, aj keď ho neotváraš; dávku overovania spustíš ručne položkou Spustiť dávku teraz.\nSkrytú položku vrátiš v Nastaveniach → Prehrávanie (Zobraziť položku v menu Filmy)."
 
 msgctxt "#30893"
 msgid "Saved – the list is recalculated in the background."
@@ -2886,3 +2886,11 @@ msgstr "Nie"
 msgctxt "#30896"
 msgid "The item is hidden from the Movies menu. You can show it again in Settings → Playback."
 msgstr "Položka je skrytá. Znova ju zapneš v Nastaveniach → Prehrávanie."
+
+msgctxt "#30897"
+msgid "Run a batch now – checked %s of %s"
+msgstr "Spustiť dávku teraz – overených %s z %s"
+
+msgctxt "#30898"
+msgid "The check batch starts in a few seconds."
+msgstr "Dávka overovania sa spustí o pár sekúnd."
