@@ -2894,6 +2894,110 @@ class TestTlacitkaZVypisu(unittest.TestCase):
         self.assertEqual(len(xbmcplugin.ended), 1)
 
 
+class TestPraceNaPozadiKodi(unittest.TestCase):
+    """Balík 1 z rozboru rychlosti (9.5.3): práce na pozadí počká na hledání, na které uživatel
+    čeká, starý seznam streamů se ukáže hned a hlavní hledání označí okno Kodi."""
+
+    def setUp(self):
+        reset_kodi()
+
+    def test_hledani_oznaci_okno_a_po_navratu_ho_uklidi(self):
+        engine = default.KodiEngine()
+        videno = []
+
+        def raw_streams(*a, **k):
+            videno.append(default.search_active())
+            return [{"url": "ws:1", "label": "Film.mkv", "source": "ws", "_direct": True}]
+        engine.raw_streams = raw_streams
+        default.collect_streams({"engine": engine}, "movie", "tt1", {"name": "Film"})
+        self.assertEqual(videno, [True])
+        self.assertFalse(default.search_active())
+        self.assertEqual(xbmcgui.Window(10000).getProperty(default.SEARCH_PROP), "")
+
+    def test_hledani_uklidi_okno_i_pri_chybe(self):
+        engine = default.KodiEngine()
+        engine.raw_streams = lambda *a, **k: (_ for _ in ()).throw(WebshareError("síť"))
+        with self.assertRaises(WebshareError):
+            default.collect_streams({"engine": engine}, "movie", "tt1", {"name": "Film"})
+        self.assertFalse(default.search_active())
+
+    def test_zahrivani_okno_neoznacuje(self):
+        engine = default.KodiEngine()
+        videno = []
+        engine.raw_streams = lambda *a, **k: videno.append(default.search_active()) or []
+        default.collect_streams({"engine": engine}, "movie", "tt1", {"name": "Film"}, track=False)
+        self.assertEqual(videno, [False])
+
+    def test_stara_znacka_je_pozustatek_po_padu(self):
+        win = xbmcgui.Window(10000)
+        win.setProperty(default.SEARCH_PROP, str(time.time() - default.SEARCH_ACTIVE_S - 5))
+        self.assertFalse(default.search_active())
+        win.setProperty(default.SEARCH_PROP, "nesmysl")
+        self.assertFalse(default.search_active())
+        win.setProperty(default.SEARCH_PROP, str(time.time()))
+        self.assertTrue(default.search_active())
+
+    def test_pozadi_pocka_na_konec_hledani(self):
+        win = xbmcgui.Window(10000)
+        win.setProperty(default.SEARCH_PROP, str(time.time()))
+        threading.Timer(0.3, lambda: win.clearProperty(default.SEARCH_PROP)).start()
+        t = time.monotonic()
+        default.wait_for_foreground_search(limit=5)
+        self.assertGreaterEqual(time.monotonic() - t, 0.25, "počkalo")
+        self.assertLess(time.monotonic() - t, 3, "a po konci hledání nečekalo dál")
+
+    def test_pozadi_necha_hledani_nejvyse_limit(self):
+        xbmcgui.Window(10000).setProperty(default.SEARCH_PROP, str(time.time()))
+        t = time.monotonic()
+        default.wait_for_foreground_search(limit=0.3)
+        self.assertLess(time.monotonic() - t, 3)
+        xbmcgui.Window(10000).clearProperty(default.SEARCH_PROP)
+
+    def test_bez_hledani_se_necekao(self):
+        t = time.monotonic()
+        default.wait_for_foreground_search(limit=5)
+        self.assertLess(time.monotonic() - t, 0.5)
+
+    def test_engine_ma_pauzu_pro_pozadi_a_stary_seznam(self):
+        engine = default.KodiEngine()
+        self.assertIs(engine.gate, default.wait_for_foreground_search)
+        self.assertIs(default.engine_options()["stale_streams"], True)
+
+    def test_kontrola_hlidanych_bezi_jako_pozadi(self):
+        engine = default.KodiEngine()
+        videno = []
+
+        def kontrola(e, *a, **k):
+            videno.append(getattr(e._tl, "background", False))
+            return []
+        with mock.patch.object(default.watch_lib, "check_series", kontrola), \
+                mock.patch.object(default.watch_lib, "check_wanted", kontrola), \
+                mock.patch.object(default, "get_trakt", return_value=None):
+            default.watch_check({"engine": engine})
+        self.assertEqual(videno, [True, True])
+        self.assertFalse(getattr(engine._tl, "background", False), "po kontrole se příznak vrací")
+
+    def test_prefetch_bezi_jako_pozadi(self):
+        now = int(time.time())
+        engine = default.KodiEngine()
+        videno = []
+        video = {"id": "tt1:1:2", "season": 1, "episode": 2}
+        with mock.patch.object(default.STORE, "recently_watched", return_value=[("tt1:1:1", {"playcount": 1, "ts": now})]), \
+                mock.patch.object(default.STORE, "item", return_value={"series": "tt1", "season": 1, "episode": 1}), \
+                mock.patch.object(default.STORE, "playcount", return_value=0), \
+                mock.patch.object(default, "next_episode", return_value=(video, {"name": "Seriál"})), \
+                mock.patch.object(default, "collect_streams",
+                                  side_effect=lambda *a, **k: videno.append(getattr(engine._tl, "background", False))):
+            default.prefetch({"engine": engine}, "next")
+        self.assertEqual(videno, [True])
+
+    def test_popis_casu_rozlisi_starou_a_castecnou_cache(self):
+        zaklad = {"cache": True, "celkem": 0.1, "streamů": 3}
+        self.assertIn("starší, obnovuje se", default.describe_timings({**zaklad, "stará cache": True}))
+        self.assertIn("částečná", default.describe_timings({**zaklad, "částečná cache": True}))
+        self.assertNotIn("starší", default.describe_timings(zaklad))
+
+
 if __name__ == "__main__":
     unittest.main()
 
@@ -3104,12 +3208,14 @@ class TestProrezavaniCacheKodi(unittest.TestCase):
         import time
         reset_kodi()
         default.STORE.cached("stary", 10, lambda: {"x": 1})
+        default.STORE.cached("nedavny", 10, lambda: {"x": 2})
         cache = pathlib.Path(_PROFILE) / "cache"
-        for f in cache.glob("*.json"):
-            os.utime(f, (time.time() - 5 * 86400,) * 2)
+        stary, nedavny = sorted(cache.glob("*.json"))
+        os.utime(stary, (time.time() - 40 * 86400,) * 2)
+        os.utime(nedavny, (time.time() - 5 * 86400,) * 2)   # hlavičky a detail titulu platí 30 dní — zůstane
         with mock.patch.object(service, "rpc_directory"):
             service.warm_caches(xbmc.Monitor(), "all")
-        self.assertEqual(list(cache.glob("*.json")), [])
+        self.assertEqual(list(cache.glob("*.json")), [nedavny])
 
 
 class TestJazykRozhrani(unittest.TestCase):

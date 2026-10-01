@@ -168,6 +168,33 @@ def should_stop():
             CANCEL.set()
             return True
     return False
+
+
+SEARCH_PROP = "nokturno.searching"   # plugin: uživatel čeká na hledání streamů (čas, kdy začalo)
+SEARCH_ACTIVE_S = 120                # starší vlastnost je pozůstatek po pádu, ne běžící hledání
+SEARCH_GATE_S = 90                   # nejdéle tolik čeká práce na pozadí na konec hledání
+
+
+def search_active():
+    """Čeká právě teď někdo (kterýkoli proces doplňku) na hledání streamů?"""
+    try:
+        since = float(xbmcgui.Window(10000).getProperty(SEARCH_PROP) or 0)
+    except ValueError:
+        return False
+    return time.time() - since < SEARCH_ACTIVE_S
+
+
+def wait_for_foreground_search(limit=SEARCH_GATE_S):
+    """Práce na pozadí (prefetch dalšího dílu, kontrola Hlídaných, obnova seznamu streamů)
+    počká, až skončí hledání, na které uživatel čeká — jinak se oba procesy dělí o linku
+    a hlavně o limity zdrojů (Přehraj.to a HellSpy omezují dotazy na adresu, rozestup mezi
+    nimi ale drží každý proces zvlášť). Jádro to volá přes `Engine.gate`, jen z vlákna
+    označeného `Engine.background()`."""
+    end = time.time() + limit
+    while search_active() and time.time() < end:
+        if should_stop():
+            return
+        MONITOR.waitForAbort(1)
 HANDLE = int(sys.argv[1])
 BASE_URL = sys.argv[0]
 ICON = ADDON.getAddonInfo("icon")
@@ -797,6 +824,9 @@ def engine_options():
         "search_streams": on("search_streams"),
         "merge_streams": True,   # verze, mezi kterými se nevybírá, jako jeden řádek (`group_streams`)
         "probe_background": True,   # hlavičky nad limit a sloučených verzí dočíst na pozadí do cache
+        # seznam streamů starší než 72 h (do 14 dní) ukázat hned a obnovit na pozadí — otevření
+        # titulu po pár dnech tak nestojí 7–20 s hledání napříč zdroji
+        "stale_streams": True,
         "fresh": warming(),
         # Adresa má výchozí hodnotu, takže je vyplněná i u vypnuté Luny — bez
         # `luna_enabled` by stav zdrojů hlásil „běží, ale chybí token" každému,
@@ -843,6 +873,7 @@ class KodiEngine(Engine):
     def __init__(self):
         self._clients = {}
         super().__init__(engine_options(), PROFILE, store=STORE, should_stop=should_stop)
+        self.gate = wait_for_foreground_search
 
     def _client(self, name):
         if name not in self._clients:
@@ -1730,12 +1761,16 @@ def collect_streams(apis, ctype, item_id, meta, alt=None, progress=None, strict=
     failures = []
     engine = engine_of(apis)
     started = time.time()
+    if track:   # práce na pozadí (prefetch, Hlídané) počká, než se hledání dokončí — viz `wait_for_foreground_search`
+        xbmcgui.Window(10000).setProperty(SEARCH_PROP, str(started))
     try:
         streams = engine.raw_streams(ctype, item_id, alt, on_progress=progress.set if progress else None,
                                      failures=failures, strict=strict, meta_video=(meta, load_meta_video(meta, item_id)),
                                      on_source_done=progress.source if progress else None,
                                      on_audio_progress=progress.audio if progress else None)
     finally:
+        if track:
+            xbmcgui.Window(10000).clearProperty(SEARCH_PROP)
         errors.extend(SourceFailure(label, err) for label, err in failures)
         remember_ws_token(engine.ws)
     xbmc.log(f"[{ADDON_ID}] streamy {item_id}: {describe_timings(engine.last_timings)}", xbmc.LOGINFO)
@@ -1750,7 +1785,8 @@ def collect_streams(apis, ctype, item_id, meta, alt=None, progress=None, strict=
 def describe_timings(t):
     """Jeden řádek do logu: kolik která fáze hledání streamů trvala (`Engine.last_timings`)."""
     if t.get("cache"):
-        return (f"z cache, celkem {t.get('celkem', 0)} s · hlavičky {t.get('hlavičky', 0)}"
+        druh = " (starší, obnovuje se na pozadí)" if t.get("stará cache") else " (částečná)" if t.get("částečná cache") else ""
+        return (f"z cache{druh}, celkem {t.get('celkem', 0)} s · hlavičky {t.get('hlavičky', 0)}"
                 f" ({t.get('hlaviček', 0)}, nedočteno {t.get('hlaviček nedočteno', 0)}) · {t.get('streamů', 0)} streamů")
     def poradi(kv):
         """Zdroj, který nestihl rozpočet, má místo času značku „>20s“ (`str`) — řadí se
@@ -4448,7 +4484,8 @@ def prefetch(apis, kind):
             if STORE.playcount(ep_id):
                 continue
             try:
-                collect_streams(apis, "series", ep_id, meta, snap.get("alt"), track=False)
+                with engine_of(apis).background():
+                    collect_streams(apis, "series", ep_id, meta, snap.get("alt"), track=False)
             except Errors as e:
                 log_error(f"prefetch {ep_id}: {e}")
     # Služba sem chodí přes Files.GetDirectory (JSON-RPC), a `succeeded=False` Kodi hlásí
@@ -5777,8 +5814,9 @@ def watch_check(apis, force=False):
             except Exception as e:  # noqa: BLE001 – výpadek Traktu nesmí shodit kontrolu
                 xbmc.log(f"[{ADDON_ID}] trakt watchlist {kind}: {e}", xbmc.LOGDEBUG)
     try:
-        done = watch_lib.check_series(engine, STORE, force=force, should_stop=should_stop)
-        done += watch_lib.check_wanted(engine, STORE, extra, force=force, should_stop=should_stop)
+        with engine.background():   # na pozadí: počká na hledání, na které uživatel čeká (`Engine.gate`)
+            done = watch_lib.check_series(engine, STORE, force=force, should_stop=should_stop)
+            done += watch_lib.check_wanted(engine, STORE, extra, force=force, should_stop=should_stop)
     except Aborted:
         raise
     except Exception as e:  # noqa: BLE001 – kontrola na pozadí nesmí nic shodit

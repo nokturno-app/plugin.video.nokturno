@@ -2,8 +2,9 @@
 
 `mediainfo.probe()` čte u jednoho titulu desítky malých výřezů (`Range`) ze stejných
 serverů. `urllib` na každý dotaz naváže nové spojení (TCP + TLS), takže zdroj vidí
-desítky handshaků místo jednoho. Tady drží fond nečinných spojení na dvojici
-(schéma, host:port) a dotazy je berou jedno po druhém.
+desítky handshaků místo jednoho. Tady drží fond nečinných spojení na trojici
+(schéma, host, port) a dotazy je berou jedno po druhém. Hlavičku `Host` skládá
+`http.client` sám (bez přihlašovacích údajů z adresy, s hranatými závorkami u IPv6).
 
 Přesměrování se sleduje ručně a přihlašovací hlavičky (`Authorization`, `Cookie`)
 se při přesměrování na jiný host zahazují, stejně jako v `safe_redirect.py`.
@@ -22,7 +23,7 @@ MAX_REDIRECTS = 5
 CITLIVE = ("authorization", "cookie", "proxy-authorization")
 
 _LOCK = threading.Lock()
-_IDLE = {}            # (schéma, netloc) → [(spojení, čas vrácení)]
+_IDLE = {}            # (schéma, host, port) → [(spojení, čas vrácení)]
 
 
 def available():
@@ -51,24 +52,24 @@ def _give(key, conn):
     conn.close()
 
 
-def _new(scheme, netloc, timeout):
+def _new(scheme, host, port, timeout):
     cls = http.client.HTTPSConnection if scheme == "https" else http.client.HTTPConnection
-    return cls(netloc, timeout=timeout)
+    return cls(host, port, timeout=timeout)
 
 
 def _once(url, headers, timeout, want):
     """Jeden dotaz → (status, data, hlavičky, Location nebo None)."""
     parts = urllib.parse.urlsplit(url)
-    key = (parts.scheme, parts.netloc)
+    key = (parts.scheme, parts.hostname, parts.port)
     path = urllib.parse.urlunsplit(("", "", parts.path or "/", parts.query, ""))
     for attempt in (0, 1):
         conn = _take(key) if attempt == 0 else None
         reused = conn is not None
         if conn is None:
-            conn = _new(parts.scheme, parts.netloc, timeout)
+            conn = _new(*key, timeout)
         try:
             conn.timeout = timeout
-            conn.request("GET", path, headers={"Host": parts.netloc, **headers})
+            conn.request("GET", path, headers=headers)
             resp = conn.getresponse()
             data = resp.read(want + 1)
             # spojení jde znovu použít jen když je odpověď přečtená celá

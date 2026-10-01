@@ -576,6 +576,12 @@ class Store:
         finally:
             self._key_unlock(path, entry)
 
+    def capped(self, key):
+        """Platí ve vlákně `fresher()` omezení stáří i pro tenhle klíč? Kdo čte cache
+        sám (`peek_cached`), musí to vědět — ten omezení nezná, jen `cached_if`."""
+        cap = getattr(self._local, "cap", None)
+        return cap is not None and (not cap[1] or key.startswith(cap[1]))
+
     @staticmethod
     def _read_cached(path, ttl):
         try:
@@ -626,23 +632,44 @@ class Store:
             except OSError:
                 pass
 
-    def prune_cache(self, max_age=72 * 3600):
-        """Smaže soubory cache starší než `max_age` — TTL se hlídá jen při čtení, takže
-        prošlé záznamy (hledání, streamy, katalogy) dřív ležely na disku navždy; v HA
-        v `.storage`, tedy i v každé záloze. Vrací počet smazaných."""
+    def prune_cache(self, max_age=31 * 86400, max_bytes=120 * 1024 * 1024):
+        """Smaže soubory cache starší než `max_age` a pak nejstarší, dokud cache nepřesahuje
+        `max_bytes`. TTL se hlídá jen při čtení, takže prošlé záznamy (hledání, streamy,
+        katalogy) dřív ležely na disku navždy; v HA v `.storage`, tedy i v každé záloze.
+        Vrací počet smazaných.
+
+        31 dní, ne 72 h: soubory jsou pojmenované podle hashe klíče, takže se TTL
+        jednotlivých záznamů nedá zjistit — a nejdelší z nich (hlavičky souborů, detail
+        titulu z TMDB) platí 30 dní. Dřívější hranice 72 h tyhle záznamy mazala po třech
+        dnech a každé další otevření titulu je pak četlo znovu ze sítě. Prošlé záznamy
+        mezitím nepřekáží, strop velikosti hlídá, aby cache nerostla."""
         cdir = os.path.join(self.dir, "cache")
         hranice = time.time() - max_age
         smazano = 0
+        zbyva = []   # (mtime, velikost, cesta) toho, co přežilo stáří
         try:
-            names = os.listdir(cdir)
+            with os.scandir(cdir) as it:
+                polozky = list(it)
         except OSError:
             return 0
-        for name in names:
-            path = os.path.join(cdir, name)
+        for entry in polozky:
             try:
-                if os.path.getmtime(path) < hranice:
-                    os.remove(path)
+                st = entry.stat()
+                if st.st_mtime < hranice:
+                    os.remove(entry.path)
                     smazano += 1
+                else:
+                    zbyva.append((st.st_mtime, st.st_size, entry.path))
+            except OSError:
+                pass
+        celkem = sum(size for _mtime, size, _path in zbyva)
+        for _mtime, size, path in sorted(zbyva):   # nejstarší první
+            if celkem <= max_bytes:
+                break
+            try:
+                os.remove(path)
+                celkem -= size
+                smazano += 1
             except OSError:
                 pass
         return smazano

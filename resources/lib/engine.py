@@ -6,11 +6,13 @@ ale bez Kodi: volání jsou synchronní a HA je pouští v executoru.
 
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import logging
 import os
 import re
+import threading
 import time
 import urllib.error
 import urllib.parse
@@ -74,6 +76,13 @@ SIZE_TOLERANCE = 0.25  # GB – Luna a WebShare zaokrouhlují velikost jinak
 SUBS_MAX = 3
 SEARCH_CACHE_TTL = 43200      # 12 h – seznam nalezených titulů podle dotazu (Luna, WebShare fulltext)
 STREAMS_CACHE_TTL = 259200    # 72 h – seznam streamů k titulu, ale JEN když nějaké našel (viz `cached_if`)
+# Seznam, ke kterému některý zdroj neodpověděl, se do 72h cache nesmí (zdroj se po návratu musí
+# projevit), jenže bez jakékoli cache se při dalším otevření titulu zopakuje celé hledání — až 20 s
+# čekání na tentýž zdroj. Krátká cache tohle otevření zlevní a výpadek se opraví sám za 10 minut.
+STREAMS_PARTIAL_TTL = 600
+# S volbou `stale_streams` se seznam starší než 72 h, ale ne než tohle, ukáže hned a na pozadí se
+# obnoví (`_cached_streams`). Konec lhůty drží i `Store.prune_cache`, který staré soubory maže.
+STREAMS_STALE_TTL = 14 * 86400
 
 _LOGGER = logging.getLogger(__name__)
 # hlavičky souborů se čtou souběžně. 16 vláken místo 8 nic nezrychlilo (Office 2026-09-18,
@@ -449,7 +458,15 @@ class Engine:
         # „Správu přihlášených zařízení" účtu). Bez ní si jádro klienta postaví samo.
         self._pt_shared = pt_api
         self.should_stop = should_stop or never
-        self.last_timings = {}   # časy fází posledního `raw_streams()` (s), viz tam
+        # `last_timings`: časy fází posledního `raw_streams()` (s), viz tam a vlastnost níž
+        self._tl = threading.local()
+        self._last_timings = {}
+        self.last_timings = {}
+        # hostitel sem může dát funkci, která počká, až hlavní hledání (to, na které uživatel čeká)
+        # skončí — práce na pozadí (`background()`) ji volá před sítí. Kodi: vlastnost okna.
+        self.gate = None
+        self._swr_lock = threading.Lock()
+        self._swr_running = set()   # klíče seznamů, které se právě obnovují na pozadí
         self._luna = None
         self._sosac = None
         self._ws = None
@@ -499,6 +516,32 @@ class Engine:
     def _check_stop(self):
         """Vyhodí `Aborted`, když hostitel končí — volá se mezi kroky dlouhé práce."""
         check_stop(self.should_stop)
+
+    @property
+    def last_timings(self):
+        """Časy fází posledního `raw_streams()` — po vlákně. Práce na pozadí (`background()`)
+        běží souběžně s hledáním, na které se čeká, a nesmí mu přepsat řádek s časy, který si
+        volající přečte hned po návratu. Vlákno, které `raw_streams()` nevolalo, dostane poslední
+        záznam z hlavního hledání."""
+        return getattr(self._tl, "timings", None) or self._last_timings
+
+    @last_timings.setter
+    def last_timings(self, value):
+        self._tl.timings = value
+        if not getattr(self._tl, "background", False):
+            self._last_timings = value
+
+    @contextlib.contextmanager
+    def background(self):
+        """Hledání v tomhle vlákně je práce na pozadí (zahřívání, kontrola Hlídaných, obnova
+        seznamu): nepřepisuje `last_timings` hlavního hledání a než sáhne na síť, počká na
+        `gate`, když ho hostitel nastavil."""
+        old = getattr(self._tl, "background", False)
+        self._tl.background = True
+        try:
+            yield
+        finally:
+            self._tl.background = old
 
     @property
     def luna(self):
@@ -2572,7 +2615,7 @@ class Engine:
 
     def raw_streams(self, ctype, item_id, alt=None, series_id=None, on_progress=None, failures=None,
                     strict=True, meta_video=None, probe_audio=True, on_source_done=None,
-                    on_audio_progress=None, stop_when=None):
+                    on_audio_progress=None, stop_when=None, refresh=False):
         """Seřazené streamy titulu ze všech dostupných zdrojů — surové slovníky.
 
         `probe_audio=False`: vynechá `_fill_audio()` (čtení hlaviček souborů) — pro
@@ -2591,6 +2634,11 @@ class Engine:
         `on_progress(done, total)`, je-li dán, se volá po každé fázi — synchronně,
         přímo z tohohle (executor) vlákna. Volající (`__init__.py`) si musí sám
         ošetřit bezpečný přechod zpátky na event loop, engine o hass/asyncio nic neví.
+
+        Cache streamů (`_cached_streams`) má kromě 72h záznamu i krátký „částečný“ (10 min, když
+        některý zdroj neodpověděl) a s volbou `stale_streams` ukáže hned i starší seznam (do 14 dní)
+        a obnoví ho na pozadí. `refresh=True` cache jen zapíše, nečte — tak se seznam obnovuje
+        (stejně jako volba `fresh`).
 
         Výpadek jednoho zdroje nezastaví ostatní. `failures`, je-li dán (seznam), dostane
         `(zdroj, chyba)` za každý přeskočený — volající z nich udělá upozornění přes
@@ -2645,6 +2693,7 @@ class Engine:
                 on_progress(min(done[0], total), total)
 
         meta, video = meta_video if meta_video else self.meta(ctype, item_id, series_id)
+        loaded = (meta, video)   # obnova na pozadí nenačítá metadata znovu — `_fetch_streams` níž `meta` mění
         base_id = split_episode_id(item_id)[0]
         include_search = bool(self._opt("search_streams", True))
 
@@ -2872,10 +2921,11 @@ class Engine:
         storage_future = storage_pool.submit(_run_storage)
         try:
             if strict and probe_audio:
-                found = self.store.cached_if(cache_key, STREAMS_CACHE_TTL, _fetch_streams,
-                                             ok=lambda data: bool(data) and not failures,
-                                             fresh=bool(self._opt("fresh", False)))
+                found = self._cached_streams(
+                    cache_key, _fetch_streams, failures, timings, refresh,
+                    lambda: self._refresh_streams_later(cache_key, ctype, item_id, alt, series_id, loaded))
             else:
+                self._yield_to_foreground()
                 found = _fetch_streams()
         except BaseException:
             # přerušení (`Aborted`) i chyba: na průchod úložiště se nečeká — to se
@@ -2938,6 +2988,69 @@ class Engine:
         timings["streamů"] = len(ordered)
         timings["celkem"] = since()
         return ordered
+
+    def _cached_streams(self, cache_key, fetch, failures, timings, refresh, again):
+        """Seznam streamů titulu z cache, jinak z `fetch()` (hledání napříč zdroji).
+
+        Pořadí: platný záznam (72 h) → částečný (10 min — některý zdroj minule neodpověděl,
+        takže se hned nehledá znovu) → starý záznam (do 14 dní, jen s volbou `stale_streams`:
+        ukáže se hned a `again()` ho na pozadí obnoví) → hledání. Ve vlákně `fresher()`
+        (kontrola Hlídaných) se z cache čte jen přes `cached_if`, který omezení stáří zná;
+        tam se krátký ani starý záznam nepoužije. `refresh` / volba `fresh` cache nečtou."""
+        store = self.store
+        refresh = refresh or bool(self._opt("fresh", False))
+        partial_key = cache_key + ":partial"
+        if not refresh and not store.capped(cache_key):
+            for key, ttl, flag in ((cache_key, STREAMS_CACHE_TTL, None),
+                                   (partial_key, STREAMS_PARTIAL_TTL, "částečná cache")):
+                data = store.peek_cached(key, ttl)
+                if data:
+                    if flag:
+                        timings[flag] = True
+                    return data
+            if self._opt("stale_streams", False):
+                data = store.peek_cached(cache_key, STREAMS_STALE_TTL)
+                if data:
+                    timings["stará cache"] = True
+                    again()
+                    return data
+        self._yield_to_foreground()   # před zámkem klíče, ne pod ním: hlavní hledání téhož titulu by čekalo
+        found = store.cached_if(cache_key, STREAMS_CACHE_TTL, fetch,
+                                ok=lambda data: bool(data) and not failures, fresh=refresh)
+        if found and failures:
+            store.cached_if(partial_key, STREAMS_PARTIAL_TTL, lambda: found, fresh=True)
+        return found
+
+    def _yield_to_foreground(self):
+        """Práce na pozadí (`background()`) počká na `gate`, než sáhne na síť — dokud skončí
+        hledání, na které uživatel čeká, ať se zdroje nedělí o linku ani o limity (Přehraj.to a
+        HellSpy omezují dotazy na adresu, a v Kodi je zahřívání i hlavní hledání jiný proces)."""
+        if self.gate and getattr(self._tl, "background", False):
+            self.gate()
+            self._check_stop()
+
+    def _refresh_streams_later(self, key, ctype, item_id, alt, series_id, loaded):
+        """Obnoví seznam streamů v cache na pozadí; na jeden klíč běží nejvýš jedno hledání.
+        Vlákno je stejného druhu jako u `_probe_in_background` (hostitel na něj na konci skriptu
+        počká) a hlídá `should_stop`, takže vypínání Kodi nezdrží."""
+        with self._swr_lock:
+            if key in self._swr_running:
+                return
+            self._swr_running.add(key)
+
+        def run():
+            try:
+                with self.background():
+                    self.raw_streams(ctype, item_id, alt, series_id=series_id, meta_video=loaded, refresh=True)
+            except (Exception, Aborted) as err:  # noqa: BLE001 – obnova na pozadí nikdy nic nerozbije
+                _LOGGER.debug("obnova streamů %s: %s", item_id, err)
+            finally:
+                with self._swr_lock:
+                    self._swr_running.discard(key)
+
+        pool = ThreadPoolExecutor(max_workers=1)
+        pool.submit(run)
+        pool.shutdown(wait=False)
 
     def _sorter(self, meta_or_video):
         """Řazení a filtr podle předvoleb (jazyk, velikost, pořadí) — funkce nad seznamem streamů."""
