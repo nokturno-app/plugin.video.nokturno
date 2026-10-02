@@ -1816,16 +1816,18 @@ class Engine:
                 })
         return out
 
-    def _probe_in_background(self, urls):
+    def _probe_in_background(self, urls, force=False):
         """Hlavičky do cache (`media:`) bez čekání — výsledek dostane až další výpis.
 
         Až po hlavním čtení, ať nebere linku tomu, na co se čeká. Hostitel na konci
         skriptu na vlákna počká (Kodi: plugin doběhne i během přehrávání); při vypínání
-        se nezačaté přeskočí (`_media_from_file` se ptá `should_stop`)."""
+        se nezačaté přeskočí (`_media_from_file` se ptá `should_stop`). `force` = i bez volby
+        `probe_background` (nový pokus o soubor, který minule nešel stáhnout)."""
         urls = list(dict.fromkeys(u for u in urls if u))
-        if not urls or not self._opt("probe_background", False):
+        if not urls or not (force or self._opt("probe_background", False)):
             return
-        self.last_timings["hlavičky na pozadí"] = len(urls)
+        if not force:
+            self.last_timings["hlavičky na pozadí"] = len(urls)
         pool = ThreadPoolExecutor(max_workers=PROBE_WORKERS)
         for url in urls:
             self._reading.setdefault(url, pool.submit(self._media_from_file, url))
@@ -1918,6 +1920,14 @@ class Engine:
             return None
         return {k: v for k, v in data.items() if k != "_ts"}
 
+    def _media_retry(self, url):
+        """Nešel soubor minule stáhnout (`mediafail:` s `unreachable`, do `MEDIA_UNKNOWN_TTL`)?"""
+        store = self.shared if url.startswith(SHARED_MEDIA) else self.store
+        if store.peek_cached(f"{MEDIA_KEY}{url}", AUDIO_TTL) is not None:
+            return False   # pozdější pokus vyšel, starý záznam o neúspěchu už nerozhoduje
+        data = store.peek_cached(f"mediafail:{url}", MEDIA_UNKNOWN_TTL)
+        return bool(data and data.get("unreachable"))
+
     @staticmethod
     def _media_failed(store, url, info):
         """Zapíše neúspěšné čtení hlavičky (`mediafail:`) a vrátí `info` beze změny."""
@@ -1997,6 +2007,17 @@ class Engine:
                        and str(s.get("url") or "").startswith("http")]
         ordered = sorted(candidates, key=lambda s: bool(s.get("channels")))
         todo = ordered[:limit]
+        # Soubor, který minule nešel stáhnout (`mediafail:` s `unreachable`), zůstane skrytý jako mrtvý
+        # a nový pokus jde jen na pozadí. V popředí by se po `MEDIA_FAIL_TTL` zkoušel při každém otevření
+        # titulu a výběr streamu by na něj pokaždé čekal celý `PROBE_DEADLINE` (Office 2026-10-02,
+        # Interstellar: jeden soubor z WebShare = 3 s navíc). Když pokus vyjde, ukáže se při dalším otevření.
+        retry = [s for s in todo if self._media_retry(self._probe_url(s))]
+        if retry:
+            for stream in retry:
+                stream["_dead"] = True
+            todo = [s for s in todo if not any(s is r for r in retry)]
+            self.last_timings["hlavičky znovu na pozadí"] = len(retry)
+            self._probe_in_background([self._probe_url(s) for s in retry], force=True)
         # `probe_background`: co se nečte teď (nad limit, sloučené verze v `background`),
         # se přečte na pozadí do cache — další otevření titulu i „Zobrazit všechny“
         # pak mají ověřené všechno, bez čekání
