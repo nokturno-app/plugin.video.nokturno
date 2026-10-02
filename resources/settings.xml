@@ -523,6 +523,27 @@
           <control type="button" format="action"/>
         </setting>
       </group>
+      <group id="lastfm" label="30784">
+        <setting id="lastfm_key" type="string" label="30785" help="30786">
+          <level>0</level>
+          <default></default>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <control type="edit" format="string">
+            <hidden>true</hidden>
+            <heading>30785</heading>
+          </control>
+        </setting>
+        <setting id="lastfm_check" type="action" label="30787" help="30788">
+          <level>0</level>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <data>RunPlugin(plugin://plugin.video.nokturno/?action=lastfm_check)</data>
+          <control type="button" format="action"/>
+        </setting>
+      </group>
       <group id="database" label="30332">
         <setting id="tmdb_api_key" type="string" label="30333" help="30334">
           <level>0</level>

@@ -3000,3 +3000,155 @@ msgstr "Saját katalógusok definíciói és az ellenőrzés eredményei. Ha a c
 msgctxt "#30783"
 msgid "Audio language"
 msgstr "Hang nyelve"
+
+msgctxt "#30784"
+msgid "Last.fm"
+msgstr "Last.fm"
+
+msgctxt "#30785"
+msgid "Last.fm API key"
+msgstr "Last.fm API-kulcs"
+
+msgctxt "#30786"
+msgid "Needed only for concert catalogs. Free key at last.fm/api."
+msgstr "Csak a koncertkatalógusokhoz kell. Ingyenes kulcs: last.fm/api."
+
+msgctxt "#30787"
+msgid "Check key"
+msgstr "Kulcs ellenőrzése"
+
+msgctxt "#30788"
+msgid "Checks that Last.fm accepts the key."
+msgstr "Ellenőrzi, hogy a Last.fm elfogadja a kulcsot."
+
+msgctxt "#30789"
+msgid "New concert catalog"
+msgstr "Új koncertkatalógus"
+
+msgctxt "#30790"
+msgid "A concert catalog needs your own Last.fm API key. Enter it in Settings → Sources and accounts → Last.fm."
+msgstr "A koncertkatalógushoz saját Last.fm API-kulcs kell. Add meg itt: Beállítások → Források és fiókok → Last.fm."
+
+msgctxt "#30791"
+msgid "Open settings"
+msgstr "Beállítások megnyitása"
+
+msgctxt "#30792"
+msgid "Music genres of the catalog"
+msgstr "A katalógus zenei műfajai"
+
+msgctxt "#30793"
+msgid "Czech scene"
+msgstr "Cseh színtér"
+
+msgctxt "#30794"
+msgid "Slovak scene"
+msgstr "Szlovák színtér"
+
+msgctxt "#30795"
+msgid "Czech rock"
+msgstr "Cseh rock"
+
+msgctxt "#30796"
+msgid "Classic rock"
+msgstr "Classic rock"
+
+msgctxt "#30797"
+msgid "Hard rock"
+msgstr "Hard rock"
+
+msgctxt "#30798"
+msgid "Metal"
+msgstr "Metal"
+
+msgctxt "#30799"
+msgid "Rock"
+msgstr "Rock"
+
+msgctxt "#30836"
+msgid "Pop"
+msgstr "Pop"
+
+msgctxt "#30837"
+msgid "Punk"
+msgstr "Punk"
+
+msgctxt "#30838"
+msgid "Hip-hop"
+msgstr "Hip-hop"
+
+msgctxt "#30839"
+msgid "Jazz"
+msgstr "Jazz"
+
+msgctxt "#30854"
+msgid "Electronic"
+msgstr "Elektronikus zene"
+
+msgctxt "#30855"
+msgid "Folk"
+msgstr "Folk"
+
+msgctxt "#30856"
+msgid "Classical"
+msgstr "Klasszikus"
+
+msgctxt "#30857"
+msgid "Reggae"
+msgstr "Reggae"
+
+msgctxt "#30858"
+msgid "World"
+msgstr "World"
+
+msgctxt "#30859"
+msgid "Popularity"
+msgstr "Népszerűség"
+
+msgctxt "#30912"
+msgid "Alphabet"
+msgstr "Ábécé"
+
+msgctxt "#30921"
+msgid "Show the catalog directly in the main menu?"
+msgstr "Megjelenjen a katalógus közvetlenül a főmenüben?"
+
+msgctxt "#30922"
+msgid "Concerts"
+msgstr "Koncertek"
+
+msgctxt "#30923"
+msgid "The Last.fm key is not valid."
+msgstr "A Last.fm-kulcs érvénytelen."
+
+msgctxt "#30978"
+msgid "The Last.fm key works."
+msgstr "A Last.fm-kulcs működik."
+
+msgctxt "#30996"
+msgid "Could not reach Last.fm. Try again later."
+msgstr "A Last.fm nem érhető el. Próbáld újra később."
+
+msgctxt "#30779"
+msgid "The catalog is being prepared – artists are searched in the background."
+msgstr "A katalógus készül – az előadók keresése a háttérben zajlik."
+
+msgctxt "#30731"
+msgid "Last.fm API key missing – open settings"
+msgstr "Hiányzik a Last.fm API-kulcs – beállítások megnyitása"
+
+msgctxt "#30737"
+msgid "Run stream verification now?"
+msgstr "Elindítod most a streamek ellenőrzését?"
+
+msgctxt "#30739"
+msgid "The first batch checks more titles at once so the catalog has something to show right away. It runs in the background."
+msgstr "Az első adag egyszerre több címet ellenőriz, hogy a katalógusban rögtön legyen mit mutatni. A háttérben fut."
+
+msgctxt "#30740"
+msgid "Start the concert search now?"
+msgstr "Elindítod most a koncertek keresését?"
+
+msgctxt "#30750"
+msgid "The first batch searches more artists at once so the catalog has something to show right away. It runs in the background."
+msgstr "Az első adag egyszerre több előadót keres át, hogy a katalógusban rögtön legyen mit mutatni. A háttérben fut."

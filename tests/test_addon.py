@@ -5720,7 +5720,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 131)   # +1 sync_catalogs (vlastní katalogy), +1 trakt_pull, +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs
+        self.assertEqual(len(volby), 133)   # +1 trakt_pull, +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):
@@ -6077,7 +6077,6 @@ class TestBezKoncertu(unittest.TestCase):
         self.assertIn("browse", akce)
         self.assertFalse(akce & {"concerts", "concert_artist", "play_ref"})
         self.assertFalse(hasattr(default, "list_concerts"))
-        self.assertFalse(hasattr(default, "play_ref"))
 
 
 class TestBez900(unittest.TestCase):
@@ -6895,7 +6894,7 @@ class TestVlastniKatalogy(unittest.TestCase):
         xbmcplugin.reset()
         default.main("action=mycats&type=movie")
         urls = [params_of(u) for u in xbmcplugin.urls()]
-        self.assertEqual([u["action"] for u in urls], ["mycat", "mycat_new"])
+        self.assertEqual([u["action"] for u in urls], ["mycat", "mycat_new", "mycat_new"])   # + nový katalog koncertů
         self.assertEqual(xbmcplugin.items[0][2].getLabel(), "Moje")
         with mock.patch.object(xbmcgui.Dialog, "yesno", return_value=True):
             default.main(f"action=mycat_delete&id={cat['id']}")
@@ -6991,6 +6990,119 @@ class TestOverovaneKatalogy(unittest.TestCase):
         self.assertEqual((cat["years"], cat["verify"], cat["menu"], cat["q"], cat["audio"], cat["surround"]),
                          (3, True, True, 3, "CZ", True))
         self.assertTrue(default.STORE.reload("mycatlog", {})[cat["id"]]["on"])
+
+
+class TestKatalogKoncertu(unittest.TestCase):
+    """Vlastní katalog koncertů podle žánru (Last.fm): formulář, výpis z indexu, přehrání, první dávka."""
+
+    def setUp(self):
+        reset_kodi()
+        default.STORE.save("mycatalogs", [])
+        default.STORE.save("mycatlog", {})
+        xbmcaddon.settings["lastfm_key"] = "klic"
+        xbmcgui.Window(10000).clearProperty(default.VERIFY_MANUAL_PROP)
+
+    def tearDown(self):
+        xbmcaddon.settings.pop("lastfm_key", None)
+
+    def _vytvor(self, yesno=(True, False), multiselect=(0, 6), name="Moje koncerty"):
+        # yesno: umístění v menu, první dávka; select: řazení (1 = Nově nalezené)
+        with mock.patch.object(xbmcgui.Dialog, "multiselect", return_value=list(multiselect)), \
+                mock.patch.object(xbmcgui.Dialog, "select", return_value=1), \
+                mock.patch.object(xbmcgui.Dialog, "yesno", side_effect=list(yesno)), \
+                mock.patch.object(xbmcgui.Dialog, "input", return_value=name):
+            default.main("action=mycat_new&kind=concert")
+        return default.mycats("concert")
+
+    def _index(self, cat):
+        import catindex
+        idx = {"sig": default.mycat.sig(cat)}
+        catindex.merge_pool(idx, [{"id": "a:alfa", "name": "Alfa"}, {"id": "a:beta", "name": "Beta"}], 0)
+        catindex.record(idx, "a:alfa", True, 100)
+        idx["items"]["a:alfa"]["files"] = [
+            {"ref": "ws:x", "name": "Alfa - Live 1990.mkv", "size": 3 * 2 ** 30, "duration": 0, "source": "ws"},
+            {"ref": "hs:1:h", "name": "Alfa - Live 1990 [DVD].mkv", "size": 2 ** 30, "duration": 5400, "source": "hs"}]
+        catindex.record(idx, "a:beta", False, 100)
+        default.STORE.save(default.mycat.INDEX + cat["id"], idx)
+
+    def test_klic_je_v_jadru(self):
+        self.assertEqual(default.engine_options()["lastfm_key"], "klic")
+        self.assertEqual(default.KodiEngine()._opt("lastfm_key"), "klic")
+
+    def test_formular_ulozi_koncertni_katalog(self):
+        cat = self._vytvor()[0]
+        self.assertEqual((cat["kind"], cat["tags"], cat["verify"], cat["show"], cat["menu"], cat["name"]),
+                         ("concert", ["czech", "rock"], True, "found", True, "Moje koncerty"))
+        self.assertTrue(default.STORE.reload("mycatlog", {})[cat["id"]]["on"])
+
+    def test_bez_klice_nic_neulozi(self):
+        xbmcaddon.settings["lastfm_key"] = ""
+        with mock.patch.object(xbmcgui.Dialog, "yesno", return_value=False):
+            default.main("action=mycat_new&kind=concert")
+        self.assertEqual(default.mycats(), [])
+
+    def test_prazdny_vyber_zanru_nic_neulozi(self):
+        self.assertEqual(self._vytvor(multiselect=()), [])
+
+    def test_prvni_davka_ano_a_ne(self):
+        cat = self._vytvor(yesno=(False, True))[0]
+        self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_MANUAL_PROP), "%s:30" % cat["id"])
+        xbmcgui.Window(10000).clearProperty(default.VERIFY_MANUAL_PROP)
+        default.STORE.save("mycatalogs", [])
+        self._vytvor(yesno=(False, False))
+        self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_MANUAL_PROP), "")
+
+    def test_vypis_interpretu_a_koncertu(self):
+        cat = self._vytvor()[0]
+        self._index(cat)
+        xbmcplugin.reset()
+        default.list_mycat({}, "movie", cat["id"], 1)
+        akce = [params_of(u) for u in xbmcplugin.urls()]
+        self.assertEqual([a["action"] for a in akce], ["mycat_batch", "mycat_artist"])
+        self.assertEqual(xbmcplugin.items[1][2].getLabel(), "Alfa (1)")
+        xbmcplugin.reset()
+        default.list_mycat_artist(cat["id"], "a:alfa")
+        play = params_of(xbmcplugin.urls()[0])
+        self.assertEqual((play["action"], play["ref"], play["alts"]), ("play_ref", "ws:x", "hs:1:h"))
+        self.assertEqual(xbmcplugin.items[0][2].getLabel(), "Live (1990)")
+
+    def test_bez_klice_vypis_nabidne_nastaveni(self):
+        cat = self._vytvor()[0]
+        xbmcaddon.settings["lastfm_key"] = ""
+        xbmcplugin.reset()
+        default.list_mycat({}, "movie", cat["id"], 1)
+        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["settings"])
+
+    def test_menu_pod_filmy_a_v_koreni(self):
+        self._vytvor(yesno=(True, False))
+        xbmcplugin.reset()
+        default.main_menu({"ws": object()})
+        self.assertIn("mycat", [params_of(u).get("action") for u in xbmcplugin.urls()])
+        default.mycat.save(default.STORE, dict(default.mycats("concert")[0], menu=False))
+        xbmcplugin.reset()
+        default.main_menu({"ws": object()})
+        self.assertNotIn("mycat", [params_of(u).get("action") for u in xbmcplugin.urls()])
+        xbmcplugin.reset()
+        default.list_mycats("movie")
+        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["mycat", "mycat_new", "mycat_new"])
+
+    def test_play_ref_zkusi_zalozni_odkaz(self):
+        with mock.patch.object(default, "resolve_url",
+                               side_effect=[default.HellspyError("pryč"), "https://cdn/x.mkv"]) as res:
+            default.play_ref({}, "hs:1:h", "Live (1990)", "ws:x")
+        self.assertEqual([c.args[1] for c in res.call_args_list], ["hs:1:h", "ws:x"])
+        self.assertTrue(xbmcplugin.resolved[-1][1])
+
+    def test_sluzba_bere_koncert_jako_cil(self):
+        cat = self._vytvor()[0]
+        self.assertIn(cat["id"], service.verify_targets(service.Store(service.PROFILE)))
+        self.assertFalse(default.mycat.foreign_recent(default.mycat.load_index(default.STORE, cat)))
+
+    def test_lastfm_check(self):
+        del xbmcgui.notifications[:]
+        with mock.patch.object(default.concertcat, "check_key", return_value=False):
+            default.main("action=lastfm_check")
+        self.assertEqual(xbmcgui.notifications[-1][1], "Klíč Last.fm neplatí.")
 
 
 class TestSluzbaOverovani(unittest.TestCase):

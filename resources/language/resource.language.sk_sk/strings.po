@@ -3002,3 +3002,155 @@ msgstr "Definície vlastných katalógov a výsledky overovania. Keď je v skupi
 msgctxt "#30783"
 msgid "Audio language"
 msgstr "Jazyk zvuku"
+
+msgctxt "#30784"
+msgid "Last.fm"
+msgstr "Last.fm"
+
+msgctxt "#30785"
+msgid "Last.fm API key"
+msgstr "Last.fm API kľúč"
+
+msgctxt "#30786"
+msgid "Needed only for concert catalogs. Free key at last.fm/api."
+msgstr "Potrebné len pre katalógy koncertov. Kľúč zadarmo na last.fm/api."
+
+msgctxt "#30787"
+msgid "Check key"
+msgstr "Overiť kľúč"
+
+msgctxt "#30788"
+msgid "Checks that Last.fm accepts the key."
+msgstr "Overí, že Last.fm kľúč prijíma."
+
+msgctxt "#30789"
+msgid "New concert catalog"
+msgstr "Nový katalóg koncertov"
+
+msgctxt "#30790"
+msgid "A concert catalog needs your own Last.fm API key. Enter it in Settings → Sources and accounts → Last.fm."
+msgstr "Katalóg koncertov potrebuje vlastný API kľúč Last.fm. Zadaj ho v Nastaveniach → Zdroje a účty → Last.fm."
+
+msgctxt "#30791"
+msgid "Open settings"
+msgstr "Otvoriť nastavenia"
+
+msgctxt "#30792"
+msgid "Music genres of the catalog"
+msgstr "Hudobné žánre katalógu"
+
+msgctxt "#30793"
+msgid "Czech scene"
+msgstr "Česká scéna"
+
+msgctxt "#30794"
+msgid "Slovak scene"
+msgstr "Slovenská scéna"
+
+msgctxt "#30795"
+msgid "Czech rock"
+msgstr "Český rock"
+
+msgctxt "#30796"
+msgid "Classic rock"
+msgstr "Classic rock"
+
+msgctxt "#30797"
+msgid "Hard rock"
+msgstr "Hard rock"
+
+msgctxt "#30798"
+msgid "Metal"
+msgstr "Metal"
+
+msgctxt "#30799"
+msgid "Rock"
+msgstr "Rock"
+
+msgctxt "#30836"
+msgid "Pop"
+msgstr "Pop"
+
+msgctxt "#30837"
+msgid "Punk"
+msgstr "Punk"
+
+msgctxt "#30838"
+msgid "Hip-hop"
+msgstr "Hip-hop"
+
+msgctxt "#30839"
+msgid "Jazz"
+msgstr "Jazz"
+
+msgctxt "#30854"
+msgid "Electronic"
+msgstr "Elektronika"
+
+msgctxt "#30855"
+msgid "Folk"
+msgstr "Folk"
+
+msgctxt "#30856"
+msgid "Classical"
+msgstr "Klasika"
+
+msgctxt "#30857"
+msgid "Reggae"
+msgstr "Reggae"
+
+msgctxt "#30858"
+msgid "World"
+msgstr "World"
+
+msgctxt "#30859"
+msgid "Popularity"
+msgstr "Popularity"
+
+msgctxt "#30912"
+msgid "Alphabet"
+msgstr "Abecedy"
+
+msgctxt "#30921"
+msgid "Show the catalog directly in the main menu?"
+msgstr "Zobraziť katalóg priamo v hlavnom menu?"
+
+msgctxt "#30922"
+msgid "Concerts"
+msgstr "Koncerty"
+
+msgctxt "#30923"
+msgid "The Last.fm key is not valid."
+msgstr "Kľúč Last.fm neplatí."
+
+msgctxt "#30978"
+msgid "The Last.fm key works."
+msgstr "Kľúč Last.fm je v poriadku."
+
+msgctxt "#30996"
+msgid "Could not reach Last.fm. Try again later."
+msgstr "Last.fm sa nepodarilo opýtať. Skús to neskôr."
+
+msgctxt "#30779"
+msgid "The catalog is being prepared – artists are searched in the background."
+msgstr "Katalóg sa pripravuje – interpreti sa prehľadávajú na pozadí."
+
+msgctxt "#30731"
+msgid "Last.fm API key missing – open settings"
+msgstr "Chýba API kľúč Last.fm – otvoriť nastavenia"
+
+msgctxt "#30737"
+msgid "Run stream verification now?"
+msgstr "Spustiť overenie streamov teraz?"
+
+msgctxt "#30739"
+msgid "The first batch checks more titles at once so the catalog has something to show right away. It runs in the background."
+msgstr "Prvá dávka preverí viac titulov naraz, nech je v katalógu hneď čo ukázať. Beží na pozadí."
+
+msgctxt "#30740"
+msgid "Start the concert search now?"
+msgstr "Spustiť hľadanie koncertov teraz?"
+
+msgctxt "#30750"
+msgid "The first batch searches more artists at once so the catalog has something to show right away. It runs in the background."
+msgstr "Prvá dávka prehľadá viac interpretov naraz, nech je v katalógu hneď čo ukázať. Beží na pozadí."

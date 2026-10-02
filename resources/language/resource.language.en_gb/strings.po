@@ -3002,3 +3002,155 @@ msgstr ""
 msgctxt "#30783"
 msgid "Audio language"
 msgstr ""
+
+msgctxt "#30784"
+msgid "Last.fm"
+msgstr ""
+
+msgctxt "#30785"
+msgid "Last.fm API key"
+msgstr ""
+
+msgctxt "#30786"
+msgid "Needed only for concert catalogs. Free key at last.fm/api."
+msgstr ""
+
+msgctxt "#30787"
+msgid "Check key"
+msgstr ""
+
+msgctxt "#30788"
+msgid "Checks that Last.fm accepts the key."
+msgstr ""
+
+msgctxt "#30789"
+msgid "New concert catalog"
+msgstr ""
+
+msgctxt "#30790"
+msgid "A concert catalog needs your own Last.fm API key. Enter it in Settings → Sources and accounts → Last.fm."
+msgstr ""
+
+msgctxt "#30791"
+msgid "Open settings"
+msgstr ""
+
+msgctxt "#30792"
+msgid "Music genres of the catalog"
+msgstr ""
+
+msgctxt "#30793"
+msgid "Czech scene"
+msgstr ""
+
+msgctxt "#30794"
+msgid "Slovak scene"
+msgstr ""
+
+msgctxt "#30795"
+msgid "Czech rock"
+msgstr ""
+
+msgctxt "#30796"
+msgid "Classic rock"
+msgstr ""
+
+msgctxt "#30797"
+msgid "Hard rock"
+msgstr ""
+
+msgctxt "#30798"
+msgid "Metal"
+msgstr ""
+
+msgctxt "#30799"
+msgid "Rock"
+msgstr ""
+
+msgctxt "#30836"
+msgid "Pop"
+msgstr ""
+
+msgctxt "#30837"
+msgid "Punk"
+msgstr ""
+
+msgctxt "#30838"
+msgid "Hip-hop"
+msgstr ""
+
+msgctxt "#30839"
+msgid "Jazz"
+msgstr ""
+
+msgctxt "#30854"
+msgid "Electronic"
+msgstr ""
+
+msgctxt "#30855"
+msgid "Folk"
+msgstr ""
+
+msgctxt "#30856"
+msgid "Classical"
+msgstr ""
+
+msgctxt "#30857"
+msgid "Reggae"
+msgstr ""
+
+msgctxt "#30858"
+msgid "World"
+msgstr ""
+
+msgctxt "#30859"
+msgid "Popularity"
+msgstr ""
+
+msgctxt "#30912"
+msgid "Alphabet"
+msgstr ""
+
+msgctxt "#30921"
+msgid "Show the catalog directly in the main menu?"
+msgstr ""
+
+msgctxt "#30922"
+msgid "Concerts"
+msgstr ""
+
+msgctxt "#30923"
+msgid "The Last.fm key is not valid."
+msgstr ""
+
+msgctxt "#30978"
+msgid "The Last.fm key works."
+msgstr ""
+
+msgctxt "#30996"
+msgid "Could not reach Last.fm. Try again later."
+msgstr ""
+
+msgctxt "#30779"
+msgid "The catalog is being prepared – artists are searched in the background."
+msgstr ""
+
+msgctxt "#30731"
+msgid "Last.fm API key missing – open settings"
+msgstr ""
+
+msgctxt "#30737"
+msgid "Run stream verification now?"
+msgstr ""
+
+msgctxt "#30739"
+msgid "The first batch checks more titles at once so the catalog has something to show right away. It runs in the background."
+msgstr ""
+
+msgctxt "#30740"
+msgid "Start the concert search now?"
+msgstr ""
+
+msgctxt "#30750"
+msgid "The first batch searches more artists at once so the catalog has something to show right away. It runs in the background."
+msgstr ""

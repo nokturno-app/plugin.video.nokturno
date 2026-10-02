@@ -54,6 +54,7 @@ from sosac_direct import EXPORT as SOSAC_EXPORT, SosacDirect, is_direct_id  # no
 from enrich import add_ratings, enrich, enrich_one, shutdown_pool as release_enrich  # noqa: E402
 import foryou  # noqa: E402
 import hq_index  # noqa: E402
+import concertcat  # noqa: E402
 import mycat  # noqa: E402
 import usage  # noqa: E402
 import servers  # noqa: E402
@@ -232,6 +233,7 @@ HQ_SEEN_DAYS = 14
 VERIFY_TRIGGER_PROP = "nokturno.verify.trigger"   # menu s prázdným indexem popožene službu; hodnota = cíl (`hq` / id katalogu)
 HQ_POOL_MAX = 200
 VERIFY_MANUAL_PROP = "nokturno.verify.manual"     # „cíl:počet“; stejný literál jako v service.py
+FIRST_BATCH_SIZE = 30                       # první dávka po uložení nového ověřovaného katalogu
 HQ_MANUAL_SIZE = 20                         # ruční „Spustit dávku nyní“ ověří víc titulů než dávka služby
 HQ_RANKS = (0, 3, 3.5, 4)                   # jakákoli, Full HD, 2K, 4K (`quality_rank` v jádru)
 HQ_AUDIO = ("", "CZ", "SK", "EN")           # index 0 = jakýkoli; stejné pořadí má i `hq_subs`
@@ -902,6 +904,8 @@ def engine_options():
         "pt_email": setting("pt_email").strip() if on("pt_enabled", "false") else "",
         "hs_enabled": on("hs_enabled", "false"),
         "tmdb_api_key": setting("tmdb_api_key"),
+        # klíč Last.fm pro katalogy koncertů (`mycat.refresh_concert` ho čte přes `_opt`)
+        "lastfm_key": setting("lastfm_key").strip(),
         # hlavičky souborů ze společné cache serveru (`Engine._media_hints`): dotaz
         # prozradí serveru identy otvíraných souborů, proto jen s povolenými statistikami
         "media_hints": on("stats_enabled", "false"),
@@ -4922,6 +4926,9 @@ def main_menu(apis):
     folder_item(L(30013), build_url(action="browse", type="series"), icon="DefaultTVShows.png")
     # sezónní a tematické katalogy zapnuté na dashboardu (bez vydání nové verze)
     dash_catalog_items(apis, "root")
+    for cat in concert_cats():   # katalogy koncertů s volbou „přímo v menu“ (čtení souboru, bez sítě)
+        if cat.get("menu"):
+            mycat_folder(cat, "movie")
     mylist_menu_item()
     folder_item(L(30483, "TV program"), build_url(action="tv"), icon="DefaultAddonPVRClient.png")
     # jako Pokračovat výš: na čisté instalaci nevede do prázdna. Podmínka musí pokrýt
@@ -5112,9 +5119,59 @@ def _mycat_pick(heading, labels, current, values):
     return None if idx < 0 else values[idx]
 
 
+# štítky Last.fm katalogu koncertů (`concertcat.TAGS`): tag → (id řetězce, český fallback)
+CONCERT_TAG_LABELS = {"czech": (30793, "Česká scéna"), "slovak": (30794, "Slovenská scéna"),
+                      "czech rock": (30795, "Český rock"), "classic rock": (30796, "Classic rock"),
+                      "hard rock": (30797, "Hard rock"), "metal": (30798, "Metal"), "rock": (30799, "Rock"),
+                      "pop": (30836, "Pop"), "punk": (30837, "Punk"), "hip-hop": (30838, "Hip-hop"),
+                      "jazz": (30839, "Jazz"), "electronic": (30854, "Elektronika"), "folk": (30855, "Folk"),
+                      "classical": (30856, "Klasika"), "reggae": (30857, "Reggae"), "world": (30858, "World")}
+CONCERT_SHOW_LABELS = (("pool", 30859, "Popularity"), ("found", 30765, "Nově nalezené"), ("name", 30912, "Abecedy"))
+CONCERT_ICON = "DefaultMusicGenres.png"   # jen standardní ikona skinu
+
+
+def concert_cats():
+    return mycats("concert")
+
+
+def concert_form(cat=None):
+    """Formulář katalogu koncertů: název, hudební žánry (štítky Last.fm), řazení a umístění. Bez vlastního
+    klíče Last.fm nabídne otevření nastavení a nic neuloží. Ověřování je tu vždy zapnuté (bez něj nemá smysl)."""
+    cat = cat or {}
+    dlg = xbmcgui.Dialog()
+    if not setting("lastfm_key").strip():
+        if dlg.yesno(L(30789, "Nový katalog koncertů"),
+                     L(30790, "Katalog koncertů potřebuje vlastní API klíč Last.fm. Zadej ho v Nastavení → "
+                              "Zdroje a účty → Last.fm."), yeslabel=L(30791, "Otevřít nastavení")):
+            ADDON.openSettings()
+        return None
+    cid = cat.get("id") or f"k{int(time.time() * 1000):x}"
+    if sum(1 for c in mycats() if c.get("verify") and c.get("id") != cid) >= mycat.MAX_VERIFIED:
+        notify(L(30780, "Ověřovat jde nejvýš 20 katalogů."), xbmcgui.NOTIFICATION_WARNING)
+        return None
+    default_name = cat.get("name") or L(30922, "Koncerty")
+    name = dlg.input(L(30957, "Název katalogu"), default_name).strip()[:60] or default_name
+    tags = list(CONCERT_TAG_LABELS)
+    current = cat.get("tags") or []
+    chosen = dlg.multiselect(L(30792, "Hudební žánry katalogu"), [L(*CONCERT_TAG_LABELS[t]) for t in tags],
+                             preselect=[i for i, t in enumerate(tags) if t in current])
+    if not chosen:   # zrušení i prázdný výběr
+        return None
+    shows = [v for v, _, _ in CONCERT_SHOW_LABELS]
+    show = _mycat_pick(L(30774, "Zobrazit seřazené podle"), [L(sid, fb) for _, sid, fb in CONCERT_SHOW_LABELS],
+                       cat.get("show") or "pool", shows)
+    if show is None:
+        return None
+    menu = dlg.yesno(L(30775, "Umístění"), L(30921, "Zobrazit katalog přímo v hlavním menu?"))
+    return {"id": cid, "kind": "concert", "name": name, "tags": [tags[i] for i in chosen], "show": show,
+            "menu": bool(menu), "verify": True}
+
+
 def mycat_form(ctype, cat=None):
     """Dialogy formuláře (žánry, jazyk, roky, řazení, ověřování, název) → uložitelný záznam, nebo None
     po zrušení. Běží jen z ne-složky (handle −1), z widgetu ani z JSON-RPC se sem nejde."""
+    if ctype == "concert":
+        return concert_form(cat)
     cat = cat or {}
     kind = "series" if ctype == "series" else "movie"
     dlg = xbmcgui.Dialog()
@@ -5194,6 +5251,22 @@ def mycat_form(ctype, cat=None):
             "q": q, "audio": audio, "subs": subs, "surround": bool(surround), "show": show, "menu": bool(menu)}
 
 
+def mycat_first_batch(cat):
+    """Po uložení ověřovaného katalogu nabídne hned první větší dávku (služba ji udělá na pozadí)."""
+    if not cat.get("verify"):
+        return
+    if cat.get("kind") == "concert":
+        heading, text = (L(30740, "Spustit hledání koncertů nyní?"),
+                         L(30750, "První dávka prohledá víc interpretů najednou, ať je v katalogu hned co ukázat. "
+                                  "Běží na pozadí."))
+    else:
+        heading, text = (L(30737, "Spustit ověření streamů nyní?"),
+                         L(30739, "První dávka prověří víc titulů najednou, ať je v katalogu hned co ukázat. "
+                                  "Běží na pozadí."))
+    if xbmcgui.Dialog().yesno(heading, text):
+        xbmcgui.Window(10000).setProperty(VERIFY_MANUAL_PROP, "%s:%s" % (cat["id"], FIRST_BATCH_SIZE))
+
+
 def mycat_new(ctype):
     cat = mycat_form(ctype)
     if not cat:
@@ -5201,6 +5274,7 @@ def mycat_new(ctype):
     mycat.save(STORE, cat)
     usage.mark_feature(STORE, "mycatalog")
     xbmc.executebuiltin("Container.Refresh")
+    mycat_first_batch(cat)
 
 
 def mycat_edit(cat_id):
@@ -5210,6 +5284,7 @@ def mycat_edit(cat_id):
         return
     mycat.save(STORE, new)
     xbmc.executebuiltin("Container.Refresh")
+    mycat_first_batch(new)
 
 
 def mycat_delete(cat_id):
@@ -5231,13 +5306,16 @@ def mycat_folder(cat, ctype):
                (L(30947, "Smazat katalog"), runplugin(action="mycat_delete", id=cat["id"]))]
     folder_item(cat.get("name") or L(30972, "Vlastní katalog"),
                 build_url(action="mycat", type=ctype, id=cat["id"]),
-                icon="DefaultVideoPlaylists.png", context=context)
+                icon=CONCERT_ICON if cat.get("kind") == "concert" else "DefaultVideoPlaylists.png", context=context)
 
 
 def list_mycats(ctype):
-    for cat in mycats(ctype):
+    for cat in mycats(ctype) + (concert_cats() if ctype == "movie" else []):   # koncerty žijí pod Filmy
         mycat_folder(cat, ctype)
     action_item(L(30945, "Nový katalog"), build_url(action="mycat_new", type=ctype), icon="DefaultAddSource.png")
+    if ctype == "movie":
+        action_item(L(30789, "Nový katalog koncertů"), build_url(action="mycat_new", kind="concert"),
+                    icon="DefaultAddSource.png")
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
 
 
@@ -5259,7 +5337,78 @@ def list_mycat_verified(cat, ctype, page):
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
 
 
+def list_mycat_concert(cat, page):
+    """Katalog koncertů: interpreti s nálezem z indexu (`mycat_index_<id>`), pod nimi koncerty (`list_mycat_artist`).
+    Žádná síť – index plní služba na pozadí (`mycat.refresh_concert`)."""
+    set_content("files")
+    if not setting("lastfm_key").strip():
+        action_item(L(30731, "Chybí API klíč Last.fm – otevřít nastavení"), build_url(action="settings"),
+                    icon="DefaultAddonProgram.png")
+        xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
+        return
+    index = mycat.load_index(STORE, cat)
+    checked, _matched, total = mycat.counts(index)
+    if page == 1:
+        action_item(_swf(30777, "Ověřeno %s z %s – spustit dávku nyní", checked, total),
+                    build_url(action="mycat_batch", id=cat["id"]), icon="DefaultAddonsUpdates.png", thumb=True)
+    artists = concertcat.visible(index, cat.get("show") or "pool")
+    if not artists:
+        xbmcgui.Window(10000).setProperty(VERIFY_TRIGGER_PROP, cat["id"])
+        notify(L(30779, "Katalog se připravuje – interpreti se prohledávají na pozadí."),
+               xbmcgui.NOTIFICATION_INFO, 4000)
+    for a in artists:
+        folder_item("%s (%d)" % (a["name"], len(concertcat.group(a["files"], a["name"]))),
+                    build_url(action="mycat_artist", id=cat["id"], a=a["id"]), icon=CONCERT_ICON)
+    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
+
+
+def list_mycat_artist(cat_id, artist_id):
+    """Koncerty jednoho interpreta: položka = koncert, přehraje první soubor, který jde, ostatní kopie jdou
+    jako záložní (`play_ref`)."""
+    cat = next((c for c in concert_cats() if c.get("id") == cat_id), None)
+    entry = ((mycat.load_index(STORE, cat).get("items") or {}).get(artist_id) or {}) if cat else {}
+    name = (entry.get("meta") or {}).get("name") or ""
+    set_content("videos")
+    for g in concertcat.group(entry.get("files") or [], name):
+        label = "%s (%s)" % (g["title"], g["year"]) if g["year"] else g["title"]
+        refs = [f["ref"] for f in g["files"]]
+        li = xbmcgui.ListItem(label=label)
+        li.setLabel2(human_size(g["files"][0].get("size") or 0))
+        li.setProperty("IsPlayable", "true")
+        li.setArt({"icon": CONCERT_ICON})
+        tag = li.getVideoInfoTag()
+        tag.setTitle(label)
+        duration = max((int(f.get("duration") or 0) for f in g["files"]), default=0)
+        if duration:
+            tag.setDuration(duration)
+        xbmcplugin.addDirectoryItem(
+            HANDLE, build_url(action="play_ref", ref=refs[0], alts=",".join(refs[1:]), name=label), li, isFolder=False)
+    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
+
+
+def play_ref(apis, ref, name="", alts=""):
+    """Přehraje vnitřní odkaz (`ws:`/`hs:`/`fs:`) bez titulu; nejde-li první, zkusí kopie z `alts` (po čárkách)."""
+    mylist_play(apis, "|".join([ref] + [a for a in (alts or "").split(",") if a]), name)
+
+
+def lastfm_check():
+    """Tlačítko „Ověřit klíč“ v nastavení Last.fm."""
+    try:
+        ok = bool(setting("lastfm_key").strip()) and concertcat.check_key(setting("lastfm_key").strip())
+    except concertcat.ConcertError:
+        notify(L(30996, "Last.fm se nepodařilo zeptat. Zkus to později."), xbmcgui.NOTIFICATION_WARNING)
+        return
+    if ok:
+        notify(L(30978, "Klíč Last.fm je v pořádku."), xbmcgui.NOTIFICATION_INFO)
+    else:
+        notify(L(30923, "Klíč Last.fm neplatí."), xbmcgui.NOTIFICATION_ERROR)
+
+
 def list_mycat(apis, ctype, cat_id, page=1):
+    cat = next((c for c in concert_cats() if c.get("id") == cat_id), None)
+    if cat:
+        list_mycat_concert(cat, page)
+        return
     cat = next((c for c in mycats(ctype) if c.get("id") == cat_id), None)
     dash = apis.get("dash")
     if not cat or (dash is None and not cat.get("verify")):
@@ -7364,7 +7513,8 @@ def router(query):
         "history_remove": lambda: history_remove(p["type"], p.get("q", "")),
         "history_clear": lambda: _tlacitko(lambda: history_clear(p["type"])),
         "mycats": lambda: list_mycats(p.get("type", "movie")),
-        "mycat_new": lambda: _tlacitko(lambda: mycat_new(p.get("type", "movie"))),
+        "mycat_new": lambda: _tlacitko(lambda: mycat_new(p.get("kind") or p.get("type", "movie"))),
+        "lastfm_check": lambda: _tlacitko(lastfm_check),
         "mycat_edit": lambda: _tlacitko(lambda: mycat_edit(p.get("id", ""))),
         "mycat_delete": lambda: _tlacitko(lambda: mycat_delete(p.get("id", ""))),
         "mycat_batch": lambda: _tlacitko(lambda: mycat_batch(p.get("id", ""))),
@@ -7519,6 +7669,10 @@ def router(query):
             list_genres(apis, p["type"], p["catalog"], p.get("src", "luna"), show_all=not p.get("noall"))
         elif action == "mycat":
             list_mycat(apis, p.get("type", "movie"), p.get("id", ""), int(p.get("page") or 1))
+        elif action == "mycat_artist":
+            list_mycat_artist(p.get("id", ""), p.get("a", ""))
+        elif action == "play_ref":
+            play_ref(apis, p.get("ref", ""), p.get("name", ""), p.get("alts", ""))
         elif action == "dash_group":
             list_dash_group(apis, p["catalog"], p.get("type", "movie"))
         elif action == "catalog":
@@ -7599,7 +7753,7 @@ def _close(action):
     """Zavře handle Kodi jako neúspěšný — bez toho by Kodi u přehrání čekalo na timeout."""
     # "title" s handle ≥ 0 = Přehrát nad titulem (Kodi čeká setResolvedUrl, viz router);
     # s handle < 0 se sem nedostane, router tu větev ukončí dřív
-    if action in ("play", "play_ws", "play_hs", "play_dav", "title"):
+    if action in ("play", "play_ws", "play_hs", "play_dav", "title", "play_ref"):
         xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
     elif action not in ("download", "download_ws", "download_hs", "toggle_fav"):
         xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
@@ -7611,7 +7765,7 @@ def _close(action):
 # zahřívání cache jinak platily čtení celé databáze (stovky řádků u velké knihovny) navíc.
 MARKS_SKIP = frozenset((
     # přehrání a streamy
-    "play", "play_ws", "play_hs", "play_dav", "title", "title_download", "prefetch", "hq_refresh",
+    "play", "play_ws", "play_hs", "play_dav", "play_ref", "title", "title_download", "prefetch", "hq_refresh",
     "verify_refresh", "mycat_batch", "hq_setup", "hq_info", "hq_batch",
     "download", "download_ws", "download_hs", "toggle_fav", "streams", "streams_filter",
     "dav_browse", "tv_pick", "page",
@@ -7621,7 +7775,7 @@ MARKS_SKIP = frozenset((
     "cztor_status", "cztor_logout", "clear_cache", "stats_send", "log_send", "website_info",
     "test_sources", "source_pause", "remote_setup", "stream_layout_reset", "setup_wizard", "sub_status",
     "luna_check", "luna_find", "os_check", "speedtest", "update_repos", "tmdbhelper_player", "sync_now",
-    "sync_create", "sync_join", "sync_leave", "mycats", "mycat_new", "mycat_edit", "mycat_delete",
+    "sync_create", "sync_join", "sync_leave", "mycats", "mycat_artist", "lastfm_check", "mycat_new", "mycat_edit", "mycat_delete",
     "watch_series", "want", "watch_episode", "watch_flag", "watch_seen", "watch_check", "watch_check_now",
     "whats_new", "ha_files", "settings", "transfer_send", "transfer_receive",
     "transfer_file_save", "transfer_file_load",

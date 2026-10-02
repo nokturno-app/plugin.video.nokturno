@@ -14,6 +14,9 @@ import time
 
 # `from .x import y`, ne `from . import x` — plochá kopie v Kodi umí jen tenhle tvar
 from abort import Aborted
+from concertcat import ConcertError, POOL_EVERY as CONCERT_POOL_EVERY, TAGS as CONCERT_TAGS
+from concertcat import pool as concert_pool, search as concert_search
+from concertfilter import rivals as concert_rivals
 from catindex import compact, counts, merge_pool, merge_results, next_batch, record, signature, visible  # noqa: F401
 
 DEFS = "mycatalogs"          # seznam definic katalogů
@@ -103,12 +106,20 @@ def definition(cat):
             audio if audio in TRACKS else "", subs if subs in TRACKS else "")
 
 
+def concert_tags(cat):
+    """Žánry katalogu koncertů – jen známé štítky (`concertcat.TAGS`)."""
+    return [t for t in cat.get("tags") or [] if t in CONCERT_TAGS]
+
+
 def sig(cat):
+    if cat.get("kind") == "concert":   # změna žánrů = nový index
+        return signature("concert", False, ",".join(sorted(concert_tags(cat))))
     return signature(*definition(cat))
 
 
-def verified(store):
-    return [c for c in catalogs(store) if c.get("verify")][:MAX_VERIFIED]
+def verified(store, concerts=True):
+    """Ověřované katalogy; `concerts=False` vynechá koncertní (HA je neověřuje)."""
+    return [c for c in catalogs(store) if c.get("verify") and (concerts or c.get("kind") != "concert")][:MAX_VERIFIED]
 
 
 def pool(dash, cat):
@@ -149,6 +160,8 @@ def refresh(engine, store, dash, cid, size=1, verify=True, should_stop=None):
     cat = next((c for c in catalogs(store) if c.get("id") == cid), None)
     if not cat or not cat.get("verify"):
         return 0
+    if cat.get("kind") == "concert":
+        return refresh_concert(engine, store, cat, size, verify, should_stop)
     kind = "series" if cat.get("kind") == "series" else "movie"
     name, csig, now = INDEX + cid, sig(cat), _now()
     index = store.reload(name, {})
@@ -180,11 +193,66 @@ def refresh(engine, store, dash, cid, size=1, verify=True, should_stop=None):
     return done
 
 
+CONCERT_RETRY = 1800   # po selhání načtení poolu z Last.fm další pokus nejdřív za 30 min
+
+
+def refresh_concert(engine, store, cat, size=1, verify=True, should_stop=None):
+    """Totéž pro katalog koncertů: pool interpretů z Last.fm (vlastní klíč `lastfm_key`) a hledání koncertů
+    ve zdrojích zařízení. Soubory se ukládají k interpretovi v indexu a nikam se nesynchronizují."""
+    key = str(engine._opt("lastfm_key") or "").strip()
+    if not key:
+        return 0
+    name, csig, now = INDEX + cat["id"], sig(cat), _now()
+    index = store.reload(name, {})
+    stale = (index.get("sig") != csig or now - int(index.get("pool_ts") or 0) >= CONCERT_POOL_EVERY) \
+        and now - int(index.get("pool_try") or 0 if index.get("sig") == csig else 0) >= CONCERT_RETRY
+    fresh = None
+    if stale:   # síť mimo zámek
+        try:
+            fresh = concert_pool(key, concert_tags(cat))
+        except ConcertError:
+            fresh = None
+    with store.updating(name, {}) as index:
+        if index.get("sig") != csig:
+            index.clear()
+            index["sig"] = csig
+        if stale:
+            index["pool_try"] = now
+        if fresh is not None:
+            merge_pool(index, fresh, now)
+            index["pool_ts"] = now
+        batch = [(m, index["items"][m]["meta"].get("name") or "") for m in next_batch(index, now, size)] if verify else []
+        names = [(e.get("meta") or {}).get("name") or "" for e in (index.get("items") or {}).values()]
+    done = 0
+    for mid, artist in batch:
+        if should_stop and should_stop():
+            break
+        files = None
+        if artist:
+            try:
+                with engine.background():
+                    files = concert_search(engine, artist, concert_rivals(artist, names), should_stop)
+            except Aborted:
+                raise
+            except Exception:  # noqa: BLE001 – výpadek zdroje = zkusit později
+                files = None
+        with store.updating(name, {}) as index:
+            entry = (index.get("items") or {}).get(mid)
+            if index.get("sig") == csig and entry is not None:
+                record(index, mid, None if files is None else bool(files), _now())
+                if files:
+                    entry["files"] = files
+                else:
+                    entry.pop("files", None)
+        done += 1
+    return done
+
+
 def overview(store):
     """Stav pro HA (služba `nokturno.catalogs`, senzor): {"paused", "catalogs": [{id, name, kind, verified, matched,
     total, last_check}]} – jen ověřované katalogy; `last_check` = ISO čas posledního ověření nebo None."""
     rows = []
-    for cat in verified(store):
+    for cat in verified(store, concerts=False):
         index = load_index(store, cat)
         checked, matched, total = counts(index)
         last = max((int(e.get("ts") or 0) for e in (index.get("items") or {}).values()), default=0)
@@ -220,7 +288,7 @@ def collect(store, since, seen):
             out["c:" + cid] = {"on": False, "ts": _ts(rec)}
         elif cid in cats:
             out["c:" + cid] = {"on": True, "ts": _ts(rec), "cat": cats[cid]}
-    for cat in verified(store):
+    for cat in verified(store, concerts=False):   # nálezy koncertů se nesynchronizují, jen definice
         index = load_index(store, cat)
         res = compact(index)
         if not res:
@@ -232,7 +300,9 @@ def collect(store, since, seen):
 
 
 def _valid(cat, cid):
-    return isinstance(cat, dict) and cat.get("id") == cid and cat.get("kind") in ("movie", "series")
+    if not (isinstance(cat, dict) and cat.get("id") == cid and cat.get("kind") in ("movie", "series", "concert")):
+        return False
+    return cat.get("kind") != "concert" or bool(concert_tags(cat))
 
 
 def apply(store, changes, stamp=0):
@@ -265,7 +335,7 @@ def apply(store, changes, stamp=0):
             applied += 1
         else:
             cat = next((c for c in catalogs(store) if c["id"] == cid), None)
-            if not cat or rec.get("sig") != sig(cat):
+            if not cat or cat.get("kind") == "concert" or rec.get("sig") != sig(cat):
                 continue
             with store.updating(INDEX + cid, {}) as index:
                 if index.get("sig") != rec["sig"]:
