@@ -169,6 +169,7 @@ class TmdbApi:
                 "name": name,
                 "_title": name,
                 "year": year,
+                "released": raw.get("release_date") or raw.get("first_air_date") or "",
                 "poster": IMG + raw["poster_path"] if raw.get("poster_path") else "",
                 "background": IMG_BIG + raw["backdrop_path"] if raw.get("backdrop_path") else "",
                 "description": raw.get("overview") or "",
@@ -261,8 +262,10 @@ class TmdbApi:
                 "poster": IMG + raw["poster_path"] if raw.get("poster_path") else "",
                 "background": IMG_BIG + raw["backdrop_path"] if raw.get("backdrop_path") else "",
                 "year": (raw.get("release_date") or raw.get("first_air_date") or "")[:4],
+                # plné datum: skiny (Arctic Fuse) ukazují v detailu ListItem.Premiered, ne rok
+                "released": raw.get("release_date") or raw.get("first_air_date") or "",
             }
-        data = self._cached(f"tmdb:brief:{kind}:{imdb_id}", DETAIL_TTL, load)
+        data = self._cached(f"tmdb:brief2:{kind}:{imdb_id}", DETAIL_TTL, load)
         if data and data.get("imdbRating"):
             data["ratingSource"] = "tmdb"   # i záznamy z cache před 8.4.0, jinak by je enrich označil za IMDb
         return data
@@ -355,6 +358,7 @@ class TmdbApi:
                 "name": data.get("title") or data.get("name") or "",
                 **({"_orig": data.get("original_title") or data.get("original_name") or ""} if own else {}),
                 "year": year,
+                "released": data.get("release_date") or data.get("first_air_date") or "",
                 "poster": IMG + data["poster_path"] if data.get("poster_path") else "",
                 "background": IMG_BIG + data["backdrop_path"] if data.get("backdrop_path") else "",
                 "description": data.get("overview") or "",
@@ -371,7 +375,7 @@ class TmdbApi:
                 "videos": videos,
                 **self._art(kind, tmdb_id, data.get("backdrop_path") or "", images=data.get("images") or {}),
             }
-        return self._cached(f"tmdb:meta3:{kind}:{imdb_id}", DETAIL_TTL, load)
+        return self._cached(f"tmdb:meta4:{kind}:{imdb_id}", DETAIL_TTL, load)
 
 
 if __name__ == "__main__":

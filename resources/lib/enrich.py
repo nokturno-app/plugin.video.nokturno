@@ -150,8 +150,8 @@ def _fetch(luna, store, ctype, imdb, tmdb=None):
         if picked.get("background"):
             picked["background"] = _capped(picked["background"], "w1280")
         return picked
-    # s TMDB jiný klíč: pod `ttmeta:` může 30 dní ležet anglický popis z Cinemety
-    key = f"ttmeta:{ctype}:{imdb}" + (":tmdb" if tmdb else "")
+    # s TMDB jiný klíč: pod `ttmeta2:` může 30 dní ležet anglický popis z Cinemety
+    key = f"ttmeta2:{ctype}:{imdb}" + (":tmdb" if tmdb else "")
     return store.cached(key, TTL, load) if store else load()
 
 
