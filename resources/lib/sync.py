@@ -9,7 +9,7 @@ Jeden výměnný krok je POST na `/api/nokturno/sync`:
 
     {"device": "Obývák", "since": <čas HA z minula>,
      "changes": {"watched": {klíč: záznam}, "favlog": {klíč: {"on", "ts"}}, "items": {klíč: snímek},
-                 "next_hidden": {seriál: {"ep", "ts"}}}}
+                 "next_hidden": {seriál: {"ep", "ts"}}, "watchlist": {…}, "catalogs": {"c:<id>"|"r:<id>": …}}}
 
 a odpověď má stejný tvar plus `"now"` (čas HA). `since` je vždy čas HA, ne
 místní — jinak by se rozešly hodiny dvou boxů. U každého titulu vyhrává novější
@@ -23,6 +23,7 @@ import urllib.request
 
 # `from .watch import …`, ne `from . import watch` — plochá kopie v Kodi umí jen tenhle tvar
 from watch import SECTION as WATCH_SECTION, apply as watch_apply, collect as watch_collect
+from mycat import SECTION as CAT_SECTION, apply as cat_apply, collect as cat_collect
 from store import ITEMS_MAX, WATCHED_MAX
 
 STATE = "sync"          # sync.json v profilu: {"since", "last_ok", "last_error", "pushed", "pulled"}
@@ -37,6 +38,8 @@ CIRCLES = {
     # hlídané seriály a tituly (`watch.py`) — seznam, příznak „kontrolovat dál“
     # i výsledek poslední kontroly, aby se tatáž kontrola nedělala na každém zařízení
     "watchlist": (WATCH_SECTION,),
+    # vlastní katalogy (`mycat.py`): definice a výsledky ověřování dostupnosti streamů
+    "catalogs": (CAT_SECTION,),
     # volby doplňku a přihlášení ke zdrojům (`setsync.py`). Nejsou ve `Store`,
     # takže je `collect_changes` nesbírá — plní je hostitel přes `syncbox`
     # a přes Home Assistant nechodí vůbec.
@@ -44,7 +47,7 @@ CIRCLES = {
     "accounts": ("acclog",),
 }
 # Nastavení ani účty ve výchozím stavu nejdou — sdílení přihlášení má být vědomé.
-DEFAULT_CIRCLES = ("watched", "favourites", "history", "watchlist")
+DEFAULT_CIRCLES = ("watched", "favourites", "history", "watchlist", "catalogs")
 # Snímky titulů jdou vždy k tomu, co se posílá — bez nich by druhá strana
 # neuměla položku vykreslit. `collect_changes` je omezuje na dotčené klíče.
 SNAPSHOTS = "items"
@@ -130,6 +133,7 @@ def collect_changes(store, since):
     items = store.reload("items", {})
     return {"watched": watched, "favlog": favlog, "histlog": histlog, "next_hidden": next_hidden,
             WATCH_SECTION: watch_collect(store, since, _seen),
+            CAT_SECTION: cat_collect(store, since, _seen),
             "items": _snapshots(items, watched, favlog)}
 
 
@@ -247,6 +251,7 @@ def apply_changes(store, changes, stamp=False):
     if hist_dirty:
         store.rebuild_history()   # zobrazený seznam podle sloučeného deníku
     applied += watch_apply(store, changes.get(WATCH_SECTION), stamp=now)
+    applied += cat_apply(store, changes.get(CAT_SECTION), stamp=now)
     return applied
 
 

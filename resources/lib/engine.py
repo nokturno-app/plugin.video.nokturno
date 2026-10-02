@@ -2758,7 +2758,8 @@ class Engine:
     @staticmethod
     def quality_match(stream, min_quality=4, surround=False, audio="CZ", subs=""):
         """Odpovídá stream definici „vysoká kvalita“? 3D se vyřazuje vždy; 5.1 vyžaduje ověřené `channels`;
-        prázdný `audio`/`subs` a `min_quality` 0 = na parametru nezáleží."""
+        prázdný `audio`/`subs` a `min_quality` 0 = na parametru nezáleží. `audio`/`subs` smí být víc kódů
+        oddělených `|` („CZ|SK“), stačí kterýkoli; 5.1 se pak hledá v kterémkoli jazyce."""
         rank = stream.get("quality_rank") or 0
         if rank < min_quality or stream_3d(stream):
             return False
@@ -2766,11 +2767,11 @@ class Engine:
         size = stream.get("size_gb") or 0
         if size and size < QUALITY_MIN_GB.get(rank, 0):
             return False
-        if audio and audio not in (stream.get("langs") or ()):
+        if audio and not set(audio.split("|")) & set(stream.get("langs") or ()):
             return False
-        if subs and subs not in (stream.get("subs") or ()):
+        if subs and not set(subs.split("|")) & set(stream.get("subs") or ()):
             return False
-        return not surround or bool(is_surround(stream, audio))
+        return not surround or bool(is_surround(stream, "" if "|" in audio else audio))
 
     def classify_quality(self, ctype, item_id, min_quality=4, surround=False, audio="CZ", subs="",
                          ttl=QUALITY_CLASS_TTL):
@@ -2799,6 +2800,22 @@ class Engine:
             return None if failures or not streams else False
 
         return self.store.cached_if(key, ttl, _spocitat, ok=lambda d: d is not None)
+
+    def verify_title(self, ctype, item_id, min_quality=0, surround=False, audio="", subs=""):
+        """Ověření titulu pro vlastní katalog. Film = `classify_quality`, seriál podle posledního
+        odvysílaného dílu (`watch.aired_episodes`). True/False, None = zkusit později."""
+        if ctype != "series":
+            return self.classify_quality("movie", item_id, min_quality, surround, audio, subs)
+        from watch import aired_episodes
+        try:
+            episodes = self.episodes(item_id)
+        except Exception as err:  # noqa: BLE001 – výpadek metadat = zkusit později
+            _LOGGER.debug("verify_title %s: %s", item_id, err)
+            return None
+        aired = aired_episodes(episodes, datetime.now().strftime("%Y-%m-%d"))
+        if not aired:
+            return False
+        return self.classify_quality("series", aired[-1]["id"], min_quality, surround, audio, subs)
 
     def _max_bitrate(self):
         """Strop datového toku z nastavení (Mb/s), 0 = bez omezení."""

@@ -11,6 +11,7 @@ souborů, které Kodi čte samo (strings.po, settings.xml, addon.xml).
 import os
 import pathlib
 import re
+import contextlib
 import json
 import logging
 import shutil
@@ -3122,7 +3123,7 @@ class TestVysokaKvalita(unittest.TestCase):
             default.hq_setup()
         self.assertEqual([xbmcaddon.settings.get(k) for k in ("hq_min_quality", "hq_channels", "hq_audio", "hq_subs",
                                                               "hq_enabled")], ["2", "1", "3", "2", "false"])
-        self.assertTrue(xbmcgui.Window(10000).getProperty(default.HQ_TRIGGER_PROP))
+        self.assertTrue(xbmcgui.Window(10000).getProperty(default.VERIFY_TRIGGER_PROP))
         for k in ("hq_min_quality", "hq_channels", "hq_audio", "hq_subs", "hq_enabled"):
             xbmcaddon.settings.pop(k, None)
         volby = iter([1, 0, -1])   # Zpět ve třetím kroku
@@ -5046,11 +5047,11 @@ class TestSynchronizaceRelay(unittest.TestCase):
         self.assertIsNone(default.sync_settings())
 
     def test_okruhy_podle_prepinacu(self):
-        self.assertEqual(default.sync_circles(), ("watched", "favourites", "history", "watchlist"),
+        self.assertEqual(default.sync_circles(), ("watched", "favourites", "history", "watchlist", "catalogs"),
                          "výchozí stav je vše zapnuté")
         xbmcaddon.settings["sync_history"] = "false"
-        self.assertEqual(default.sync_circles(), ("watched", "favourites", "watchlist"))
-        for klic in ("sync_watched", "sync_favourites", "sync_watchlist"):
+        self.assertEqual(default.sync_circles(), ("watched", "favourites", "watchlist", "catalogs"))
+        for klic in ("sync_watched", "sync_favourites", "sync_watchlist", "sync_catalogs"):
             xbmcaddon.settings[klic] = "false"
         self.assertEqual(default.sync_circles(), ())
 
@@ -5172,14 +5173,14 @@ class TestSynchronizaceRelay(unittest.TestCase):
                     break
                 time.sleep(0.02)
         self.assertEqual(relay.call_count, 0)
-        self.assertEqual(ha.call_args[1]["circles"], ("watched", "favourites", "watchlist"))
+        self.assertEqual(ha.call_args[1]["circles"], ("watched", "favourites", "watchlist", "catalogs"))
 
     def test_rucni_synchronizace_pres_ha_posila_okruhy(self):
         xbmcaddon.settings.update({"sync_mode": "0", "sync_url": "http://ha", "sync_key": "k",
                                    "sync_favourites": "false"})
         with mock.patch.object(default, "sync_once", return_value=(True, 0, 0, "")) as ha:
             default.sync_now()
-        self.assertEqual(ha.call_args[1]["circles"], ("watched", "history", "watchlist"))
+        self.assertEqual(ha.call_args[1]["circles"], ("watched", "history", "watchlist", "catalogs"))
 
     # --- jedno středisko, ne dvě ---
 
@@ -5273,14 +5274,14 @@ class TestSynchronizaceRelay(unittest.TestCase):
 
     def test_nastaveni_a_ucty_jsou_vychozim_stavem_vypnute(self):
         """Sdílení hesel se nesmí zapnout samo tím, že uživatel založí skupinu."""
-        self.assertEqual(default.sync_circles(), ("watched", "favourites", "history", "watchlist"))
+        self.assertEqual(default.sync_circles(), ("watched", "favourites", "history", "watchlist", "catalogs"))
 
     def test_zapnute_okruhy_se_pridaji_jen_u_relaye(self):
         xbmcaddon.settings.update({"sync_settings": "true", "sync_accounts": "true"})
         self.assertEqual(default.sync_circles(),
-                         ("watched", "favourites", "history", "watchlist", "settings", "accounts"))
+                         ("watched", "favourites", "history", "watchlist", "catalogs", "settings", "accounts"))
         xbmcaddon.settings["sync_mode"] = "0"
-        self.assertEqual(default.sync_circles(), ("watched", "favourites", "history", "watchlist"),
+        self.assertEqual(default.sync_circles(), ("watched", "favourites", "history", "watchlist", "catalogs"),
                          "Home Assistant nastavení ani účty nepřenáší")
 
     def test_hodnoty_nastaveni_jen_kdyz_je_okruh_zapnuty(self):
@@ -5719,7 +5720,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 130)   # +1 trakt_pull, +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs
+        self.assertEqual(len(volby), 131)   # +1 sync_catalogs (vlastní katalogy), +1 trakt_pull, +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):
@@ -6823,10 +6824,12 @@ class TestVlastniKatalogy(unittest.TestCase):
         reset_kodi()
         default.STORE.save("mycatalogs", [])
 
-    def _vytvor(self, multiselect=(3, 7), selects=(0, 1, 1), numeric=("1990", ""), name=""):
+    def _vytvor(self, multiselect=(3, 7), selects=(0, 1, 1, 1), numeric=("1990", ""), name="", yesno=False):
+        # selects: spojení žánrů, jazyk, roky (1 = Od–do), řazení; ověřování a umístění jdou přes `yesno`
         with mock.patch.object(xbmcgui.Dialog, "multiselect", return_value=list(multiselect)), \
                 mock.patch.object(xbmcgui.Dialog, "select", side_effect=list(selects)), \
                 mock.patch.object(xbmcgui.Dialog, "numeric", side_effect=list(numeric), create=True), \
+                mock.patch.object(xbmcgui.Dialog, "yesno", return_value=yesno), \
                 mock.patch.object(xbmcgui.Dialog, "input", return_value=name):
             default.main("action=mycat_new&type=movie")
         return default.mycats("movie")
@@ -6844,7 +6847,7 @@ class TestVlastniKatalogy(unittest.TestCase):
         self.assertEqual(default.mycat_params({**cat, "join": "or"})["with_genres"], "35|10751")
 
     def test_pohadky_jako_klicove_slovo(self):
-        cat = self._vytvor(multiselect=(18,), selects=(3, 0))[0]
+        cat = self._vytvor(multiselect=(18,), selects=(3, 1, 0))[0]
         self.assertEqual((cat["genres"], cat["keywords"], cat["lang"]), ([], ["fairy"], "cs|sk"))
         self.assertEqual(cat["name"], "Pohádky · Čeština nebo slovenština")
         self.assertEqual(default.mycat_params(cat), {"with_keywords": "3205|329731|358931|351899",
@@ -6901,6 +6904,139 @@ class TestVlastniKatalogy(unittest.TestCase):
     def test_menu_filmu_nabizi_vlastni_katalogy(self):
         default.browse_menu({}, "movie")
         self.assertIn("mycats", [params_of(u).get("action") for u in xbmcplugin.urls()])
+
+
+class TestOverovaneKatalogy(unittest.TestCase):
+    """Vlastní katalog s ověřováním streamů: umístění v menu, výpis z indexu, dávka, deník synchronizace."""
+
+    def setUp(self):
+        reset_kodi()
+        default.STORE.save("mycatalogs", [])
+        default.STORE.save("mycatlog", {})
+        default.STORE.save("favourites", [])
+        default.STORE.save("watched", {})
+
+    def _cat(self, **k):
+        cat = dict({"id": "k1", "kind": "movie", "name": "Ověřené", "verify": True, "q": 3, "audio": "CZ", "show": "found"}, **k)
+        default.mycat.save(default.STORE, cat)
+        return cat
+
+    def _index(self, cat):
+        import catindex
+        idx = {"sig": default.mycat.sig(cat)}
+        catindex.merge_pool(idx, [meta_item("tt1"), meta_item("tt2"), meta_item("tt3")], 0)
+        catindex.record(idx, "tt1", True, 100)
+        catindex.record(idx, "tt2", False, 100)
+        catindex.record(idx, "tt3", True, 200)
+        default.STORE.save(default.mycat.INDEX + cat["id"], idx)
+
+    def test_menu_ukaze_katalog_jen_s_umistenim(self):
+        self._cat(menu=True)
+        self._cat(id="k2", name="Skrytý", menu=False)
+        default.browse_menu({}, "movie")
+        ids = [params_of(u).get("id") for u in xbmcplugin.urls() if params_of(u).get("action") == "mycat"]
+        self.assertEqual(ids, ["k1"])
+
+    def test_vypis_jen_overene_a_akce_davky(self):
+        cat = self._cat()
+        self._index(cat)
+        default.list_mycat({}, "movie", "k1", 1)
+        akce = [params_of(u) for u in xbmcplugin.urls()]
+        self.assertEqual(akce[0]["action"], "mycat_batch")
+        self.assertEqual([a.get("id") for a in akce[1:]], ["tt3", "tt1"])   # nově nalezené první
+        self.assertFalse(xbmcgui.notifications)
+
+    def test_jina_definice_nebo_prazdny_index_popozene_sluzbu(self):
+        cat = self._cat()
+        self._index(cat)
+        default.mycat.save(default.STORE, dict(cat, q=4))
+        default.list_mycat({}, "movie", "k1", 1)
+        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["mycat_batch"])
+        self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_TRIGGER_PROP), "k1")
+        self.assertEqual(len(xbmcgui.notifications), 1)
+
+    def test_davka_overi_titul_a_zapise_found(self):
+        self._cat()
+
+        class Dash:
+            def discover(self, kind, params, page=1):
+                return [meta_item("tt1"), meta_item("tt2")], 1
+
+        class Engine:
+            @contextlib.contextmanager
+            def background(self):
+                yield
+
+            def verify_title(self, kind, mid, *definition):
+                return mid == "tt1"
+
+        default.verify_refresh({"dash": Dash(), "engine": Engine()}, "k1", 2)
+        idx = default.STORE.reload(default.mycat.INDEX + "k1", {})
+        self.assertTrue(idx["items"]["tt1"]["ok"] and idx["items"]["tt1"]["found"])
+        self.assertFalse(idx["items"]["tt2"]["ok"])
+
+    def test_batch_zada_ukol_sluzbe(self):
+        default.main("action=mycat_batch&id=k1")
+        self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_MANUAL_PROP), "k1:%s" % default.HQ_MANUAL_SIZE)
+
+    def test_novy_overovany_katalog_zapise_denik(self):
+        selects = (1, 2, 0, 1, 1, 0, 1, 0)   # jazyk cs, roky Posledních X, řazení výběru, Full HD, zvuk CZ, titulky 0, 5.1, zobrazení
+        with mock.patch.object(xbmcgui.Dialog, "multiselect", return_value=[0]), \
+                mock.patch.object(xbmcgui.Dialog, "select", side_effect=list(selects)), \
+                mock.patch.object(xbmcgui.Dialog, "numeric", return_value="3", create=True), \
+                mock.patch.object(xbmcgui.Dialog, "yesno", return_value=True), \
+                mock.patch.object(xbmcgui.Dialog, "input", return_value="Nové"):
+            default.main("action=mycat_new&type=movie")
+        cat = default.mycats("movie")[0]
+        self.assertEqual((cat["years"], cat["verify"], cat["menu"], cat["q"], cat["audio"], cat["surround"]),
+                         (3, True, True, 3, "CZ", True))
+        self.assertTrue(default.STORE.reload("mycatlog", {})[cat["id"]]["on"])
+
+
+class TestSluzbaOverovani(unittest.TestCase):
+    """Služba ověřuje jen to, co nepřišlo z jiného zařízení; ruční dávka vždy."""
+
+    def setUp(self):
+        reset_kodi()
+        default.STORE.save("mycatalogs", [])
+        default.STORE.save("mycatlog", {})
+        default.mycat.save(default.STORE, {"id": "k1", "kind": "movie", "name": "A", "verify": True})
+        self.monitor = mock.Mock()
+        self.monitor.abortRequested.return_value = False
+        self.monitor.waitForAbort.return_value = False
+
+    def _index(self, foreign):
+        import catindex
+        idx = {"sig": default.mycat.sig({"id": "k1"})}
+        catindex.merge_pool(idx, [meta_item("tt1")], 0)
+        if foreign:
+            idx["foreign_ts"] = int(time.time())
+        default.STORE.save(default.mycat.INDEX + "k1", idx)
+
+    def test_cile_jsou_hq_a_overovane_katalogy(self):
+        self.assertEqual(service.verify_targets(service.Store(service.PROFILE)), ["hq", "k1"])
+
+    def test_cizi_vysledky_jen_obnova_poolu(self):
+        self._index(foreign=True)
+        with mock.patch.object(service, "rpc_directory") as rpc:
+            self.assertEqual(service._verify_run(self.monitor, "k1", 8, False), (0, 0, 0))
+        self.assertEqual(rpc.call_count, 1)
+        self.assertIn("pool_only=1", rpc.call_args[0][0])
+
+    def test_rucni_davka_overuje_i_pri_cizich_vysledcich(self):
+        self._index(foreign=True)
+        with mock.patch.object(service, "rpc_directory") as rpc, \
+                mock.patch.object(xbmcgui, "DialogProgressBG", create=True):
+            service._verify_run(self.monitor, "k1", 2, True)
+        self.assertEqual(rpc.call_count, 2)
+        self.assertNotIn("pool_only", rpc.call_args[0][0])
+
+    def test_bez_cizich_vysledku_overuje_sam(self):
+        self._index(foreign=False)
+        with mock.patch.object(service, "rpc_directory") as rpc:
+            service._verify_run(self.monitor, "k1", 3, False)
+        self.assertEqual(rpc.call_count, 3)
+        self.assertIn("action=verify_refresh&target=k1", rpc.call_args[0][0])
 
 
 class TestStitekSdilej(unittest.TestCase):

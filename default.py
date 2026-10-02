@@ -54,6 +54,7 @@ from sosac_direct import EXPORT as SOSAC_EXPORT, SosacDirect, is_direct_id  # no
 from enrich import add_ratings, enrich, enrich_one, shutdown_pool as release_enrich  # noqa: E402
 import foryou  # noqa: E402
 import hq_index  # noqa: E402
+import mycat  # noqa: E402
 import usage  # noqa: E402
 import servers  # noqa: E402
 from hellspy_api import HellspyApi, HellspyError  # noqa: E402
@@ -228,9 +229,9 @@ FORYOU_SEEN_DAYS = 14
 HQ_SEEN_KEY = "hq_seen"
 HQ_INDEX_KEY = "hq_index"
 HQ_SEEN_DAYS = 14
-HQ_TRIGGER_PROP = "nokturno.hq.trigger"   # menu otevřené s prázdným indexem popožene službu
+VERIFY_TRIGGER_PROP = "nokturno.verify.trigger"   # menu s prázdným indexem popožene službu; hodnota = cíl (`hq` / id katalogu)
 HQ_POOL_MAX = 200
-HQ_MANUAL_PROP = "nokturno.hq.manual"       # stejný literál jako v service.py
+VERIFY_MANUAL_PROP = "nokturno.verify.manual"     # „cíl:počet“; stejný literál jako v service.py
 HQ_MANUAL_SIZE = 20                         # ruční „Spustit dávku nyní“ ověří víc titulů než dávka služby
 HQ_RANKS = (0, 3, 3.5, 4)                   # jakákoli, Full HD, 2K, 4K (`quality_rank` v jádru)
 HQ_AUDIO = ("", "CZ", "SK", "EN")           # index 0 = jakýkoli; stejné pořadí má i `hq_subs`
@@ -2618,7 +2619,7 @@ def sync_targets():
 # volby doplňku a přihlášení do jeho rozhraní nepatří (proto je `settings.xml`
 # u obou přepínačů schovává, když je vybraný Home Assistant).
 SYNC_CIRCLE_SETTINGS = {"watched": "sync_watched", "favourites": "sync_favourites",
-                        "history": "sync_history", "watchlist": "sync_watchlist",
+                        "history": "sync_history", "watchlist": "sync_watchlist", "catalogs": "sync_catalogs",
                         "settings": "sync_settings",
                         "accounts": "sync_accounts"}
 SYNC_RELAY_ONLY = ("settings", "accounts")
@@ -4990,6 +4991,9 @@ def browse_menu(apis, ctype):
     if ctype == "movie" and on("hq_enabled"):   # hned pod „Nejlépe hodnocené“
         folder_item(L(30993, "Filmy ve vysoké kvalitě"), build_url(action="hq", type="movie"),
                     icon="DefaultMovies.png")
+    for cat in mycats(ctype):   # katalogy s volbou „přímo v menu“ (jen čtení souboru, bez sítě)
+        if cat.get("menu"):
+            mycat_folder(cat, ctype)
     folder_item(L(30944, "Vlastní katalogy"), build_url(action="mycats", type=ctype),
                 icon="DefaultVideoPlaylists.png")
     # „Náhodný film/seriál" je ne-složka: klik ji Kodi spustí jako skript s handle −1
@@ -5066,7 +5070,7 @@ MYCAT_GENRES = {   # id žánrů TMDB → anglický název (česky přes `genre_
 }
 # Klíčová slova TMDB, která TMDB jako žánr nemá (pohádka je u něj jen klíčové slovo).
 # Ve formuláři jsou pod žánry; ukládá se klíč, ne id, ať jde seznam id později doplnit.
-MYCAT_KEYWORDS = (("fairy", "3205|329731|358931|351899", 30976, "Pohádky"),)
+MYCAT_KEYWORDS = tuple((key, ids, 30976, "Pohádky") for key, ids in mycat.KEYWORDS.items())
 MYCAT_LANGS = (("", 30950, "Jakýkoli"), ("cs", 30960, "Čeština"), ("sk", 30961, "Slovenština"),
                ("cs|sk", 30962, "Čeština nebo slovenština"), ("en", 30963, "Angličtina"),
                ("de", 30964, "Němčina"), ("fr", 30965, "Francouzština"), ("es", 30966, "Španělština"),
@@ -5074,23 +5078,19 @@ MYCAT_LANGS = (("", 30950, "Jakýkoli"), ("cs", 30960, "Čeština"), ("sk", 3096
                ("ko", 30970, "Korejština"), ("ja", 30971, "Japonština"))
 MYCAT_SORTS = (("popularity.desc", 30954, "Oblíbenosti"), ("vote_average.desc", 30955, "Hodnocení"),
                ("primary_release_date.desc", 30956, "Data vydání"))
+MYCAT_QUALITY_LABELS = ((0, 30885, "Libovolná"), (3, 0, "Full HD"), (3.5, 0, "2K"), (4, 0, "4K"))   # 0 = bez překladu
+MYCAT_TRACK_LABELS = (("", 30762, "Libovolné"), ("CZ", 30112, "Čeština"), ("SK", 30113, "Slovenština"),
+                      ("CZ|SK", 30763, "Čeština nebo slovenština"), ("EN", 30114, "Angličtina"),
+                      ("HU", 30559, "Maďarština"))
+MYCAT_SHOW_LABELS = (("found", 30765, "Nově nalezené"), ("pool", 30764, "Stejně jako výběr"),
+                     ("released", 30766, "Nejnovější vydání"))
 
 
 def mycats(ctype=None):
-    items = STORE.load("mycatalogs", [])
-    items = items if isinstance(items, list) else []
-    return [c for c in items if isinstance(c, dict) and (ctype is None or c.get("kind") == ctype)]
+    return mycat.catalogs(STORE, ctype)
 
 
-def mycat_params(cat):
-    """Uložené volby → parametry `DashApi.discover` (neplatné hodnoty zahodí až klient)."""
-    genres = [str(g) for g in cat.get("genres") or []]
-    keywords = [ids for key, ids, _, _ in MYCAT_KEYWORDS if key in (cat.get("keywords") or [])]
-    params = {"with_genres": ("|" if cat.get("join") == "or" else ",").join(genres),
-              "with_keywords": "|".join(keywords),
-              "with_original_language": cat.get("lang") or "", "sort_by": cat.get("sort") or "",
-              "year_from": cat.get("year_from") or "", "year_to": cat.get("year_to") or ""}
-    return {k: v for k, v in params.items() if v}
+mycat_params = mycat.params   # parametry `DashApi.discover`; sestavení je v jádru (`mycat.py`), sdílí ho HA a Stremio
 
 
 def mycat_auto_name(ctype, genres, lang, keywords=()):
@@ -5106,8 +5106,14 @@ def _mycat_year(heading, current):
     return int(value) if value and value.isdigit() and 1900 <= int(value) <= 2099 else None
 
 
+def _mycat_pick(heading, labels, current, values):
+    """Výběr z `labels` (dvojice text/id řetězce), vrací hodnotu z `values`, nebo None při zrušení."""
+    idx = xbmcgui.Dialog().select(heading, labels, preselect=values.index(current) if current in values else 0)
+    return None if idx < 0 else values[idx]
+
+
 def mycat_form(ctype, cat=None):
-    """Dialogy formuláře (žánry, jazyk, roky, řazení, název) → uložitelný záznam, nebo None
+    """Dialogy formuláře (žánry, jazyk, roky, řazení, ověřování, název) → uložitelný záznam, nebo None
     po zrušení. Běží jen z ne-složky (handle −1), z widgetu ani z JSON-RPC se sem nejde."""
     cat = cat or {}
     kind = "series" if ctype == "series" else "movie"
@@ -5136,26 +5142,63 @@ def mycat_form(ctype, cat=None):
     if idx < 0:
         return None
     lang = langs[idx]
-    year_from = _mycat_year(L(30951, "Od roku (prázdné = bez omezení)"), cat.get("year_from"))
-    year_to = _mycat_year(L(30952, "Do roku (prázdné = bez omezení)"), cat.get("year_to"))
+    years = year_from = year_to = None
+    mode = dlg.select(L(30767, "Roky"), [L(30768, "Bez omezení"), L(30769, "Od–do"), L(30770, "Posledních X let")],
+                      preselect=2 if cat.get("years") else 1 if cat.get("year_from") or cat.get("year_to") else 0)
+    if mode < 0:
+        return None
+    if mode == 1:
+        year_from = _mycat_year(L(30951, "Od roku (prázdné = bez omezení)"), cat.get("year_from"))
+        year_to = _mycat_year(L(30952, "Do roku (prázdné = bez omezení)"), cat.get("year_to"))
+    elif mode == 2:
+        value = dlg.numeric(0, L(30771, "Kolik posledních let"), str(cat.get("years") or 5))
+        if not (value and value.isdigit() and 1 <= int(value) <= 50):
+            return None
+        years = int(value)
     sorts = [code for code, _, _ in MYCAT_SORTS]
     idx = dlg.select(L(30953, "Řadit podle"), [L(sid, fb) for _, sid, fb in MYCAT_SORTS],
                      preselect=sorts.index(cat.get("sort")) if cat.get("sort") in sorts else 0)
     if idx < 0:
         return None
+    cid = cat.get("id") or f"k{int(time.time() * 1000):x}"
+    verify = dlg.yesno(L(30772, "Ověřovat dostupnost streamů?"),
+                       L(30773, "Katalog pak ukáže jen tituly, ke kterým se našel stream podle tvých požadavků. "
+                                "Ověřuje se na pozadí – na Home Assistantovi ve skupině synchronizace, jinak na "
+                                "tomhle zařízení."))
+    if verify and sum(1 for c in mycats() if c.get("verify") and c.get("id") != cid) >= mycat.MAX_VERIFIED:
+        notify(L(30780, "Ověřovat jde nejvýš 20 katalogů."), xbmcgui.NOTIFICATION_WARNING)
+        verify = False
+    q, audio, subs, surround, show = 0, "", "", False, "found"
+    if verify:
+        qs = [v for v, _, _ in MYCAT_QUALITY_LABELS]
+        q = _mycat_pick(L(30994, "Minimální kvalita"), [L(sid, fb) if sid else fb for _, sid, fb in MYCAT_QUALITY_LABELS],
+                        mycat.norm_quality(cat.get("q")), qs)
+        tracks = [v for v, _, _ in MYCAT_TRACK_LABELS]
+        track_labels = [L(sid, fb) for _, sid, fb in MYCAT_TRACK_LABELS]
+        audio = None if q is None else _mycat_pick(L(30783, "Jazyk zvuku"), track_labels, cat.get("audio") or "", tracks)
+        subs = None if audio is None else _mycat_pick(L(30884, "Titulky"), track_labels, cat.get("subs") or "", tracks)
+        surround = None if subs is None else _mycat_pick(
+            L(30883, "Kanály zvuku"), [L(30886, "Libovolné"), L(30888, "5.1 a víc")], bool(cat.get("surround")),
+            [False, True])
+        shows = [v for v, _, _ in MYCAT_SHOW_LABELS]
+        show = None if surround is None else _mycat_pick(
+            L(30774, "Zobrazit seřazené podle"), [L(sid, fb) for _, sid, fb in MYCAT_SHOW_LABELS],
+            cat.get("show") or "found", shows)
+        if show is None:
+            return None
+    menu = dlg.yesno(L(30775, "Umístění"), L(30776, "Zobrazit katalog přímo v menu Filmy/Seriály?"))
     default_name = cat.get("name") or mycat_auto_name(kind, picked, lang, keywords)
     name = dlg.input(L(30957, "Název katalogu"), default_name).strip()[:60] or default_name
-    return {"id": cat.get("id") or f"k{int(time.time() * 1000):x}", "kind": kind, "name": name,
-            "genres": picked, "keywords": keywords, "join": join, "lang": lang, "year_from": year_from, "year_to": year_to,
-            "sort": sorts[idx]}
+    return {"id": cid, "kind": kind, "name": name, "genres": picked, "keywords": keywords, "join": join, "lang": lang,
+            "year_from": year_from, "year_to": year_to, "years": years, "sort": sorts[idx], "verify": bool(verify),
+            "q": q, "audio": audio, "subs": subs, "surround": bool(surround), "show": show, "menu": bool(menu)}
 
 
 def mycat_new(ctype):
     cat = mycat_form(ctype)
     if not cat:
         return
-    with STORE.updating("mycatalogs", []) as items:
-        items.append(cat)
+    mycat.save(STORE, cat)
     usage.mark_feature(STORE, "mycatalog")
     xbmc.executebuiltin("Container.Refresh")
 
@@ -5165,8 +5208,7 @@ def mycat_edit(cat_id):
     new = mycat_form(cat.get("kind"), cat) if cat else None
     if not new:
         return
-    with STORE.updating("mycatalogs", []) as items:
-        items[:] = [new if isinstance(c, dict) and c.get("id") == cat_id else c for c in items]
+    mycat.save(STORE, new)
     xbmc.executebuiltin("Container.Refresh")
 
 
@@ -5175,29 +5217,58 @@ def mycat_delete(cat_id):
     if not cat or not xbmcgui.Dialog().yesno(L(30947, "Smazat katalog"),
                                              L(30958, "Smazat katalog %s?") % cat.get("name", "")):
         return
-    with STORE.updating("mycatalogs", []) as items:
-        items[:] = [c for c in items if not (isinstance(c, dict) and c.get("id") == cat_id)]
+    mycat.delete(STORE, cat_id)
     xbmc.executebuiltin("Container.Refresh")
+
+
+def mycat_batch(cat_id):
+    """Ruční „Spustit dávku nyní“ ověřovaného katalogu: úkol dostane služba (vzor `hq_batch`)."""
+    xbmcgui.Window(10000).setProperty(VERIFY_MANUAL_PROP, "%s:%s" % (cat_id, HQ_MANUAL_SIZE))
+
+
+def mycat_folder(cat, ctype):
+    context = [(L(30946, "Upravit katalog"), runplugin(action="mycat_edit", id=cat["id"])),
+               (L(30947, "Smazat katalog"), runplugin(action="mycat_delete", id=cat["id"]))]
+    folder_item(cat.get("name") or L(30972, "Vlastní katalog"),
+                build_url(action="mycat", type=ctype, id=cat["id"]),
+                icon="DefaultVideoPlaylists.png", context=context)
 
 
 def list_mycats(ctype):
     for cat in mycats(ctype):
-        context = [(L(30946, "Upravit katalog"), runplugin(action="mycat_edit", id=cat["id"])),
-                   (L(30947, "Smazat katalog"), runplugin(action="mycat_delete", id=cat["id"]))]
-        folder_item(cat.get("name") or L(30972, "Vlastní katalog"),
-                    build_url(action="mycat", type=ctype, id=cat["id"]),
-                    icon="DefaultVideoPlaylists.png", context=context)
+        mycat_folder(cat, ctype)
     action_item(L(30945, "Nový katalog"), build_url(action="mycat_new", type=ctype), icon="DefaultAddSource.png")
+    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
+
+
+def list_mycat_verified(cat, ctype, page):
+    """Ověřovaný katalog: jen tituly, které index (`mycat_index_<id>`) označil za vyhovující; první řádek
+    je akce „spustit dávku“, prázdný index popožene službu."""
+    index = mycat.load_index(STORE, cat)
+    checked, matched, total = mycat.counts(index)
+    if page == 1:
+        action_item(_swf(30777, "Ověřeno %s z %s – spustit dávku nyní", checked, total),
+                    build_url(action="mycat_batch", id=cat["id"]), icon="DefaultAddonsUpdates.png", thumb=True)
+    metas = mycat.visible(index, sort=cat.get("show") or "found")
+    if not metas:
+        xbmcgui.Window(10000).setProperty(VERIFY_TRIGGER_PROP, cat["id"])
+        notify(L(30778, "Katalog se připravuje – tituly se ověřují na pozadí."), xbmcgui.NOTIFICATION_INFO, 4000)
+    rate(metas, ctype)
+    for m in metas:
+        add_meta_item(m, ctype)
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
 
 
 def list_mycat(apis, ctype, cat_id, page=1):
     cat = next((c for c in mycats(ctype) if c.get("id") == cat_id), None)
     dash = apis.get("dash")
-    if not cat or dash is None:
+    if not cat or (dash is None and not cat.get("verify")):
         xbmcplugin.endOfDirectory(HANDLE, succeeded=False)
         return
     set_content("tvshows" if ctype == "series" else "movies")
+    if cat.get("verify"):
+        list_mycat_verified(cat, ctype, page)
+        return
     metas, pages = dash.discover(ctype, mycat_params(cat), page=page)
     if metas is None:
         notify(L(30959, "Katalog se nepodařilo načíst. Zkus to později."), xbmcgui.NOTIFICATION_WARNING)
@@ -6285,7 +6356,7 @@ def hq_setup():
         chosen[key] = pick
     for key, pick in chosen.items():
         ADDON.setSetting(key, ("false" if pick else "true") if key == "hq_enabled" else str(pick))
-    xbmcgui.Window(10000).setProperty(HQ_TRIGGER_PROP, "1")
+    xbmcgui.Window(10000).setProperty(VERIFY_TRIGGER_PROP, "hq")
     notify(L(30896, "Položka je skrytá. Znovu ji zapneš v Nastavení → Přehrávání.") if chosen["hq_enabled"]
            else L(30893, "Uloženo – seznam se přepočítá na pozadí."), xbmcgui.NOTIFICATION_INFO, 4000)
     xbmc.executebuiltin("Container.Refresh")
@@ -6294,7 +6365,7 @@ def hq_setup():
 def hq_batch():
     """Ruční „Spustit dávku nyní": jen zadá úkol službě, ta ho dělá po jednom titulu s ukazatelem v rohu
     a ostatní kliknutí v menu nechává projít."""
-    xbmcgui.Window(10000).setProperty(HQ_MANUAL_PROP, str(HQ_MANUAL_SIZE))
+    xbmcgui.Window(10000).setProperty(VERIFY_MANUAL_PROP, "hq:%s" % HQ_MANUAL_SIZE)
 
 
 def hq_info():
@@ -6328,13 +6399,19 @@ def hq_pool(apis):
     return pool[:HQ_POOL_MAX]
 
 
-def hq_refresh(apis, size=8):
-    """Ověří `size` nejpotřebnějších titulů pro index (volá služba přes `action=hq_refresh`); bez UI, bez modálu.
+def verify_refresh(apis, target="hq", size=8, pool_only=False):
+    """Ověří `size` nejpotřebnějších titulů pro index (volá služba přes `action=verify_refresh`); bez UI, bez modálu.
+    `target` = `hq` („Filmy ve vysoké kvalitě“) nebo id vlastního katalogu (`mycat.refresh`), `pool_only` = jen
+    obnova kandidátů (zařízení s cizími výsledky).
 
     Služba ji volá po jednom titulu s odstupem: plugin běží v jednom interpretu (reuse invoker), takže dlouhý
     běh by držel všechna ostatní kliknutí v menu, dokud nedoběhne."""
     try:
         if should_stop():
+            return
+        if target != "hq":
+            mycat.refresh(engine_of(apis), STORE, apis.get("dash"), target, size, verify=not pool_only,
+                          should_stop=should_stop)
             return
         min_q, surround, audio, subs = hq_definition()
         sig = hq_index.signature(min_q, surround, audio, subs)
@@ -6354,7 +6431,7 @@ def hq_refresh(apis, size=8):
                 break
             try:
                 with engine.background():
-                    result = engine.classify_quality("movie", mid, min_q, surround, audio, subs)
+                    result = engine.verify_title("movie", mid, min_q, surround, audio, subs)
             except Errors as e:
                 log_error(f"hq {mid}: {e}")
                 result = None
@@ -6362,8 +6439,9 @@ def hq_refresh(apis, size=8):
                 if index.get("sig") == sig:
                     hq_index.record(index, mid, result, int(time.time()))
     except Errors as e:
-        log_error(f"hq_refresh: {e}")
-    xbmcplugin.endOfDirectory(HANDLE, succeeded=True, cacheToDisc=False)
+        log_error(f"verify_refresh {target}: {e}")
+    finally:
+        xbmcplugin.endOfDirectory(HANDLE, succeeded=True, cacheToDisc=False)
 
 
 def list_hq(apis, ctype, genre=None):
@@ -6383,7 +6461,7 @@ def list_hq(apis, ctype, genre=None):
         action_item(L(30891, "Jak to funguje"), build_url(action="hq_info"), icon="DefaultIconInfo.png", thumb=True)
     items = hq_index.visible(index, None if genre in (None, "", "*") else genre)
     if not items:
-        xbmcgui.Window(10000).setProperty(HQ_TRIGGER_PROP, "1")
+        xbmcgui.Window(10000).setProperty(VERIFY_TRIGGER_PROP, "hq")
         notify(L(30998, "Seznam se připravuje – filmy se ověřují na pozadí."), xbmcgui.NOTIFICATION_INFO, 4000)
     elif not genre:
         folder_item(L(30020), build_url(action="hq", type=ctype, genre="*"), icon="DefaultVideoPlaylists.png")
@@ -7289,6 +7367,7 @@ def router(query):
         "mycat_new": lambda: _tlacitko(lambda: mycat_new(p.get("type", "movie"))),
         "mycat_edit": lambda: _tlacitko(lambda: mycat_edit(p.get("id", ""))),
         "mycat_delete": lambda: _tlacitko(lambda: mycat_delete(p.get("id", ""))),
+        "mycat_batch": lambda: _tlacitko(lambda: mycat_batch(p.get("id", ""))),
         "toggle_watched": lambda: toggle_watched(p["id"]),
         "remove_progress": lambda: remove_progress(p["id"], p.get("series")),
         "search": lambda: search_menu(p.get("type") or p.get("kind") or "any"),
@@ -7423,8 +7502,9 @@ def router(query):
             list_foryou(apis, p.get("type", "movie"))
         elif action == "hq":
             list_hq(apis, p.get("type", "movie"), p.get("genre"))
-        elif action == "hq_refresh":
-            hq_refresh(apis, size=max(1, min(20, int(p.get("size") or 8))))
+        elif action in ("hq_refresh", "verify_refresh"):   # `hq_refresh` = starý odkaz
+            verify_refresh(apis, p.get("target") or "hq", size=max(1, min(20, int(p.get("size") or 8))),
+                           pool_only=p.get("pool_only") == "1")
         elif action == "hq_setup":
             _tlacitko(hq_setup)
         elif action == "hq_info":
@@ -7532,7 +7612,7 @@ def _close(action):
 MARKS_SKIP = frozenset((
     # přehrání a streamy
     "play", "play_ws", "play_hs", "play_dav", "title", "title_download", "prefetch", "hq_refresh",
-    "hq_setup", "hq_info", "hq_batch",
+    "verify_refresh", "mycat_batch", "hq_setup", "hq_info", "hq_batch",
     "download", "download_ws", "download_hs", "toggle_fav", "streams", "streams_filter",
     "dav_browse", "tv_pick", "page",
     # akce bez výpisu titulů (tlačítka v nastavení, hledání, stahování, Trakt, CZtor…)

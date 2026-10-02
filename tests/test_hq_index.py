@@ -24,7 +24,7 @@ class T(unittest.TestCase):
         H.merge_pool(idx, [M("tt1"), M("tt2"), M("tt3")], 0)
         H.record(idx, "tt1", True, 1000)
         H.record(idx, "tt2", False, 2000)
-        now = 2000 + 4 * 86400
+        now = 1000 + 8 * 86400   # nález se kontroluje po 7 dnech, nic po 3
         self.assertEqual(H.next_batch(idx, now, size=8), ["tt3", "tt1", "tt2"])
         self.assertEqual(H.next_batch(idx, now, size=1), ["tt3"])
         self.assertEqual(H.next_batch(idx, 3000), ["tt3"])   # tt1/tt2 ještě čerstvé

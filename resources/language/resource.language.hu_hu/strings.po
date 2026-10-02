@@ -2916,3 +2916,87 @@ msgstr "Stream adatok betöltése"
 msgctxt "#30006"
 msgid "Details loaded – click Refresh stream dialog"
 msgstr "Adatok betöltve – kattints a Stream ablak frissítésére"
+
+msgctxt "#30762"
+msgid "Any"
+msgstr "Bármelyik"
+
+msgctxt "#30763"
+msgid "Czech or Slovak"
+msgstr "Cseh vagy szlovák"
+
+msgctxt "#30764"
+msgid "Same as selection"
+msgstr "Mint a kiválasztás"
+
+msgctxt "#30765"
+msgid "Newly found"
+msgstr "Újonnan talált"
+
+msgctxt "#30766"
+msgid "Latest release"
+msgstr "Legújabb megjelenés"
+
+msgctxt "#30767"
+msgid "Years"
+msgstr "Évek"
+
+msgctxt "#30768"
+msgid "No limit"
+msgstr "Korlátozás nélkül"
+
+msgctxt "#30769"
+msgid "From–to"
+msgstr "Tól–ig"
+
+msgctxt "#30770"
+msgid "Last X years"
+msgstr "Utolsó X év"
+
+msgctxt "#30771"
+msgid "How many last years"
+msgstr "Hány utolsó év"
+
+msgctxt "#30772"
+msgid "Verify stream availability?"
+msgstr "Ellenőrizzem a streamek elérhetőségét?"
+
+msgctxt "#30773"
+msgid "The catalog will then show only titles with a stream matching your requirements. It is verified in the background – on Home Assistant in the sync group, otherwise on this device."
+msgstr "A katalógus ezután csak azokat a címeket mutatja, amelyekhez van a kéréseidnek megfelelő stream. Az ellenőrzés a háttérben fut – a szinkroncsoportban a Home Assistanton, egyébként ezen az eszközön."
+
+msgctxt "#30774"
+msgid "Show sorted by"
+msgstr "Rendezés"
+
+msgctxt "#30775"
+msgid "Placement"
+msgstr "Elhelyezés"
+
+msgctxt "#30776"
+msgid "Show the catalog directly in the Movies/TV Shows menu?"
+msgstr "Megjelenjen a katalógus közvetlenül a Filmek/Sorozatok menüben?"
+
+msgctxt "#30777"
+msgid "Verified %s of %s – run a batch now"
+msgstr "Ellenőrizve %s / %s – köteg indítása most"
+
+msgctxt "#30778"
+msgid "The catalog is being prepared – titles are being verified in the background."
+msgstr "A katalógus készül – a címek ellenőrzése a háttérben fut."
+
+msgctxt "#30780"
+msgid "Up to 20 catalogs can be verified."
+msgstr "Legfeljebb 20 katalógus ellenőrizhető."
+
+msgctxt "#30781"
+msgid "Synchronize own catalogs"
+msgstr "Saját katalógusok szinkronizálása"
+
+msgctxt "#30782"
+msgid "Definitions of own catalogs and verification results. When Home Assistant is in the sync group, it verifies and the other devices only display."
+msgstr "Saját katalógusok definíciói és az ellenőrzés eredményei. Ha a csoportban van Home Assistant, ő ellenőriz, a többi eszköz csak megjeleníti."
+
+msgctxt "#30783"
+msgid "Audio language"
+msgstr "Hang nyelve"

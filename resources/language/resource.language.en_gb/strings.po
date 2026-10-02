@@ -2918,3 +2918,87 @@ msgstr ""
 msgctxt "#30006"
 msgid "Details loaded – click Refresh stream dialog"
 msgstr ""
+
+msgctxt "#30762"
+msgid "Any"
+msgstr ""
+
+msgctxt "#30763"
+msgid "Czech or Slovak"
+msgstr ""
+
+msgctxt "#30764"
+msgid "Same as selection"
+msgstr ""
+
+msgctxt "#30765"
+msgid "Newly found"
+msgstr ""
+
+msgctxt "#30766"
+msgid "Latest release"
+msgstr ""
+
+msgctxt "#30767"
+msgid "Years"
+msgstr ""
+
+msgctxt "#30768"
+msgid "No limit"
+msgstr ""
+
+msgctxt "#30769"
+msgid "From–to"
+msgstr ""
+
+msgctxt "#30770"
+msgid "Last X years"
+msgstr ""
+
+msgctxt "#30771"
+msgid "How many last years"
+msgstr ""
+
+msgctxt "#30772"
+msgid "Verify stream availability?"
+msgstr ""
+
+msgctxt "#30773"
+msgid "The catalog will then show only titles with a stream matching your requirements. It is verified in the background – on Home Assistant in the sync group, otherwise on this device."
+msgstr ""
+
+msgctxt "#30774"
+msgid "Show sorted by"
+msgstr ""
+
+msgctxt "#30775"
+msgid "Placement"
+msgstr ""
+
+msgctxt "#30776"
+msgid "Show the catalog directly in the Movies/TV Shows menu?"
+msgstr ""
+
+msgctxt "#30777"
+msgid "Verified %s of %s – run a batch now"
+msgstr ""
+
+msgctxt "#30778"
+msgid "The catalog is being prepared – titles are being verified in the background."
+msgstr ""
+
+msgctxt "#30780"
+msgid "Up to 20 catalogs can be verified."
+msgstr ""
+
+msgctxt "#30781"
+msgid "Synchronize own catalogs"
+msgstr ""
+
+msgctxt "#30782"
+msgid "Definitions of own catalogs and verification results. When Home Assistant is in the sync group, it verifies and the other devices only display."
+msgstr ""
+
+msgctxt "#30783"
+msgid "Audio language"
+msgstr ""

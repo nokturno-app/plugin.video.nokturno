@@ -210,6 +210,11 @@ def sync_once(store, code, circles=DEFAULT_CIRCLES, base_url=SYNC_URL, name="", 
         snimky = payload[SNAPSHOTS]
         payload = dict(payload, **{SNAPSHOTS: dict(list(snimky.items())[:len(snimky) // 2])})
         blob = seal(keys, payload)
+    # Totéž s výsledky ověřování vlastních katalogů (`r:<id>`): definice (`c:`) zůstávají, výsledky se
+    # dopočítají znovu na dalším zařízení.
+    if len(blob) > MAX_BLOB and payload.get("catalogs"):
+        payload = dict(payload, catalogs={k: v for k, v in payload["catalogs"].items() if not k.startswith("r:")})
+        blob = seal(keys, payload)
 
     # Otisk stavu, ne blobu: nonce je pokaždé jiná, takže by se nahrávalo
     # každé kolo, i když se nic nezměnilo.

@@ -18,6 +18,7 @@ import re
 import sys
 import threading
 import time
+import urllib.parse
 import urllib.request
 
 import xbmc
@@ -66,6 +67,8 @@ import kodi_settings  # noqa: E402 – vedle service.py, most do settings.xml
 import kodi_sources  # noqa: E402 – vedle service.py, sdílený výčet zdrojů do statistik
 import setsync  # noqa: E402
 import watch as watch_lib  # noqa: E402
+import catindex  # noqa: E402
+import mycat  # noqa: E402
 
 PROP = "nokturno.playing"
 VIEWED_PROP = "nokturno.viewed"
@@ -103,9 +106,9 @@ WARM_PROP = "nokturno.warm"    # plugin při zahřívání cache API jen zapisuj
 WARM_RETRY = 10 * 60      # když se zrovna přehrává, zahřívání počká
 HQ_SEEN_KEY = "hq_seen"              # stejný literál jako v default.py (note_hq_open)
 HQ_SEEN_DAYS = 14
-HQ_TRIGGER_PROP = "nokturno.hq.trigger"   # stejný literál jako v default.py
-HQ_MANUAL_PROP = "nokturno.hq.manual"     # stejný literál jako v default.py
-HQ_EVERY = 600            # dávka ověřování „Filmů ve vysoké kvalitě" po 10 minutách
+VERIFY_TRIGGER_PROP = "nokturno.verify.trigger"   # stejný literál jako v default.py; hodnota = cíl (`hq` / id katalogu)
+VERIFY_MANUAL_PROP = "nokturno.verify.manual"     # stejný literál jako v default.py; „cíl:počet“
+HQ_EVERY = 600            # dávka ověřování (Filmy ve vysoké kvalitě, vlastní katalogy) po 10 minutách
 HQ_FIRST = 120
 FORYOU_SEEN_KEY = "foryou_seen"      # stejný literál jako v default.py (note_foryou_open)
 FORYOU_SEEN_DAYS = 14                # a stejná lhůta jako v default.py
@@ -957,7 +960,7 @@ class Syncer:
     # nastavení a účty umí jen relay (viz `default.sync_circles`) a jsou výchozím
     # stavem vypnuté — sdílení přihlášení má být vědomé rozhodnutí
     CIRCLES = {"watched": "sync_watched", "favourites": "sync_favourites",
-               "history": "sync_history", "watchlist": "sync_watchlist",
+               "history": "sync_history", "watchlist": "sync_watchlist", "catalogs": "sync_catalogs",
                "settings": "sync_settings",
                "accounts": "sync_accounts"}
     RELAY_ONLY = ("settings", "accounts")
@@ -1212,28 +1215,43 @@ def warmer(monitor):
             return
 
 
-def _hq_url(size):
-    return f"plugin://plugin.video.nokturno/?action=hq_refresh&size={size}"
+def _verify_url(target, size, pool_only=False):
+    return (f"plugin://plugin.video.nokturno/?action=verify_refresh&target={urllib.parse.quote(target)}"
+            f"&size={size}" + ("&pool_only=1" if pool_only else ""))
 
 
-def _hq_run(monitor, count, progress):
+def _verify_names(store, target):
+    """(klíč indexu, název pro ukazatel, katalog nebo None) – `hq` = Filmy ve vysoké kvalitě, jinak id katalogu."""
+    if target == "hq":
+        return "hq_index", L(30993, "Filmy ve vysoké kvalitě"), None
+    cat = next((c for c in mycat.catalogs(store) if c.get("id") == target), None)
+    return mycat.INDEX + target, (cat or {}).get("name") or target, cat
+
+
+def verify_targets(store):
+    """Co se ověřuje: Filmy ve vysoké kvalitě (když je položka zapnutá) a ověřované vlastní katalogy."""
+    out = ["hq"] if xbmcaddon.Addon().getSetting("hq_enabled") != "false" else []
+    return out + [c["id"] for c in mycat.verified(store)]
+
+
+def _verify_run(monitor, target, count, progress):
     """Ověří až `count` titulů, vždy jeden přes plugin a s odstupem — plugin běží v jednom interpretu,
-    takže dlouhý běh by držel všechna ostatní kliknutí v menu. Vrací (ověřeno, z toho vyhovuje, v seznamu celkem)."""
+    takže dlouhý běh by držel všechna ostatní kliknutí v menu. Vrací (ověřeno, z toho vyhovuje, v seznamu celkem).
+    Katalog, kterému přišly čerstvé výsledky z jiného zařízení (Home Assistant), neověřuje – jen obnoví kandidáty
+    (metadata); `progress` (ruční dávka) ověřuje vždy."""
     store = Store(PROFILE)
-    index = store.reload("hq_index", {}) or {}
-    ted = int(time.time())
-    due = []
-    for mid, e in (index.get("items") or {}).items():
-        if not e.get("ts") or ted - e["ts"] >= 3 * 86400:
-            due.append((e.get("ok") is not None, e.get("rank", 0) if e.get("ok") is None else e.get("ts") or 0, mid))
-    due.sort()
-    names = {mid: ((index["items"][mid].get("meta") or {}).get("name") or mid) for _a, _b, mid in due}
-    ids = [mid for _a, _b, mid in due][:count]
+    key, title, cat = _verify_names(store, target)
+    index = store.reload(key, {}) or {}
+    if cat is not None and not progress and mycat.foreign_recent(index):
+        rpc_directory(_verify_url(target, 1, pool_only=True))
+        return 0, 0, 0
+    ids = catindex.next_batch(index, int(time.time()), size=count)
+    names = {mid: ((index["items"][mid].get("meta") or {}).get("name") or mid) for mid in ids}
     total = len(ids) or count
     bar = None
     if progress:
         bar = xbmcgui.DialogProgressBG()
-        bar.create(L(30993, "Filmy ve vysoké kvalitě"), "")
+        bar.create(title, "")
     before = sum(1 for e in (index.get("items") or {}).values() if e.get("ok") is not None)
     try:
         for pos in range(count):
@@ -1242,55 +1260,64 @@ def _hq_run(monitor, count, progress):
             if bar and pos < len(ids):
                 bar.update(int(pos * 100 / total), message=(L(30899, "Ověřuji %s z %s – %s") %
                                                              (pos + 1, total, names.get(ids[pos], ""))))
-            rpc_directory(_hq_url(1))
+            rpc_directory(_verify_url(target, 1))
             if monitor.waitForAbort(1):   # mezera, kterou projdou kliknutí uživatele
                 break
     finally:
         if bar:
             bar.close()
-    after = (store.reload("hq_index", {}) or {}).get("items") or {}
+    after = (store.reload(key, {}) or {}).get("items") or {}
     done = max(sum(1 for e in after.values() if e.get("ok") is not None) - before, 0)
     matched = sum(1 for mid in ids if (after.get(mid) or {}).get("ok") is True)   # mezi právě ověřenými
     total = sum(1 for e in after.values() if e.get("ok") is True)                # v seznamu celkem
     return done, matched, total
 
 
-def hq_worker(monitor):
-    """Vlákno: průběžně ověřuje „Filmy ve vysoké kvalitě" po dávkách (po jednom titulu, viz `_hq_run`),
-    dokud je položka zapnutá, nehraje se a je síť. Ruční dávku zadá vlastnost okna `HQ_MANUAL_PROP`,
-    první dávku po otevření prázdného seznamu `HQ_TRIGGER_PROP`."""
+def verify_worker(monitor):
+    """Vlákno: průběžně ověřuje „Filmy ve vysoké kvalitě“ a vlastní katalogy po dávkách (po jednom titulu, viz
+    `_verify_run`), vždy jeden cíl na kolo, dokud se nehraje a je síť. Ruční dávku zadá vlastnost okna
+    `VERIFY_MANUAL_PROP` („cíl:počet“), první dávku po otevření prázdného seznamu `VERIFY_TRIGGER_PROP` (cíl)."""
     win = xbmcgui.Window(10000)
     waited = HQ_EVERY - HQ_FIRST
+    turn = 0
     while not monitor.abortRequested():
         if monitor.waitForAbort(5):
             return
         waited += 5
-        manual = win.getProperty(HQ_MANUAL_PROP)
-        trigger = bool(win.getProperty(HQ_TRIGGER_PROP))
+        manual = win.getProperty(VERIFY_MANUAL_PROP)
+        trigger = win.getProperty(VERIFY_TRIGGER_PROP)
         if waited < HQ_EVERY and not trigger and not manual:
             continue
         try:
             if QUITTING.is_set() or xbmc.Player().isPlaying() or not terms_ok():
                 continue
-            if xbmcaddon.Addon().getSetting("hq_enabled") == "false":   # položka vypnutá = nic se neověřuje
-                win.clearProperty(HQ_MANUAL_PROP)
-                continue
             store = Store(PROFILE)
             offline = (store.reload(accounts_lib.OFFLINE, {}) or {}).get("ts", 0)
             if offline and time.time() - float(offline) < accounts_lib.OFFLINE_TTL:
                 continue
-            win.clearProperty(HQ_TRIGGER_PROP)
-            win.clearProperty(HQ_MANUAL_PROP)
-            waited = 0
+            win.clearProperty(VERIFY_TRIGGER_PROP)
+            win.clearProperty(VERIFY_MANUAL_PROP)
+            targets = verify_targets(store)
             if manual:
-                done, matched, total = _hq_run(monitor, int(manual) if manual.isdigit() else 20, progress=True)
+                target, _sep, count = manual.partition(":")
+                if target not in targets:   # vypnutá položka / smazaný katalog = nic se neověřuje
+                    continue
+                waited = 0
+                _key, title, _cat = _verify_names(store, target)
+                done, matched, total = _verify_run(monitor, target, int(count) if count.isdigit() else 20, True)
                 xbmcgui.Dialog().notification(
-                    L(30993, "Filmy ve vysoké kvalitě"),
-                    L(30898, "Dávka hotová – ověřeno %s, vyhovuje %s (v seznamu celkem %s)") % (done, matched, total), xbmcgui.NOTIFICATION_INFO, 4000)
-            else:
-                _hq_run(monitor, 8, progress=False)
+                    title,
+                    L(30898, "Dávka hotová – ověřeno %s, vyhovuje %s (v seznamu celkem %s)") % (done, matched, total),
+                    xbmcgui.NOTIFICATION_INFO, 4000)
+                continue
+            target = ("hq" if trigger == "1" else trigger) if trigger else None
+            if target is None and targets:
+                target, turn = targets[turn % len(targets)], turn + 1
+            if target in targets:
+                waited = 0
+                _verify_run(monitor, target, 8, False)
         except Exception as e:  # noqa: BLE001 – vlákno nesmí spadnout
-            log(f"hq_worker: {e}", xbmc.LOGWARNING)
+            log(f"verify_worker: {e}", xbmc.LOGWARNING)
 
 
 class ServiceMonitor(xbmc.Monitor):
@@ -1617,7 +1644,7 @@ def main():
     player.sw.start()
     Downloader(store, monitor).start()
     threading.Thread(target=warmer, args=(monitor,), daemon=True).start()
-    threading.Thread(target=hq_worker, args=(monitor,), daemon=True, name="nokturno-hq").start()
+    threading.Thread(target=verify_worker, args=(monitor,), daemon=True, name="nokturno-verify").start()
     syncer = Syncer(store)
     accounts_checker = AccountsChecker(store)
     watch_checker = WatchChecker(store)

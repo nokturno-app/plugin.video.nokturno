@@ -2918,3 +2918,87 @@ msgstr "Dočítavam údaje o streamoch"
 msgctxt "#30006"
 msgid "Details loaded – click Refresh stream dialog"
 msgstr "Údaje dočítané – klikni na Obnoviť modal streamov"
+
+msgctxt "#30762"
+msgid "Any"
+msgstr "Ľubovoľné"
+
+msgctxt "#30763"
+msgid "Czech or Slovak"
+msgstr "Čeština alebo slovenčina"
+
+msgctxt "#30764"
+msgid "Same as selection"
+msgstr "Rovnako ako výber"
+
+msgctxt "#30765"
+msgid "Newly found"
+msgstr "Novo nájdené"
+
+msgctxt "#30766"
+msgid "Latest release"
+msgstr "Najnovšie vydanie"
+
+msgctxt "#30767"
+msgid "Years"
+msgstr "Roky"
+
+msgctxt "#30768"
+msgid "No limit"
+msgstr "Bez obmedzenia"
+
+msgctxt "#30769"
+msgid "From–to"
+msgstr "Od–do"
+
+msgctxt "#30770"
+msgid "Last X years"
+msgstr "Posledných X rokov"
+
+msgctxt "#30771"
+msgid "How many last years"
+msgstr "Koľko posledných rokov"
+
+msgctxt "#30772"
+msgid "Verify stream availability?"
+msgstr "Overovať dostupnosť streamov?"
+
+msgctxt "#30773"
+msgid "The catalog will then show only titles with a stream matching your requirements. It is verified in the background – on Home Assistant in the sync group, otherwise on this device."
+msgstr "Katalóg potom ukáže len tituly, ku ktorým sa našiel stream podľa tvojich požiadaviek. Overuje sa na pozadí – na Home Assistantovi v skupine synchronizácie, inak na tomto zariadení."
+
+msgctxt "#30774"
+msgid "Show sorted by"
+msgstr "Zobraziť zoradené podľa"
+
+msgctxt "#30775"
+msgid "Placement"
+msgstr "Umiestnenie"
+
+msgctxt "#30776"
+msgid "Show the catalog directly in the Movies/TV Shows menu?"
+msgstr "Zobraziť katalóg priamo v ponuke Filmy/Seriály?"
+
+msgctxt "#30777"
+msgid "Verified %s of %s – run a batch now"
+msgstr "Overené %s z %s – spustiť dávku teraz"
+
+msgctxt "#30778"
+msgid "The catalog is being prepared – titles are being verified in the background."
+msgstr "Katalóg sa pripravuje – tituly sa overujú na pozadí."
+
+msgctxt "#30780"
+msgid "Up to 20 catalogs can be verified."
+msgstr "Overovať ide najviac 20 katalógov."
+
+msgctxt "#30781"
+msgid "Synchronize own catalogs"
+msgstr "Synchronizovať vlastné katalógy"
+
+msgctxt "#30782"
+msgid "Definitions of own catalogs and verification results. When Home Assistant is in the sync group, it verifies and the other devices only display."
+msgstr "Definície vlastných katalógov a výsledky overovania. Keď je v skupine Home Assistant, overuje on a ostatné zariadenia len zobrazujú."
+
+msgctxt "#30783"
+msgid "Audio language"
+msgstr "Jazyk zvuku"
