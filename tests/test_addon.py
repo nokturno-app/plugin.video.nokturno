@@ -2685,7 +2685,7 @@ class TestObsahZDashboardu(unittest.TestCase):
         self.assertEqual(xbmcplugin.urls(), [])
 
     def test_dalsi_strana_nahradi_vypis(self):
-        """Discord 2026-09-28: Zpět po listování vedlo přes všechny stránky zpátky."""
+        """Stará větev action=page (uložené odkazy) dál nahradí výpis."""
         cil = default.build_url(action="catalog", type="movie", catalog="top", skip=20)
         xbmc.cond_visible.add("Window.IsMedia")
         xbmc.info_labels["Container.PluginName"] = "plugin.video.nokturno"
@@ -2694,6 +2694,18 @@ class TestObsahZDashboardu(unittest.TestCase):
         del xbmc.builtins[:]
         default.main("action=page&url=" + urllib.parse.quote("plugin://jiny.doplnek/?x=1"))
         self.assertEqual([b for b in xbmc.builtins if "Update" in b or "Activate" in b], [])
+
+    def test_dalsi_je_slozka_a_nahradi_historii(self):
+        """„Další“ = složka s paged=1; výpis s paged=1 končí updateListing=True."""
+        url = default.build_url(action="catalog", type="movie", catalog="top", skip=20)
+        default.next_page_item(url)
+        self.assertEqual(xbmcplugin.urls(), [url + "&paged=1"])
+        self.assertTrue(xbmcplugin.items[-1][3])
+        cizi = urllib.parse.quote("plugin://jiny.doplnek/?x=1")
+        default.router("action=page&url=" + cizi + "&paged=1")
+        self.assertTrue(default.UPDATE_LISTING)
+        default.router("action=page&url=" + cizi)
+        self.assertFalse(default.UPDATE_LISTING)
 
     def test_seznam_dilu_v_kontextu_dilu(self):
         label, cmd = default.episodes_context("tt0903747", 2)[0]
@@ -6752,9 +6764,8 @@ class TestVlastniKatalogy(unittest.TestCase):
         self.assertEqual(dash.calls[0][1]["with_original_language"], "cs")
         urls = xbmcplugin.urls()
         dalsi = params_of(urls[-1])
-        self.assertEqual(dalsi["action"], "page")
-        self.assertEqual(params_of(dalsi["url"]), {"action": "mycat", "type": "movie", "id": cat["id"], "page": "2"})
-        self.assertFalse(xbmcplugin.items[-1][3], "„Další“ je tlačítko, ne složka")
+        self.assertEqual(dalsi, {"action": "mycat", "type": "movie", "id": cat["id"], "page": "2", "paged": "1"})
+        self.assertTrue(xbmcplugin.items[-1][3], "„Další“ je složka")
 
     def test_vypadek_serveru_ohlasi(self):
         cat = self._vytvor()[0]

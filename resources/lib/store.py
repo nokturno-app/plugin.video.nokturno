@@ -9,6 +9,9 @@ downloads.json   fronta stahování [{"id", "url", "name", "dest", "status", "do
 trakt.json       tokeny Traktu
 cache/           odpovědi API s TTL (manifesty, meta)
 
+`cache/` a `sosac_index.json` jdou kdykoli stáhnout znovu. Hostitel je může poslat
+jinam (`cache_dir`) — HA je drží v `.cache/nokturno`, aby nebyly v každé záloze HA.
+
 Kodi si u položek z pluginu zhlédnutí samo nepamatuje spolehlivě (cesta streamu
 se mění), proto vlastní evidence.
 """
@@ -74,10 +77,12 @@ _MISSING = object()   # `_read_cached`: záznam chybí nebo prošel (None je pla
 
 
 class Store:
-    def __init__(self, directory):
+    def __init__(self, directory, cache_dir=None):
         self.dir = directory
+        # cache API a rejstřík Sosáče (data, která jdou stáhnout znovu); bez zadání vedle ostatních
+        self.cache_dir = cache_dir or directory
         os.makedirs(directory, exist_ok=True)
-        os.makedirs(os.path.join(directory, "cache"), exist_ok=True)
+        os.makedirs(os.path.join(self.cache_dir, "cache"), exist_ok=True)
         # Soubory sdílí víc procesů najednou (doplněk v Kodi = nový proces na každý
         # výpis, plus služba na pozadí). Načtený obsah se drží v paměti jen dokud se
         # soubor na disku nezmění (`_sigs`: mtime + velikost) — jinak by zápis
@@ -87,6 +92,9 @@ class Store:
         self._sigs = {}
         self._index = None
         self._clean_tmp()
+        # úložiště rejstříku Sosáče založené hned tady, ne v `index()`: ten se volá i ze smyčky
+        # událostí HA (atributy senzoru) a konstruktor Store čte disk (`_clean_tmp`)
+        self._index_files = Store(self.cache_dir) if self.cache_dir != directory else None
         # Hledání pro film i seriál běží souběžně ve dvou vláknech (default.py
         # search_run) a obě sahají na tenhle jeden Store — bez zámku dvě vlákna
         # měnila stejný sdílený dict zároveň s tím, jak ho druhé zapisovalo
@@ -256,7 +264,7 @@ class Store:
         """Rejstřík Sosáče nad vlastním souborem, viz `Index`."""
         with self._lock:
             if self._index is None:
-                self._index = Index(self)
+                self._index = Index(self, files=self._index_files)
             return self._index
 
     # --- historie hledání -------------------------------------------------------
@@ -540,7 +548,7 @@ class Store:
         if cap is not None and (not cap[1] or key.startswith(cap[1])):
             ttl = min(ttl, cap[0])
             fresh = fresh or ttl <= 0
-        path = os.path.join(self.dir, "cache", hashlib.md5(key.encode("utf-8")).hexdigest() + ".json")
+        path = os.path.join(self.cache_dir, "cache", hashlib.md5(key.encode("utf-8")).hexdigest() + ".json")
         if not fresh:
             data = self._read_cached(path, ttl)
             if data is not _MISSING:
@@ -617,7 +625,7 @@ class Store:
         v `ttl` — beze spuštění loaderu. Pro rozhodnutí předem (bez placení ceny
         výpočtu), jestli je něco vůbec připravené, např. než se nabídne drahý
         přepočet uživateli ke schválení místo automatického spuštění."""
-        path = os.path.join(self.dir, "cache", hashlib.md5(key.encode("utf-8")).hexdigest() + ".json")
+        path = os.path.join(self.cache_dir, "cache", hashlib.md5(key.encode("utf-8")).hexdigest() + ".json")
         try:
             if time.time() - os.path.getmtime(path) < ttl:
                 with open(path, encoding="utf-8") as f:
@@ -627,7 +635,7 @@ class Store:
         return None
 
     def clear_cache(self):
-        cdir = os.path.join(self.dir, "cache")
+        cdir = os.path.join(self.cache_dir, "cache")
         for name in os.listdir(cdir):
             try:
                 os.remove(os.path.join(cdir, name))
@@ -645,7 +653,7 @@ class Store:
         titulu z TMDB) platí 30 dní. Dřívější hranice 72 h tyhle záznamy mazala po třech
         dnech a každé další otevření titulu je pak četlo znovu ze sítě. Prošlé záznamy
         mezitím nepřekáží, strop velikosti hlídá, aby cache nerostla."""
-        cdir = os.path.join(self.dir, "cache")
+        cdir = os.path.join(self.cache_dir, "cache")
         hranice = time.time() - max_age
         smazano = 0
         zbyva = []   # (mtime, velikost, cesta) toho, co přežilo stáří
@@ -690,11 +698,13 @@ class Index:
     a psaný jen z uživatelských akcí; staré `idx:` záznamy se odsud jednou odstěhují.
     """
 
-    def __init__(self, store, name="sosac_index"):
+    def __init__(self, store, name="sosac_index", files=None):
         # žádné čtení ani zápis souboru tady: `Engine.sources()` zakládá SosacDirect
         # (a tím rejstřík) i z atributů senzoru HA, tedy ve smyčce událostí, kde HA
         # blokující `open()` hlásí jako chybu. Stěhování proběhne až při prvním použití.
         self.store = store
+        # kde leží soubor rejstříku (`Store.cache_dir`); `store` dál drží items.json
+        self.files = files or store
         self.name = name
         self._migrated = False
 
@@ -707,10 +717,10 @@ class Index:
             old = [k for k in items if k.startswith("idx:")]
             if not old:
                 return
-            data = self.store.load(self.name, {})
+            data = self.files.load(self.name, {})
             for k in old:
                 data.setdefault(k, items.pop(k))
-            self.store.save(self.name, data)
+            self.files.save(self.name, data)
             self.store.save("items", items)
 
     def remember_item(self, key, info):
@@ -724,7 +734,7 @@ class Index:
             return
         self._migrate()
         with self.store._lock:
-            data = self.store.load(self.name, {})
+            data = self.files.load(self.name, {})
             ts = int(time.time())
             changed = False
             for key, info in items.items():
@@ -741,14 +751,14 @@ class Index:
             if not changed:
                 return
             self.store._trim(data, INDEX_MAX)
-            self.store.save(self.name, data)
+            self.files.save(self.name, data)
 
     def item(self, key):
         """`idx:` klíče z rejstříku; ostatní (snímek přehraného titulu, ze kterého
         `SosacDirect.meta()` skládá meta neznámého filmu) z `items.json`."""
         self._migrate()
         with self.store._lock:
-            snap = self.store.load(self.name, {}).get(str(key))
+            snap = self.files.load(self.name, {}).get(str(key))
             if snap is None and not str(key).startswith("idx:"):
                 snap = self.store.item(key)
             return snap

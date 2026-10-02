@@ -200,6 +200,8 @@ def wait_for_foreground_search(limit=SEARCH_GATE_S):
         MONITOR.waitForAbort(1)
 HANDLE = int(sys.argv[1])
 BASE_URL = sys.argv[0]
+# výpis otevřený přes „Další“ (`paged=1`): stránka nahradí předchozí v historii Kodi
+UPDATE_LISTING = False
 ICON = ADDON.getAddonInfo("icon")
 PROFILE = xbmcvfs.translatePath(ADDON.getAddonInfo("profile"))
 ADDON_PATH = xbmcvfs.translatePath(ADDON.getAddonInfo("path"))
@@ -1262,9 +1264,11 @@ def mylist_play(apis, refs, name=""):
 
 
 def next_page_item(url):
-    """„Další“ jako tlačítko, které nahradí aktuální stránku (`action=page`). Zpět pak vede rovnou
-    do menu, ne přes všechny prohlédnuté stránky (Discord 2026-09-28)."""
-    action_item(L(30021), build_url(action="page", url=url), icon="DefaultFolder.png")
+    """„Další“ jako obyčejná složka s `paged=1`. Výpis ji zavře s `updateListing=True`, takže
+    stránka nahradí předchozí v historii: Zpět vede rovnou do menu (Discord 2026-09-28)
+    a výběr začne na první položce. Dřív tlačítko `action=page` + `Container.Update(…,replace)`
+    – první klik jen zatočil kolečkem a výběr zůstal uprostřed."""
+    folder_item(L(30021), url + "&paged=1", icon="DefaultFolder.png")
 
 
 def folder_item(label, url, icon=None, context=None):
@@ -4992,7 +4996,7 @@ def list_catalog(apis, ctype, cid, src, genre=None, search=None, skip=0):
         next_page_item(build_url(action="catalog", type=ctype, catalog=cid, src=src, genre=genre,
                                         search=search, skip=skip + len(metas)))
     # widget a výpis v Nokturnu mívají stejnou adresu, položky se ale liší podle okna (add_playable)
-    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
+    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False, updateListing=UPDATE_LISTING)
 
 
 # --- vlastní katalogy ------------------------------------------------------------
@@ -5152,7 +5156,7 @@ def list_mycat(apis, ctype, cat_id, page=1):
         add_meta_item(m, ctype)
     if metas and page < pages:
         next_page_item(build_url(action="mycat", type=ctype, id=cat_id, page=page + 1))
-    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
+    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False, updateListing=UPDATE_LISTING)
 
 
 # --- hledání + historie -----------------------------------------------------------
@@ -5439,7 +5443,7 @@ def list_ws_results(apis, query, offset=0):
         add_ws_file(f)
     if offset + len(files) < total and files:
         next_page_item(build_url(action="search_run", type="ws", q=query, offset=offset + len(files)))
-    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
+    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False, updateListing=UPDATE_LISTING)
 
 
 def list_hs_results(apis, query, offset=0):
@@ -5454,7 +5458,7 @@ def list_hs_results(apis, query, offset=0):
     # dokud chodí plná dávka
     if len(files) == HS_PAGE:
         next_page_item(build_url(action="search_run", type="hs", q=query, offset=offset + len(files)))
-    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
+    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False, updateListing=UPDATE_LISTING)
 
 
 def _storage_ok(api, errors):
@@ -5523,7 +5527,7 @@ def list_dav_results(apis, query, offset=0):
         next_page_item(build_url(action="search_run", type="dav", q=query, offset=offset + WS_PAGE))
     if errors:
         notify(skipped_notice(errors), xbmcgui.NOTIFICATION_WARNING, 7000)
-    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
+    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False, updateListing=UPDATE_LISTING)
 
 
 def history_remove(kind, query):
@@ -7222,6 +7226,8 @@ def source_pause(source):
 def router(query):
     p = dict(urllib.parse.parse_qsl(query.lstrip("?")))
     action = p.get("action")
+    global UPDATE_LISTING
+    UPDATE_LISTING = p.get("paged") == "1"
     # akce bez seznamu (RunPlugin) a bez API
     simple = {
         "history_remove": lambda: history_remove(p["type"], p.get("q", "")),
