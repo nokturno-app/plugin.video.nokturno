@@ -142,6 +142,18 @@ class TraktApi:
             })
         return out
 
+    # --- stahování historie (trakt_pull.py) ------------------------------------------
+    def last_activities(self):
+        return self._request("/sync/last_activities") or {}
+
+    def history(self, start_at, page=1, limit=100):
+        """Zhlédnutí od `start_at` (ISO), od nejnovějšího."""
+        return self._request(f"/sync/history?start_at={start_at}&page={page}&limit={limit}") or []
+
+    def playback(self):
+        """Rozkoukané: `progress` v %, `paused_at`; `extended=full` dá i `runtime` v minutách."""
+        return self._request("/sync/playback?extended=full") or []
+
     @staticmethod
     def _payload(item_id, season=None, episode=None):
         ids = ids_for(item_id)

@@ -2167,6 +2167,14 @@ msgctxt "#30749"
 msgid "Do you agree to the terms of use above?"
 msgstr "Souhlasíš s podmínkami použití výše?"
 
+msgctxt "#30750"
+msgid "Download watched and in progress from Trakt"
+msgstr "Stahovat zhlédnuté a rozkoukané z Traktu"
+
+msgctxt "#30751"
+msgid "Titles you finished or paused elsewhere (Stremio, Nuvio, another Kodi add-on) appear in Recently watched and Continue watching. Checked every 15 minutes."
+msgstr "Co dokoukáš nebo rozkoukáš jinde (Stremio, Nuvio, jiný doplněk Kodi), se objeví v seznamech Naposledy zhlédnuté a Pokračovat ve sledování. Kontroluje se každých 15 minut."
+
 msgctxt "#30800"
 msgid "SyncWatch"
 msgstr "SyncWatch"

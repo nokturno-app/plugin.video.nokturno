@@ -576,6 +576,14 @@
           <data>RunPlugin(plugin://plugin.video.nokturno/?action=trakt_auth)</data>
           <control format="action" type="button"/>
         </setting>
+        <setting id="trakt_pull" type="boolean" label="30750" help="30751">
+          <level>0</level>
+          <default>true</default>
+          <dependencies>
+            <dependency type="enable" setting="trakt_enabled">true</dependency>
+          </dependencies>
+          <control type="toggle"/>
+        </setting>
         <setting id="trakt_logout_action" type="action" label="30098">
           <level>0</level>
           <constraints>

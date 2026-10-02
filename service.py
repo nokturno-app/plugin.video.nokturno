@@ -57,6 +57,7 @@ import syncbox  # noqa: E402
 from trend_api import CATALOG_ID as TREND_CATALOG_ID  # noqa: E402
 from tracks import SUBS_WHEN_NEEDED, pick_audio, pick_subtitle, track_lang  # noqa: E402
 from trakt_api import TraktApi, TraktError, pick_keys  # noqa: E402
+import trakt_pull  # noqa: E402
 from dash_api import DashApi  # noqa: E402
 from webshare_api import WebshareApi  # noqa: E402
 import kodi_marks  # noqa: E402 – vedle service.py, čte videodatabázi Kodi
@@ -83,6 +84,8 @@ ACCOUNTS_EVERY = 6 * 3600     # pod `accounts.TTL` (12 h), ať v menu nestojí z
 ACCOUNTS_RETRY = 20 * 60      # zdroj, na který se nešlo dostat, zkusit dřív — viz AccountsChecker.tick
 ACCOUNTS_TRIGGER_PROP = "nokturno.accounts_trigger"   # stejný literál jako v default.py
 WATCH_TRIGGER_PROP = "nokturno.watch_check"           # stejný literál jako v default.py
+TRAKT_PULL_DELAY = 5 * 60   # po startu napřed skin a widgety
+TRAKT_PULL_EVERY = 15 * 60  # kolo bez změny na Traktu stojí jeden dotaz (last_activities)
 WATCH_DELAY = 6 * 60        # po startu napřed skin, widgety a stav zdrojů
 WATCH_EVERY = 30 * 60       # jak často se podívat, jestli něco z Hlídaných nečeká na kontrolu
 WATCH_DAILY = 24 * 3600     # seznam z Traktu (`watch_state.last_run`) — jinak se nepozná, že je co dělat
@@ -893,6 +896,50 @@ class WatchChecker:
             time.sleep(0.2)
 
 
+class TraktPuller:
+    """Zhlédnuté a rozkoukané z Traktu do vlastní evidence (`trakt_pull` v jádru).
+
+    Jen dotazy na Trakt, žádné zdroje — běží tedy přímo ve službě, ne přes plugin.
+    Ne při přehrávání (vlastní scrobble by se vracel jako ozvěna dřív, než se
+    pozice zapíše) a ne bez sítě. Po přijetí se hned synchronizuje a značky
+    v databázi Kodi srovná `KodiMarks`.
+    """
+
+    def __init__(self, store):
+        self.store = store
+        self.next = time.time() + TRAKT_PULL_DELAY
+        self.lock = threading.Lock()
+
+    def tick(self):
+        if time.time() < self.next:
+            return
+        self.next = time.time() + TRAKT_PULL_EVERY
+        addon = fresh_addon()
+        if addon is None or addon.getSetting("trakt_pull") == "false" or xbmc.Player().isPlaying():
+            return
+        znacka = (self.store.reload(accounts_lib.OFFLINE, {}) or {}).get("ts", 0)
+        if znacka and time.time() - float(znacka) < accounts_lib.OFFLINE_TTL:
+            return
+        if not self.lock.acquire(blocking=False):
+            return
+
+        def run():
+            try:
+                trakt = get_trakt(self.store)
+                if not trakt:
+                    return
+                n = trakt_pull.pull(self.store, trakt)
+                if n:
+                    log(f"Trakt: přijato {n} zhlédnutých/rozkoukaných")
+                    xbmcgui.Window(10000).setProperty(SYNC_PROP, "1")
+            except Exception as e:  # noqa: BLE001 – Trakt nesmí shodit službu
+                log(f"stahování z Traktu: {e}", xbmc.LOGWARNING)
+            finally:
+                self.lock.release()
+
+        threading.Thread(target=run, daemon=True, name="nokturno-trakt").start()
+
+
 SUB_STATE = "substate"   # substate.json v profilu: {"last_warned": "YYYY-MM-DD"}
 
 
@@ -1574,6 +1621,7 @@ def main():
     syncer = Syncer(store)
     accounts_checker = AccountsChecker(store)
     watch_checker = WatchChecker(store)
+    trakt_puller = TraktPuller(store)
     marks = KodiMarks(store)
     crash_sender = CrashSender(CrashReporter(PROFILE))
     log("start")
@@ -1587,6 +1635,7 @@ def main():
             syncer.tick()
             accounts_checker.tick()
             watch_checker.tick()
+            trakt_puller.tick()
             marks.tick()
             crash_sender.tick()
             if monitor.waitForAbort(POLL):

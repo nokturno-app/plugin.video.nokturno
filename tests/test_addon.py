@@ -5719,7 +5719,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 129)   # +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs
+        self.assertEqual(len(volby), 130)   # +1 trakt_pull, +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):
@@ -5822,7 +5822,7 @@ class TestKorenMenu(unittest.TestCase):
         self.assertEqual(skupina.get("label"), "30090")
         self.assertEqual({s.get("id") for s in skupina.iter("setting")},
                          {"trakt_enabled", "trakt_client_id", "trakt_client_secret",
-                          "trakt_auth_action", "trakt_logout_action"})
+                          "trakt_auth_action", "trakt_pull", "trakt_logout_action"})
         self.assertNotIn("trakt", default.REMOTE_SETUP_CATEGORIES)
 
     def test_muj_seznam_se_neukaze_prazdny(self):
@@ -6543,6 +6543,37 @@ class TestHlidaneSluzba(unittest.TestCase):
         self.checker.next_notice = 0
         self.run_tick()
         self.assertEqual(len(xbmcgui.notifications), 1, "podruhé už ne")
+
+
+class TestStahovaniZTraktu(unittest.TestCase):
+    """Služba stahuje zhlédnuté a rozkoukané z Traktu (`TraktPuller`)."""
+
+    def setUp(self):
+        reset_kodi()
+        self.dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.dir.cleanup)
+        self.store = service.Store(self.dir.name)
+        self.puller = service.TraktPuller(self.store)
+        self.puller.next = 0
+
+    def run_tick(self, trakt, n=1):
+        with mock.patch.object(service, "get_trakt", return_value=trakt), \
+                mock.patch.object(service.trakt_pull, "pull", return_value=n) as pull, \
+                mock.patch.object(service.threading, "Thread") as thread:
+            thread.side_effect = lambda target, daemon, name: mock.Mock(start=target)
+            self.puller.tick()
+        return pull
+
+    def test_prijate_hned_synchronizuje(self):
+        self.run_tick(object()).assert_called_once()
+        self.assertEqual(xbmcgui.Window(10000).getProperty(service.SYNC_PROP), "1")
+
+    def test_vypnuto_v_nastaveni(self):
+        service.ADDON.setSetting("trakt_pull", "false")
+        self.run_tick(object()).assert_not_called()
+
+    def test_bez_prihlaseni_nic(self):
+        self.run_tick(None).assert_not_called()
 
 
 class TestAktualizaceDoplnku(unittest.TestCase):
