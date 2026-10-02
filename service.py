@@ -137,6 +137,20 @@ def refresh_tmdbhelper_player():
         log(f"player pro TMDb Helper: {e}", xbmc.LOGWARNING)
 
 
+def heal_repos():
+    """Repozitář, který pořád čte staré repo matata86, přepojí na nokturno-app
+    (`update_info.heal_repos`) a hned ho nechá zkontrolovat."""
+    healed = update_info.heal_repos(xbmcvfs.translatePath("special://home/addons/"))
+    if not healed:
+        return
+    db = update_info.find_db(xbmcvfs.translatePath("special://database/"))
+    for repo_id in healed:
+        # původ a pravidlo z databáze Kodi – proč se repozitář sám neaktualizoval
+        log(f"{repo_id} přepojen na nokturno-app (původ, pravidlo: {update_info.read_db(db, repo_id)})")
+    xbmc.executebuiltin("UpdateLocalAddons", True)
+    xbmc.executebuiltin("UpdateAddonRepos")
+
+
 def fresh_addon():
     """Doplněk s čerstvě načteným nastavením, nebo None.
 
@@ -1564,6 +1578,7 @@ def main():
     crash_sender = CrashSender(CrashReporter(PROFILE))
     log("start")
     refresh_tmdbhelper_player()
+    heal_repos()
     try:
         while not monitor.abortRequested():
             player.tick()

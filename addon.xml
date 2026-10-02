@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="9.8.0" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="9.8.3" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>9.8.0 – Filmy ve vysoké kvalitě v menu Filmů: populární a nejsledovanější filmy, které mají stream podle tvé definice (kvalita, 5.1, jazyk zvuku), rozdělené podle žánrů. Datum premiéry v detailu. Další strana ve výpisech se otevře na první klik a začíná nahoře.
+    <news>9.8.3 – Doplněk zase dostává aktualizace i tam, kde zůstal na verzi 9.0.0: repozitář se sám přepojí na novou adresu.
+9.8.0 – Filmy ve vysoké kvalitě v menu Filmů: populární a nejsledovanější filmy, které mají stream podle tvé definice (kvalita, 5.1, jazyk zvuku), rozdělené podle žánrů. Datum premiéry v detailu. Další strana ve výpisech se otevře na první klik a začíná nahoře.
 9.7.0~beta1 – Detail filmu a seriálu ukazuje datum premiéry (vzhledy jako Arctic Fuse 3 ho kreslí místo roku).
 9.6.2 – Detail filmu a seriálu ukazuje datum premiéry (vzhledy jako Arctic Fuse 3 ho kreslí místo roku).
 9.6.0~beta8 – Filmy ve vysoké kvalitě: položky Nastavit, Spustit dávku a Jak to funguje jsou zase obyčejné položky bez složky.

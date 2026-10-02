@@ -78,6 +78,38 @@ def info(execute, db_dir, addon_id=ADDON_ID):
     return out
 
 
+OLD_REPO = "raw.githubusercontent.com/matata86/plugin.video.nokturno/"
+NEW_REPO = "raw.githubusercontent.com/nokturno-app/plugin.video.nokturno/"
+REPO_IDS = ("repository.nokturno", "repository.nokturno.beta")
+_REPO_VERSION_RE = re.compile(r'(<addon\b[^>]*?\bversion=")[^"]*(")')
+
+
+def heal_repos(addons_dir):
+    """Přepojí repozitáře 1.0.x ze starého repa matata86 na nokturno-app.
+
+    Staré repo nabízí jako poslední doplněk 9.0.0 a k tomu repozitář 1.1.0 s novými
+    adresami. Doplněk se z něj aktualizoval, repozitář na části zařízení ne (2026-10-02:
+    ~550 instalací stojí na 9.0.0 s repozitářem 1.0.3), takže se tu `addon.xml`
+    přepíše na adresy a verzi 1.1.0. Vrací id přepsaných repozitářů."""
+    healed = []
+    for repo_id in REPO_IDS:
+        path = os.path.join(addons_dir, repo_id, "addon.xml")
+        try:
+            with open(path, encoding="utf-8") as f:
+                text = f.read()
+            if OLD_REPO not in text:
+                continue
+            text = _REPO_VERSION_RE.sub(r"\g<1>1.1.0\2", text.replace(OLD_REPO, NEW_REPO), count=1)
+            text = text.replace('provider-name="matata86"', 'provider-name="Nokturno"')
+            with open(path + ".tmp", "w", encoding="utf-8") as f:
+                f.write(text)
+            os.replace(path + ".tmp", path)
+            healed.append(repo_id)
+        except OSError:
+            continue
+    return healed
+
+
 def quality(addon, store):
     """K plnému hlášení: kódy stavu zdrojů, použité funkce, průvodce, skin a architektura.
     Jen kódy a názvy funkcí — nic, podle čeho by šlo poznat, co kdo sleduje."""
