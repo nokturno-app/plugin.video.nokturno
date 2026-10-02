@@ -1346,6 +1346,7 @@ def snapshot(meta, ctype, video=None, series_id=None, alt=None):
         "genres": [str(g) for g in (meta.get("genres") or [])],
         "runtime": (video or meta).get("runtime") or "",
         "mpaa": str(meta.get("mpaa") or ""),
+        "released": release_date((video or meta).get("released")),
     }
 
 
@@ -1414,6 +1415,16 @@ def fav_context(key, ctype, series_id=None, alt=None):
     return (label, runplugin(action="toggle_fav", id=key, type=ctype, series=series_id, alt=alt))
 
 
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
+def release_date(value):
+    """`RRRR-MM-DD` z data vydání (TMDB `2026-09-16`, Cinemeta `2026-09-16T00:00:00.000Z`),
+    jinak prázdné. Arctic Fuse 3 ukazuje v detailu `ListItem.Premiered`, ne rok."""
+    value = str(value or "")[:10]
+    return value if _DATE_RE.match(value) else ""
+
+
 def fill_info(li, meta, ctype="movie", video=None, tech=True):
     """`tech=False` vynechá stopáž a hodnocení.
 
@@ -1439,6 +1450,8 @@ def fill_info(li, meta, ctype="movie", video=None, tech=True):
     year = str(meta.get("year") or meta.get("releaseInfo") or "")[:4]
     if tech and year.isdigit():
         tag.setYear(int(year))
+    if tech and not video and release_date(meta.get("released")):
+        tag.setPremiered(release_date(meta.get("released")))
     if meta.get("genres"):
         tag.setGenres([str(g) for g in meta["genres"]])
     try:
@@ -1562,6 +1575,8 @@ def fill_info_snapshot(li, snap):
     if is_ep:
         tag.setSeason(int(snap.get("season") or 0))
         tag.setEpisode(int(snap.get("episode") or 0))
+    if release_date(snap.get("released")):
+        (tag.setFirstAired if is_ep else tag.setPremiered)(release_date(snap["released"]))
     base = split_episode_id(snap.get("id"))[0]
     if str(base).startswith("tt"):
         tag.setIMDBNumber(base)

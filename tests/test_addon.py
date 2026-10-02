@@ -583,6 +583,19 @@ class TestFillInfo(unittest.TestCase):
         self.assertEqual([(a.args[0], a.args[1], a.args[3]) for a in actors],
                          [("Herec Jedna", "", ""), ("Herec Dva", "", "")])
 
+    def test_datum_premiery(self):
+        """Arctic Fuse 3 ukazuje v detailu filmu `ListItem.Premiered`, ne rok (Discord, 2026-10-02)."""
+        li = xbmcgui.ListItem()
+        default.fill_info(li, {"id": "tt1", "name": "Film", "year": "2026", "released": "2026-09-16T00:00:00.000Z"})
+        self.assertEqual(self.calls(li, "setPremiered"), [("2026-09-16",)])
+        li = xbmcgui.ListItem()
+        default.fill_info(li, {"id": "tt1", "name": "Film", "year": "2026", "released": "2026"})
+        self.assertEqual(self.calls(li, "setPremiered"), [], "jen rok není datum")
+        li = xbmcgui.ListItem()
+        snap = default.snapshot({"id": "tt1", "name": "Film", "released": "2026-09-16"}, "movie")
+        default.fill_info_snapshot(li, snap)
+        self.assertEqual(self.calls(li, "setPremiered"), [("2026-09-16",)])
+
     def test_bez_tmdb_udaju_se_nic_nenastavi(self):
         li = xbmcgui.ListItem()
         default.fill_info(li, {"id": "tt1", "name": "Film"})
