@@ -68,6 +68,44 @@ def save(store, cat):
     _touch(store, cat["id"], True)
 
 
+# Předdefinované katalogy: běžné záznamy s pevným id (víc zařízení ve skupině synchronizace tak nezaloží
+# duplikáty), upravitelné i smazatelné. (id, kind, název cs, pole)
+PRESETS = (
+    ("pre-movie-popular", "movie", "Populární", {"sort": "popularity.desc"}),
+    ("pre-movie-top", "movie", "Nejlépe hodnocené", {"sort": "vote_average.desc"}),
+    ("pre-movie-cz-dub", "movie", "Nové s CZ dabingem",
+     {"sort": "popularity.desc", "years": 2, "verify": True, "audio": "CZ", "show": "found"}),
+    ("pre-movie-hq", "movie", "Filmy ve vysoké kvalitě",
+     {"sort": "popularity.desc", "verify": True, "q": 4, "show": "found"}),
+    ("pre-movie-czech", "movie", "České filmy", {"sort": "popularity.desc", "lang": "cs"}),
+    ("pre-series-popular", "series", "Populární", {"sort": "popularity.desc"}),
+    ("pre-series-top", "series", "Nejlépe hodnocené", {"sort": "vote_average.desc"}),
+    ("pre-series-cz-dub", "series", "Nové s CZ dabingem",
+     {"sort": "popularity.desc", "years": 2, "verify": True, "audio": "CZ", "show": "found"}),
+    ("pre-series-czech", "series", "České seriály", {"sort": "popularity.desc", "lang": "cs"}),
+)
+
+
+def preset_catalog(pid, kind, name, fields):
+    """Plný záznam předvolby (stejná pole, jaká ukládá formulář v Kodi)."""
+    return dict({"id": pid, "kind": kind, "name": name, "genres": [], "keywords": [], "join": "and", "lang": "",
+                 "year_from": None, "year_to": None, "years": None, "sort": "popularity.desc", "verify": False,
+                 "q": 0, "audio": "", "subs": "", "surround": False, "show": "found", "menu": True}, **fields)
+
+
+def seed(store, names=None, overrides=None):
+    """Založí předvolby, které v deníku ještě nejsou (smazaná předvolba má v `LOG` `on False`, takže se nevrátí).
+    `names` = {id: název}, `overrides` = {id: {pole}} přepíše pole předvolby. Vrací seznam založených id."""
+    names, overrides, made = names or {}, overrides or {}, []
+    with store.updating(LOG, {}) as log:
+        for pid, kind, name, fields in PRESETS:
+            if pid in log:
+                continue
+            save(store, preset_catalog(pid, kind, names.get(pid) or name, dict(fields, **overrides.get(pid, {}))))
+            made.append(pid)
+    return made
+
+
 def delete(store, cid):
     with store.updating(DEFS, []) as items:
         items[:] = [c for c in items if not (isinstance(c, dict) and c.get("id") == cid)]

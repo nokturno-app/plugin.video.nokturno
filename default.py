@@ -23,6 +23,7 @@ import time
 import traceback
 import urllib.parse
 import urllib.request
+import xml.etree.ElementTree as ET
 import zlib
 
 import xbmc
@@ -53,7 +54,6 @@ from sosac_api import SosacError, is_sosac_id as _is_stremio_sosac_id  # noqa: E
 from sosac_direct import EXPORT as SOSAC_EXPORT, SosacDirect, is_direct_id  # noqa: E402
 from enrich import add_ratings, enrich, enrich_one, shutdown_pool as release_enrich  # noqa: E402
 import foryou  # noqa: E402
-import hq_index  # noqa: E402
 import concertcat  # noqa: E402
 import mycat  # noqa: E402
 import usage  # noqa: E402
@@ -225,19 +225,11 @@ ACCOUNTS_TRIGGER_PROP = "nokturno.accounts_trigger"   # stejný literál jako v 
 FORYOU_TTL = 24 * 3600
 FORYOU_SEEN_KEY = "foryou_seen"
 FORYOU_SEEN_DAYS = 14
-# „Filmy ve vysoké kvalitě" – trvalý index ověřený na pozadí (`hq_index`, `hq_refresh`);
-# menu čte jen index. Stejný literál `hq_seen` je v service.py.
-HQ_SEEN_KEY = "hq_seen"
-HQ_INDEX_KEY = "hq_index"
-HQ_SEEN_DAYS = 14
-VERIFY_TRIGGER_PROP = "nokturno.verify.trigger"   # menu s prázdným indexem popožene službu; hodnota = cíl (`hq` / id katalogu)
-HQ_POOL_MAX = 200
+# Ověřované vlastní katalogy (`mycat`) mají trvalý index ověřený na pozadí; menu čte jen index.
+VERIFY_TRIGGER_PROP = "nokturno.verify.trigger"   # menu s prázdným indexem popožene službu; hodnota = id katalogu
 VERIFY_MANUAL_PROP = "nokturno.verify.manual"     # „cíl:počet“; stejný literál jako v service.py
 FIRST_BATCH_SIZE = 30                       # první dávka po uložení nového ověřovaného katalogu
-HQ_MANUAL_SIZE = 20                         # ruční „Spustit dávku nyní“ ověří víc titulů než dávka služby
-HQ_RANKS = (0, 3, 3.5, 4)                   # jakákoli, Full HD, 2K, 4K (`quality_rank` v jádru)
-HQ_AUDIO = ("", "CZ", "SK", "EN")           # index 0 = jakýkoli; stejné pořadí má i `hq_subs`
-HQ_QUALITY_LABELS = ("", "Full HD", "2K", "4K")
+MANUAL_BATCH_SIZE = 20                      # ruční „Spustit dávku nyní“ ověří víc titulů než dávka služby
 # O kolik dřív než vyprší cache ji zahřívání přepočítá — musí být aspoň interval
 # zahřívání (`service.WARM_EVERY`, 2,5 h), jinak kolo jen přečte platnou cache a nechá
 # ji vypršet mezi dvěma koly (6.2.2 nález 29).
@@ -500,11 +492,6 @@ def note_foryou_open(ctype):
     má služba seznam zahřívat na pozadí (viz `service.foryou_warm_urls`)."""
     with STORE.updating(FORYOU_SEEN_KEY, {}) as seen:
         seen[str(ctype)] = int(time.time())
-
-
-def note_hq_open():
-    """Zapamatuje otevření „Filmů ve vysoké kvalitě" – služba na pozadí ověřuje jen pro toho, kdo je otevřel."""
-    STORE.save(HQ_SEEN_KEY, int(time.time()))
 
 
 def foryou_wanted(ctype, days=FORYOU_SEEN_DAYS):
@@ -2574,6 +2561,60 @@ def migrate_sync_mode():
     ADDON.setSetting("sync_mode", SYNC_MODE_RELAY)
     notify(L(30688, "Synchronizace jede přes dashboard. S Home Assistantem zadej "
                     "týž kód skupiny i v nastavení integrace."), ms=8000)
+
+
+def _hq_from_profile():
+    """Zrušená nastavení `hq_*` (Filmy ve vysoké kvalitě) z profilového settings.xml (`getSetting` o zrušené volbě
+    neví, viz `migrate_sync_mode`) → (skrytá položka, {pole předvolby `pre-movie-hq`}). Chybějící hodnota =
+    někdejší výchozí z settings.xml; bez jediného `hq_*` a bez `hq_index` (čistá instalace) žádné přepisy."""
+    vals = {}
+    try:
+        for el in ET.parse(os.path.join(PROFILE, "settings.xml")).getroot().iter("setting"):
+            if str(el.get("id") or "").startswith("hq_"):
+                vals[el.get("id")] = (el.text or "").strip()
+    except (IOError, OSError, ET.ParseError):
+        pass
+    if vals.get("hq_enabled") == "false":
+        return True, {}
+    if not vals and not (STORE.load("hq_index", {}) or {}).get("items"):
+        return False, {}
+
+    def idx(key, default, size):
+        try:
+            return max(0, min(size - 1, int(vals.get(key, default))))
+        except ValueError:
+            return default
+    tracks = ("", "CZ", "SK", "EN")
+    return False, {"q": (0, 3, 3.5, 4)[idx("hq_min_quality", 3, 4)], "surround": idx("hq_channels", 1, 2) == 1,
+                   "audio": tracks[idx("hq_audio", 1, 4)], "subs": tracks[idx("hq_subs", 0, 4)]}
+
+
+def seed_catalogs():
+    """Jednou na instalaci založí předdefinované vlastní katalogy (`mycat.PRESETS`). Převezme nastavení i hotové
+    výsledky zrušených „Filmů ve vysoké kvalitě“ (`hq_*`, `hq_index`). Výjimka menu neshodí; značka se zapíše
+    až po úspěchu."""
+    if STORE.load("catalogs_seeded", ""):
+        return
+    try:
+        names = {pid: L(sid, fb) for pid, sid, fb in (
+            ("pre-movie-popular", 30007, "Populární"), ("pre-series-popular", 30007, "Populární"),
+            ("pre-movie-top", 30008, "Nejlépe hodnocené"), ("pre-series-top", 30008, "Nejlépe hodnocené"),
+            ("pre-movie-cz-dub", 30015, "Nové s CZ dabingem"), ("pre-series-cz-dub", 30015, "Nové s CZ dabingem"),
+            ("pre-movie-hq", 30993, "Filmy ve vysoké kvalitě"), ("pre-movie-czech", 30016, "České filmy"),
+            ("pre-series-czech", 30017, "České seriály"))}
+        hidden, overrides = _hq_from_profile()
+        if hidden:
+            mycat.delete(STORE, "pre-movie-hq")   # smazaná předvolba se už nezaloží
+        made = mycat.seed(STORE, names, {"pre-movie-hq": overrides} if overrides else None)
+        old = STORE.load("hq_index", {}) or {}
+        if "pre-movie-hq" in made and old.get("items"):
+            cat = next(c for c in mycats("movie") if c.get("id") == "pre-movie-hq")
+            STORE.save(mycat.INDEX + "pre-movie-hq", dict(old, sig=mycat.sig(cat), pool_ts=0))
+        if old:
+            STORE.save("hq_index", {})
+        STORE.save("catalogs_seeded", "1")
+    except Exception as e:  # noqa: BLE001 – menu nesmí spadnout
+        log_error(f"seed_catalogs: {e}")
 
 
 def migrate_sync_mode_default():
@@ -4952,52 +4993,22 @@ def main_menu(apis):
 
 
 def browse_menu(apis, ctype):
-    """Filmy / Seriály: seznamy bez ohledu na zdroj. Zdroj vybírá doplněk sám —
-    TMDB (vlastní klíč), jinak Luna, jinak Cinemeta. „Podle písmene“ vypadlo
-    (2026-09-14) — 100 položek bez popisů, pomalé a nikdo ho neprocházel.
-
-    „Populární na TMDB“ a „Nejlépe hodnocené“ jdou přes `action="genres"`
-    (2026-09-15) — obě mají u zdroje (TMDB/Luna/Cinemeta) seznam žánrů, `list_genres()`
-    nabídne „Vše“ i jednotlivé žánry, teprve pak se sáhne na `list_catalog()` se
-    zvoleným `genre=`. „Nejsledovanější tento týden“ (dashboard) žánr u položek nemá,
-    zůstává tedy jako přímý `action="catalog"`."""
+    """Filmy / Seriály: katalogy z dashboardu, Pro Tebe, Nejsledovanější tento týden, vlastní katalogy
+    s volbou „přímo v menu“ (včetně předdefinovaných, viz `mycat.PRESETS`), Vlastní katalogy a Náhodný
+    film/seriál. Populární, Nejlépe hodnocené i Filmy ve vysoké kvalitě jsou předvolby vlastních
+    katalogů – dají se upravit i smazat. „Nejsledovanější tento týden“ (dashboard) je přímý `action="catalog"`."""
     kind = "series" if ctype == "series" else "movie"
-    tmdb, luna, cinemeta = apis.get("tmdb"), apis.get("luna"), apis.get("cinemeta")
     # sezónní a tematické katalogy z dashboardu nahoře, pořadí mezi nimi řídí `position`
     dash_catalog_items(apis, "browse", kind)
-
-    def pick(tmdb_cid, luna_cid, cinemeta_cid):
-        if tmdb and tmdb_cid:
-            return "tmdb", tmdb_cid, None
-        if luna and luna_cid:
-            return "luna", luna_cid, None
-        if cinemeta and cinemeta_cid:
-            return "cinemeta", cinemeta_cid, None
-        return None
 
     # „Pro tebe" jen když je z čeho doporučovat — prázdný seznam by jen mátl. Seznam
     # vzorů se čte z profilu (`watched`), žádná síť, takže kreslení menu to nezdrží.
     if foryou_seeds(apis, ctype, limit=1):
         folder_item(L(30605, "Pro Tebe"), build_url(action="foryou", type=ctype),
                     icon="DefaultAddonsRecentlyUpdated.png")
-    rows = [
-        (L(30398, "Populární na TMDB"), "genres", pick("popular", f"tmdb.top_{kind}", "top"), "DefaultMovies.png"),
-        (L(30393, "Nejsledovanější tento týden"), "catalog", ("trend", TREND_CATALOG_ID, None),
-         "DefaultFavourites.png"),
-        (L(30399, "Nejlépe hodnocené"), "genres", pick("top_rated", f"tmdb.top_rated_{kind}", "imdbRating"),
-         "DefaultMusicTop100.png"),
-    ]
-    for label, action, target, icon in rows:
-        if not target:
-            continue
-        src, cid, genre = target
-        params = {"action": action, "type": ctype, "catalog": cid, "src": src}
-        if genre:
-            params["genre"] = genre
-        folder_item(label, build_url(**params), icon=icon)
-    if ctype == "movie" and on("hq_enabled"):   # hned pod „Nejlépe hodnocené“
-        folder_item(L(30993, "Filmy ve vysoké kvalitě"), build_url(action="hq", type="movie"),
-                    icon="DefaultMovies.png")
+    folder_item(L(30393, "Nejsledovanější tento týden"),
+                build_url(action="catalog", type=ctype, catalog=TREND_CATALOG_ID, src="trend"),
+                icon="DefaultFavourites.png")
     for cat in mycats(ctype):   # katalogy s volbou „přímo v menu“ (jen čtení souboru, bez sítě)
         if cat.get("menu"):
             mycat_folder(cat, ctype)
@@ -5297,8 +5308,8 @@ def mycat_delete(cat_id):
 
 
 def mycat_batch(cat_id):
-    """Ruční „Spustit dávku nyní“ ověřovaného katalogu: úkol dostane služba (vzor `hq_batch`)."""
-    xbmcgui.Window(10000).setProperty(VERIFY_MANUAL_PROP, "%s:%s" % (cat_id, HQ_MANUAL_SIZE))
+    """Ruční „Spustit dávku nyní“ ověřovaného katalogu: úkol dostane služba."""
+    xbmcgui.Window(10000).setProperty(VERIFY_MANUAL_PROP, "%s:%s" % (cat_id, MANUAL_BATCH_SIZE))
 
 
 def mycat_folder(cat, ctype):
@@ -6462,166 +6473,24 @@ def foryou_items(apis, ctype, seeds):
     return items
 
 
-def hq_definition():
-    """(min. kvalita, prostorový zvuk, jazyk zvuku, jazyk titulků) z nastavení; „jakákoli" = 0 / False / ""."""
-    def idx(key, default, size):
-        try:
-            return max(0, min(size - 1, int(setting(key, default))))
-        except ValueError:
-            return int(default)
-    return (HQ_RANKS[idx("hq_min_quality", "3", len(HQ_RANKS))], idx("hq_channels", "1", 2) == 1,
-            HQ_AUDIO[idx("hq_audio", "1", len(HQ_AUDIO))], HQ_AUDIO[idx("hq_subs", "0", len(HQ_AUDIO))])
-
-
-def hq_summary():
-    """Krátké shrnutí definice pro popisek položky (vejde se na řádek skinu)."""
-    q, surround, audio, subs = hq_definition()
-    return _swf(30890, "%s · %s · zvuk %s · titulky %s", HQ_QUALITY_LABELS[HQ_RANKS.index(q)] or "–",
-                "5.1+" if surround else "–", audio or "–", subs or "–")
-
-
-def hq_setup():
-    """Modal z menu: kvalita, kanály, jazyk zvuku, titulky, zobrazení položky. Zpět v kterémkoli kroku = nic se neuloží."""
-    any_ = L(30111, "Libovolný")
-    langs = [L(30112, "Čeština"), L(30113, "Slovenština"), L(30114, "Angličtina")]
-    steps = (
-        ("hq_min_quality", L(30994, "Minimální kvalita"), [L(30885, "Libovolná"), "Full HD", "2K", "4K"], 3),
-        ("hq_channels", L(30883, "Kanály zvuku"), [L(30886, "Libovolné"), L(30888, "5.1 a víc")], 1),
-        ("hq_audio", L(30997, "Jazyk zvuku"), [any_] + langs, 1),
-        ("hq_subs", L(30884, "Titulky"), [L(30887, "Libovolné")] + langs, 0),
-        ("hq_enabled", L(30882, "Zobrazit položku v menu Filmy"), [L(30894, "Ano"), L(30895, "Ne")], 0),
-    )
-    chosen = {}
-    for key, heading, options, default in steps:
-        try:
-            cur = int(setting(key, str(default)))
-        except ValueError:
-            cur = default
-        if key == "hq_enabled":
-            cur = 1 if setting(key) == "false" else 0
-        pick = xbmcgui.Dialog().select(heading, options, preselect=max(0, min(len(options) - 1, cur)))
-        if pick < 0:
-            return
-        chosen[key] = pick
-    for key, pick in chosen.items():
-        ADDON.setSetting(key, ("false" if pick else "true") if key == "hq_enabled" else str(pick))
-    xbmcgui.Window(10000).setProperty(VERIFY_TRIGGER_PROP, "hq")
-    notify(L(30896, "Položka je skrytá. Znovu ji zapneš v Nastavení → Přehrávání.") if chosen["hq_enabled"]
-           else L(30893, "Uloženo – seznam se přepočítá na pozadí."), xbmcgui.NOTIFICATION_INFO, 4000)
-    xbmc.executebuiltin("Container.Refresh")
-
-
-def hq_batch():
-    """Ruční „Spustit dávku nyní": jen zadá úkol službě, ta ho dělá po jednom titulu s ukazatelem v rohu
-    a ostatní kliknutí v menu nechává projít."""
-    xbmcgui.Window(10000).setProperty(VERIFY_MANUAL_PROP, "hq:%s" % HQ_MANUAL_SIZE)
-
-
-def hq_info():
-    xbmcgui.Dialog().textviewer(L(30891, "Jak to funguje"), L(30892, "Seznam vychází z populárních, nejsledovanějších "
-                                "a nejlépe hodnocených filmů. Na pozadí se kontroluje, které z nich mají stream podle "
-                                "tvých parametrů."))
-
-
-def hq_pool(apis):
-    """Kandidáti: trend ∪ populární (5 stran) ∪ nejlépe hodnocené (3 strany), jen `tt` id, nejvýš `HQ_POOL_MAX`."""
-    pool, seen = [], set()
-
-    def add(metas):
-        for m in metas or []:
-            mid = str(m.get("id") or "")
-            if mid.startswith("tt") and mid not in seen:
-                seen.add(mid)
-                pool.append(m)
-
-    trend = apis.get("trend")
-    if trend:
-        add(trend.catalog("movie", TREND_CATALOG_ID))
-    src, cid = random_source(apis, "movie")
-    if src:
-        for n in range(5):
-            add(apis[src].catalog("movie", cid, skip=PAGE * n))
-    tops = {"tmdb": "top_rated", "luna": "tmdb.top_rated_movie", "cinemeta": "imdbRating"}
-    for n in range(3):
-        if src:
-            add(apis[src].catalog("movie", tops[src], skip=PAGE * n))
-    return pool[:HQ_POOL_MAX]
-
-
-def verify_refresh(apis, target="hq", size=8, pool_only=False):
-    """Ověří `size` nejpotřebnějších titulů pro index (volá služba přes `action=verify_refresh`); bez UI, bez modálu.
-    `target` = `hq` („Filmy ve vysoké kvalitě“) nebo id vlastního katalogu (`mycat.refresh`), `pool_only` = jen
-    obnova kandidátů (zařízení s cizími výsledky).
+def verify_refresh(apis, target="", size=8, pool_only=False):
+    """Ověří `size` nejpotřebnějších titulů ověřovaného vlastního katalogu `target` (volá služba přes
+    `action=verify_refresh`); bez UI, bez modálu. `pool_only` = jen obnova kandidátů (zařízení s cizími výsledky).
+    Starý cíl `hq` (Filmy ve vysoké kvalitě) je od zrušení samostatné funkce předvolba `pre-movie-hq`.
 
     Služba ji volá po jednom titulu s odstupem: plugin běží v jednom interpretu (reuse invoker), takže dlouhý
     běh by držel všechna ostatní kliknutí v menu, dokud nedoběhne."""
     try:
         if should_stop():
             return
-        if target != "hq":
-            mycat.refresh(engine_of(apis), STORE, apis.get("dash"), target, size, verify=not pool_only,
-                          should_stop=should_stop)
-            return
-        min_q, surround, audio, subs = hq_definition()
-        sig = hq_index.signature(min_q, surround, audio, subs)
-        pool = hq_pool(apis)
-        if not pool:   # bez sítě/zdrojů index nechat být
-            return
-        now = int(time.time())
-        with STORE.updating(HQ_INDEX_KEY, {}) as index:
-            if index.get("sig") != sig:
-                index.clear()
-                index["sig"] = sig
-            hq_index.merge_pool(index, pool, now)
-            batch = hq_index.next_batch(index, now, size=size)
-        engine = engine_of(apis)
-        for mid in batch:
-            if should_stop():
-                break
-            try:
-                with engine.background():
-                    result = engine.verify_title("movie", mid, min_q, surround, audio, subs)
-            except Errors as e:
-                log_error(f"hq {mid}: {e}")
-                result = None
-            with STORE.updating(HQ_INDEX_KEY, {}) as index:
-                if index.get("sig") == sig:
-                    hq_index.record(index, mid, result, int(time.time()))
+        if target in ("", "hq"):
+            target = "pre-movie-hq"
+        mycat.refresh(engine_of(apis), STORE, apis.get("dash"), target, size, verify=not pool_only,
+                      should_stop=should_stop)
     except Errors as e:
         log_error(f"verify_refresh {target}: {e}")
     finally:
         xbmcplugin.endOfDirectory(HANDLE, succeeded=True, cacheToDisc=False)
-
-
-def list_hq(apis, ctype, genre=None):
-    """„Filmy ve vysoké kvalitě" – jen čte index; bez genre „Vše" + žánry s aspoň jedním filmem."""
-    note_hq_open()
-    set_content("files" if not genre else "movies")   # kořen složky je seznam akcí s ikonami, ne plakáty
-    index = STORE.load(HQ_INDEX_KEY, {}) or {}
-    if index.get("sig") != hq_index.signature(*hq_definition()):
-        index = {}   # jiná definice = index neplatný
-    if not genre:   # nastavení a nápověda jsou ne-složky: klik je spustí s handle −1, výpis se nekreslí
-        polozky = (index.get("items") or {}).values()
-        hotovo = sum(1 for v in polozky if v.get("ok") is not None)
-        action_item(_swf(30889, "Nastavit: %s", hq_summary()), build_url(action="hq_setup"),
-                    icon="DefaultAddonProgram.png", thumb=True)
-        action_item(_swf(30897, "Spustit dávku nyní – ověřeno %s z %s", hotovo, len(polozky)),
-                    build_url(action="hq_batch"), icon="DefaultAddonsUpdates.png", thumb=True)
-        action_item(L(30891, "Jak to funguje"), build_url(action="hq_info"), icon="DefaultIconInfo.png", thumb=True)
-    items = hq_index.visible(index, None if genre in (None, "", "*") else genre)
-    if not items:
-        xbmcgui.Window(10000).setProperty(VERIFY_TRIGGER_PROP, "hq")
-        notify(L(30998, "Seznam se připravuje – filmy se ověřují na pozadí."), xbmcgui.NOTIFICATION_INFO, 4000)
-    elif not genre:
-        folder_item(L(30020), build_url(action="hq", type=ctype, genre="*"), icon="DefaultVideoPlaylists.png")
-        for g in hq_index.genres_available(index):
-            folder_item(GENRE_LABELS.get(g, genre_label(g)), build_url(action="hq", type=ctype, genre=g),
-                        icon="DefaultGenre.png")
-        items = []
-    rate(items, "movie")
-    for m in items:
-        add_meta_item(m, "movie")
-    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
 
 
 def list_foryou(apis, ctype):
@@ -7650,17 +7519,16 @@ def router(query):
             browse_menu(apis, p.get("type", "movie"))
         elif action == "foryou":
             list_foryou(apis, p.get("type", "movie"))
-        elif action == "hq":
-            list_hq(apis, p.get("type", "movie"), p.get("genre"))
+        elif action == "hq":   # uložený odkaz na zrušené „Filmy ve vysoké kvalitě“ → předvolba, jinak hlavní menu
+            if any(c.get("id") == "pre-movie-hq" for c in mycats("movie")):
+                list_mycat(apis, "movie", "pre-movie-hq")
+            else:
+                main_menu(apis)
         elif action in ("hq_refresh", "verify_refresh"):   # `hq_refresh` = starý odkaz
-            verify_refresh(apis, p.get("target") or "hq", size=max(1, min(20, int(p.get("size") or 8))),
+            verify_refresh(apis, p.get("target") or "", size=max(1, min(20, int(p.get("size") or 8))),
                            pool_only=p.get("pool_only") == "1")
-        elif action == "hq_setup":
-            _tlacitko(hq_setup)
-        elif action == "hq_info":
-            _tlacitko(hq_info)
-        elif action == "hq_batch":
-            _tlacitko(hq_batch)
+        elif action in ("hq_setup", "hq_info", "hq_batch"):   # staré uložené odkazy: nic se neděje
+            _tlacitko(lambda: None)
         elif action == "similar":
             list_similar(apis, p.get("type", "movie"), p.get("id", ""))
         elif action == "tv":
@@ -7799,6 +7667,7 @@ def main(query):
         migrate_sync_mode_default()
         migrate_terms()
         migrate_luna_default()
+        seed_catalogs()
         action = dict(urllib.parse.parse_qsl(query.lstrip("?"))).get("action") or ""
         # do nastavení a k textu podmínek se uživatel musí dostat i bez souhlasu — jinak
         # by neměl kde ho dát (přepínač je první kategorie nastavení)

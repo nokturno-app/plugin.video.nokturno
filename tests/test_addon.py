@@ -1732,12 +1732,12 @@ class TestMenuAZahrivani(unittest.TestCase):
         menu = self.browse({"tmdb": object(), "sosac_db": object(), "luna": None, "cinemeta": None})
         self.assertTrue(self.warm() <= menu, self.warm() - menu)
 
-    def test_zahrivani_bere_aktualni_nastaveni(self):
-        """Modulový ADDON služby nevidí změny — po zadání klíče TMDB se dál zahřívala Luna."""
+    def test_zahrivani_nezavisi_na_zdroji(self):
+        """Populární a Nejlépe hodnocené jsou předvolby vlastních katalogů, zahřívá se jen žebříček z dashboardu."""
         xbmcaddon.settings["token"] = "t"
-        self.assertEqual({p["src"] for p in map(params_of, service.warm_urls())}, {"luna", "trend"})
+        self.assertEqual({p["src"] for p in map(params_of, service.warm_urls())}, {"trend"})
         xbmcaddon.settings["tmdb_api_key"] = "abc"
-        self.assertEqual({p["src"] for p in map(params_of, service.warm_urls())}, {"tmdb", "trend"})
+        self.assertEqual({p["src"] for p in map(params_of, service.warm_urls())}, {"trend"})
 
     def test_s_lunou(self):
         xbmcaddon.settings["token"] = "t"
@@ -1778,14 +1778,19 @@ class TestMenuAZahrivani(unittest.TestCase):
         katalogy = {params_of(u).get("catalog") for u in xbmcplugin.urls()}
         self.assertNotIn("year", katalogy)
 
-    def test_popularni_a_nejlepe_hodnocene_jdou_pres_genres(self):
-        """2026-09-15 (druhé kolo): obě jdou přes `list_genres()` — uživatel dřív
-        neměl jak si Populární/Nejlépe hodnocené přefiltrovat podle žánru."""
-        default.browse_menu({"tmdb": object(), "sosac_db": None, "luna": None, "cinemeta": None}, "movie")
-        # `.get()`: menu má od „Pro tebe"/„Náhodný film" i položky bez `catalog`
-        podle_katalogu = {params_of(u).get("catalog"): params_of(u)["action"] for u in xbmcplugin.urls()}
-        self.assertEqual(podle_katalogu.get("popular"), "genres")
-        self.assertEqual(podle_katalogu.get("top_rated"), "genres")
+    def test_menu_je_stihle(self):
+        """Populární, Nejlépe hodnocené ani Filmy ve vysoké kvalitě v menu natvrdo nejsou — jsou to předvolby
+        vlastních katalogů (`menu: True`)."""
+        for typ in ("movie", "series"):
+            xbmcplugin.reset()
+            default.browse_menu({"tmdb": object(), "sosac_db": None, "luna": object(), "cinemeta": None}, typ)
+            akce = [params_of(u) for u in xbmcplugin.urls()]
+            self.assertNotIn("genres", [a["action"] for a in akce])
+            self.assertNotIn("hq", [a["action"] for a in akce])
+            self.assertNotIn("popular", {a.get("catalog") for a in akce})
+            self.assertIn("nejsledovanejsi", {a.get("catalog") for a in akce})
+            self.assertIn("mycats", [a["action"] for a in akce])
+            self.assertEqual([a["action"] for a in akce][-2:], ["mycats", "random"])
 
 
 class FakeTmdb:
@@ -3024,117 +3029,115 @@ class TestPraceNaPozadiKodi(unittest.TestCase):
         self.assertNotIn("starší", default.describe_timings(zaklad))
 
 
-class TestVysokaKvalita(unittest.TestCase):
-    """„Filmy ve vysoké kvalitě" (index na pozadí): menu čte jen index, nikdy síť ani modál."""
+class TestPredvolbyKatalogu(unittest.TestCase):
+    """Předdefinované vlastní katalogy (`mycat.PRESETS`) místo pevných položek menu a samostatného HQ."""
 
     def setUp(self):
         reset_kodi()
+        for k in ("mycatalogs", "mycatlog", "catalogs_seeded", "hq_index", "favourites", "watched"):
+            default.STORE.save(k, [] if k in ("mycatalogs", "favourites") else {})
         default.STORE.save("wizard_done", True)
-        default.STORE.save("favourites", [])
-        default.STORE.save("watched", {})
+        self.settings = os.path.join(default.PROFILE, "settings.xml")
+        if os.path.exists(self.settings):
+            os.remove(self.settings)
+        self.addCleanup(lambda: os.path.exists(self.settings) and os.remove(self.settings))
 
-    def naplnit(self):
-        import hq_index
-        sig = hq_index.signature(*default.hq_definition())
-        idx = {"sig": sig}
-        hq_index.merge_pool(idx, [meta_item("tt1", genres=["Akční"]), meta_item("tt2", genres=["Drama"]),
-                                  meta_item("tt3", genres=["Akční"])], 0)
-        hq_index.record(idx, "tt1", True, 1)
-        hq_index.record(idx, "tt2", True, 1)
-        hq_index.record(idx, "tt3", False, 1)
-        default.STORE.save(default.HQ_INDEX_KEY, idx)
+    def hq_settings(self, **hodnoty):
+        with open(self.settings, "w", encoding="utf-8") as f:
+            f.write("<settings version=\"2\">%s</settings>" % "".join(
+                '<setting id="%s">%s</setting>' % kv for kv in hodnoty.items()))
 
-    def test_koren_bere_jen_ok_filmy_a_zanry(self):
-        self.naplnit()
-        default.list_hq({}, "movie")
-        akce = [params_of(u) for u in xbmcplugin.urls()]
-        self.assertEqual([a.get("genre") for a in akce if a.get("action") == "hq"], ["*", "Akční", "Drama"])
-        self.assertFalse(xbmcgui.notifications)
+    def ids(self):
+        return [c["id"] for c in default.mycats()]
 
-    def test_zanr_a_vse(self):
-        self.naplnit()
-        default.list_hq({}, "movie", "Akční")
-        self.assertEqual([params_of(u).get("id") for u in xbmcplugin.urls()], ["tt1"])
+    def test_seed_zalozi_devet_a_znacku_podruhe_nic(self):
+        default.seed_catalogs()
+        self.assertEqual(len(self.ids()), 9)
+        self.assertTrue(default.STORE.load("catalogs_seeded", ""))
+        names = {c["id"]: c["name"] for c in default.mycats()}
+        self.assertEqual(names["pre-movie-hq"], "Filmy ve vysoké kvalitě")
+        self.assertEqual(names["pre-series-czech"], "České seriály")
+        default.mycat.delete(default.STORE, "pre-movie-top")
+        default.seed_catalogs()
+        self.assertEqual(len(self.ids()), 8)
+
+    def test_menu_ma_predvolby_s_umistenim(self):
+        default.seed_catalogs()
         xbmcplugin.reset()
-        default.list_hq({}, "movie", "*")
-        self.assertEqual([params_of(u).get("id") for u in xbmcplugin.urls()], ["tt1", "tt2"])
+        default.browse_menu({}, "movie")
+        nazvy = [it[2].getLabel() for it in xbmcplugin.items]
+        self.assertEqual(nazvy[:6], ["Nejsledovanější tento týden", "Populární", "Nejlépe hodnocené",
+                                     "Nové s CZ dabingem", "Filmy ve vysoké kvalitě", "České filmy"])
+        xbmcplugin.reset()
+        default.browse_menu({}, "series")
+        self.assertEqual([it[2].getLabel() for it in xbmcplugin.items][1:5],
+                         ["Populární", "Nejlépe hodnocené", "Nové s CZ dabingem", "České seriály"])
 
-    def test_prazdny_index_notifikace_bez_modalu(self):
-        default.STORE.save(default.HQ_INDEX_KEY, {})
-        oks = len(xbmcgui.oks)
-        default.list_hq({}, "movie")
-        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["hq_setup", "hq_batch", "hq_info"])
-        self.assertEqual(len(xbmcgui.notifications), 1)
-        self.assertEqual(len(xbmcgui.oks), oks)
+    def test_migrace_hq_vypnuta_predvolba_nevznikne(self):
+        self.hq_settings(hq_enabled="false")
+        default.seed_catalogs()
+        self.assertNotIn("pre-movie-hq", self.ids())
+        self.assertEqual(len(self.ids()), 8)
 
-    def test_jina_definice_index_zneplatni(self):
-        self.naplnit()
-        xbmcaddon.settings["hq_channels"] = "0"
-        try:
-            default.list_hq({}, "movie")
-        finally:
-            xbmcaddon.settings.pop("hq_channels", None)
-        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["hq_setup", "hq_batch", "hq_info"])
+    def test_migrace_hq_nastaveni(self):
+        self.hq_settings(hq_enabled="true", hq_min_quality="2", hq_channels="0", hq_audio="2", hq_subs="1")
+        default.seed_catalogs()
+        hq = next(c for c in default.mycats() if c["id"] == "pre-movie-hq")
+        self.assertEqual((hq["q"], hq["surround"], hq["audio"], hq["subs"]), (3.5, False, "SK", "CZ"))
 
-    def test_polozka_jen_v_menu_filmu(self):
-        for typ, ocek in (("movie", True), ("series", False)):
+    def test_migrace_hq_chybejici_hodnoty_jsou_puvodni_vychozi(self):
+        self.hq_settings(hq_enabled="true")
+        default.seed_catalogs()
+        hq = next(c for c in default.mycats() if c["id"] == "pre-movie-hq")
+        self.assertEqual((hq["q"], hq["surround"], hq["audio"], hq["subs"]), (4, True, "CZ", ""))
+
+    def test_cista_instalace_ma_vychozi_predvolbu_hq(self):
+        default.seed_catalogs()
+        hq = next(c for c in default.mycats() if c["id"] == "pre-movie-hq")
+        self.assertEqual((hq["q"], hq["surround"], hq["audio"]), (4, False, ""))
+
+    def test_migrace_hq_prevezme_hotove_vysledky(self):
+        import catindex
+        self.hq_settings(hq_enabled="true")
+        idx = {"sig": "stary"}
+        catindex.merge_pool(idx, [meta_item("tt1"), meta_item("tt2")], 0)
+        catindex.record(idx, "tt1", True, 100)
+        default.STORE.save("hq_index", idx)
+        default.seed_catalogs()
+        cat = next(c for c in default.mycats() if c["id"] == "pre-movie-hq")
+        nove = default.mycat.load_index(default.STORE, cat)
+        self.assertEqual(nove["items"]["tt1"]["ok"], True)
+        self.assertEqual(nove["pool_ts"], 0)
+        self.assertEqual([m["id"] for m in default.mycat.visible(nove)], ["tt1"])
+        self.assertFalse(default.STORE.load("hq_index", {}))
+
+    def test_vyjimka_v_seedu_menu_neshodi_a_znacka_se_nezapise(self):
+        with mock.patch.object(default.mycat, "seed", side_effect=RuntimeError("x")):
+            default.seed_catalogs()
+        self.assertFalse(default.STORE.load("catalogs_seeded", ""))
+
+    def test_stary_odkaz_hq_nespadne(self):
+        for k in (("hq", {}), ("hq_setup", {}), ("hq_info", {}), ("hq_batch", {}), ("hq_refresh", {})):
             xbmcplugin.reset()
-            default.browse_menu({}, typ)
-            self.assertEqual("hq" in [params_of(u).get("action") for u in xbmcplugin.urls()], ocek)
+            default.router("?action=%s&type=movie" % k[0])
+        default.seed_catalogs()
+        default.STORE.save(default.mycat.INDEX + "pre-movie-hq", {})
+        xbmcplugin.reset()
+        with mock.patch.object(default, "get_apis", return_value={"dash": object()}):
+            default.router("?action=hq&type=movie")
+        self.assertTrue(xbmcplugin.items or xbmcplugin.ended)
 
     def test_retezce_ve_ctyrech_jazycich(self):
         for lang in ("cs_cz", "sk_sk", "en_gb", "hu_hu"):
             po = (LANG_DIR / f"resource.language.{lang}" / "strings.po").read_text(encoding="utf-8")
-            for sid in [30993, 30994, 30995, 30997, 30998] + list(range(30882, 30897)):
+            for sid in (30007, 30008, 30015, 30016, 30017, 30993):
                 self.assertIn(f'msgctxt "#{sid}"', po, (lang, sid))
 
-    def test_definice_jakakoli(self):
-        self.assertEqual(default.hq_definition(), (4, True, "CZ", ""))
-        for k, v in (("hq_min_quality", "0"), ("hq_channels", "0"), ("hq_audio", "0"), ("hq_subs", "2")):
-            xbmcaddon.settings[k] = v
-        try:
-            self.assertEqual(default.hq_definition(), (0, False, "", "SK"))
-        finally:
-            for k in ("hq_min_quality", "hq_channels", "hq_audio", "hq_subs"):
-                xbmcaddon.settings.pop(k, None)
-
-    def test_polozka_v_menu_podle_hq_enabled(self):
-        for hodnota, ocek in (("false", False), ("true", True)):
-            xbmcaddon.settings["hq_enabled"] = hodnota
-            xbmcplugin.reset()
-            try:
-                default.browse_menu({}, "movie")
-            finally:
-                xbmcaddon.settings.pop("hq_enabled", None)
-            self.assertEqual("hq" in [params_of(u).get("action") for u in xbmcplugin.urls()], ocek)
-
-    def test_nastaveni_a_info_jsou_ne_slozky(self):
-        self.naplnit()
-        default.list_hq({}, "movie")
-        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()][:3], ["hq_setup", "hq_batch", "hq_info"])
-        self.assertEqual([it[3] for it in xbmcplugin.items[:3]], [False, False, False])
-        xbmcplugin.reset()
-        default.list_hq({}, "movie", "*")
-        self.assertNotIn("hq_setup", [params_of(u).get("action") for u in xbmcplugin.urls()])
-
-    def test_setup_ulozi_volby_a_zpet_nic(self):
-        volby = iter([2, 1, 3, 2, 1])   # 2K, 5.1+, EN, SK titulky, skrýt
-        with mock.patch.object(xbmcgui.Dialog, "select", lambda self, *a, **k: next(volby)):
-            default.hq_setup()
-        self.assertEqual([xbmcaddon.settings.get(k) for k in ("hq_min_quality", "hq_channels", "hq_audio", "hq_subs",
-                                                              "hq_enabled")], ["2", "1", "3", "2", "false"])
-        self.assertTrue(xbmcgui.Window(10000).getProperty(default.VERIFY_TRIGGER_PROP))
-        for k in ("hq_min_quality", "hq_channels", "hq_audio", "hq_subs", "hq_enabled"):
-            xbmcaddon.settings.pop(k, None)
-        volby = iter([1, 0, -1])   # Zpět ve třetím kroku
-        with mock.patch.object(xbmcgui.Dialog, "select", lambda self, *a, **k: next(volby)):
-            default.hq_setup()
-        self.assertIsNone(xbmcaddon.settings.get("hq_min_quality"))
-
-    def test_info_textviewer(self):
-        default.hq_info()
-        self.assertEqual(len(xbmcgui.textviewers), 1)
-
+    def test_hq_funkce_zanikla(self):
+        zdroj = (ROOT / "default.py").read_text(encoding="utf-8")
+        for jmeno in ("def hq_definition", "def list_hq", "def hq_setup", "HQ_INDEX_KEY"):
+            self.assertNotIn(jmeno, zdroj)
+        self.assertNotIn('id="hq_enabled"', (ROOT / "resources" / "settings.xml").read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
@@ -5720,7 +5723,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 133)   # +1 trakt_pull, +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs
+        self.assertEqual(len(volby), 128)   # +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):
@@ -6976,7 +6979,7 @@ class TestOverovaneKatalogy(unittest.TestCase):
 
     def test_batch_zada_ukol_sluzbe(self):
         default.main("action=mycat_batch&id=k1")
-        self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_MANUAL_PROP), "k1:%s" % default.HQ_MANUAL_SIZE)
+        self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_MANUAL_PROP), "k1:%s" % default.MANUAL_BATCH_SIZE)
 
     def test_novy_overovany_katalog_zapise_denik(self):
         selects = (1, 2, 0, 1, 1, 0, 1, 0)   # jazyk cs, roky Posledních X, řazení výběru, Full HD, zvuk CZ, titulky 0, 5.1, zobrazení
@@ -7125,8 +7128,8 @@ class TestSluzbaOverovani(unittest.TestCase):
             idx["foreign_ts"] = int(time.time())
         default.STORE.save(default.mycat.INDEX + "k1", idx)
 
-    def test_cile_jsou_hq_a_overovane_katalogy(self):
-        self.assertEqual(service.verify_targets(service.Store(service.PROFILE)), ["hq", "k1"])
+    def test_cile_jsou_overovane_katalogy(self):
+        self.assertEqual(service.verify_targets(service.Store(service.PROFILE)), ["k1"])
 
     def test_cizi_vysledky_jen_obnova_poolu(self):
         self._index(foreign=True)

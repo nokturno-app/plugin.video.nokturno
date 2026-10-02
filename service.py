@@ -104,11 +104,9 @@ WARM_DELAY = 180          # po startu Kodi nechat nejdřív doběhnout skin a wi
 WARM_EVERY = int(2.5 * 3600)   # pod TTL žebříčků Sosáče (3 h); s WARM_PROP se cache obnoví i před vypršením
 WARM_PROP = "nokturno.warm"    # plugin při zahřívání cache API jen zapisuje, nečte (viz default.warming)
 WARM_RETRY = 10 * 60      # když se zrovna přehrává, zahřívání počká
-HQ_SEEN_KEY = "hq_seen"              # stejný literál jako v default.py (note_hq_open)
-HQ_SEEN_DAYS = 14
-VERIFY_TRIGGER_PROP = "nokturno.verify.trigger"   # stejný literál jako v default.py; hodnota = cíl (`hq` / id katalogu)
+VERIFY_TRIGGER_PROP = "nokturno.verify.trigger"   # stejný literál jako v default.py; hodnota = id katalogu
 VERIFY_MANUAL_PROP = "nokturno.verify.manual"     # stejný literál jako v default.py; „cíl:počet“
-HQ_EVERY = 600            # dávka ověřování (Filmy ve vysoké kvalitě, vlastní katalogy) po 10 minutách
+HQ_EVERY = 600            # dávka ověřování (ověřované vlastní katalogy) po 10 minutách
 HQ_FIRST = 120
 FORYOU_SEEN_KEY = "foryou_seen"      # stejný literál jako v default.py (note_foryou_open)
 FORYOU_SEEN_DAYS = 14                # a stejná lhůta jako v default.py
@@ -1100,30 +1098,12 @@ class KodiMarks:
 # hlavní menu a seznam streamů). Streamy dalšího dílu má vlastní akci `prefetch`.
 
 def warm_urls():
-    """Tytéž výpisy, které otevírá menu Filmy / Seriály (`browse_menu()` v default.py).
-
-    Dřív se zahřívalo `src=sosac` a Luna, jenže menu od 3.1.6 bere seznamy z TMDB
-    (je-li klíč) a z veřejného katalogu `sosac_db` — zahřívání tak minulo všechno,
-    co uživatel otevírá, a první otevření nově přidaných trvalo na Office 12 s."""
+    """Tytéž výpisy, které otevírá menu Filmy / Seriály (`browse_menu()` v default.py): vlastní žebříček
+    z dashboardu. Populární a Nejlépe hodnocené jsou předvolby vlastních katalogů (`mycat.PRESETS`) a
+    zahřívání nepotřebují — jedou přes dashboard `/discover` s vlastní cache na serveru."""
     base = "plugin://plugin.video.nokturno/?action=catalog&src={src}&type={t}&catalog={c}"
-    # čerstvá instance: modulový ADDON z doby startu služby nevidí změny nastavení —
-    # po zadání klíče TMDB se dál zahřívala Luna
-    addon = fresh_addon()
-    if addon is None:
-        return []
-    urls = []
-    for t in ("movie", "series"):
-        if addon.getSetting("tmdb_api_key").strip():
-            for c in ("popular", "top_rated"):
-                urls.append(base.format(src="tmdb", t=t, c=c))
-        # `luna_enabled` je ve výchozím stavu zapnuté i bez vyplněného tokenu — bez něj
-        # ale `get_luna()` vrátí None a zahřívaný katalog skončí chybou „Není nastaven
-        # žádný zdroj" (čtyři řádky v kodi.logu při každém warm-upu, nic zahřátého)
-        elif addon.getSetting("luna_enabled") != "false" and addon.getSetting("token").strip():
-            urls.append(base.format(src="luna", t=t, c=f"tmdb.top_{t}"))
-            urls.append(base.format(src="luna", t=t, c=f"tmdb.top_rated_{t}"))
-        # vlastní žebříček (dashboard) — bez ohledu na TMDB/Lunu, funguje vždycky stejně
-        urls.append(base.format(src="trend", t=t, c=TREND_CATALOG_ID))
+    # vlastní žebříček (dashboard) — funguje vždycky stejně, bez ohledu na TMDB/Lunu
+    urls = [base.format(src="trend", t=t, c=TREND_CATALOG_ID) for t in ("movie", "series")]
     return urls + foryou_warm_urls()
 
 
@@ -1221,17 +1201,14 @@ def _verify_url(target, size, pool_only=False):
 
 
 def _verify_names(store, target):
-    """(klíč indexu, název pro ukazatel, katalog nebo None) – `hq` = Filmy ve vysoké kvalitě, jinak id katalogu."""
-    if target == "hq":
-        return "hq_index", L(30993, "Filmy ve vysoké kvalitě"), None
+    """(klíč indexu, název pro ukazatel, katalog nebo None) pro id katalogu."""
     cat = next((c for c in mycat.catalogs(store) if c.get("id") == target), None)
     return mycat.INDEX + target, (cat or {}).get("name") or target, cat
 
 
 def verify_targets(store):
-    """Co se ověřuje: Filmy ve vysoké kvalitě (když je položka zapnutá) a ověřované vlastní katalogy."""
-    out = ["hq"] if xbmcaddon.Addon().getSetting("hq_enabled") != "false" else []
-    return out + [c["id"] for c in mycat.verified(store)]
+    """Co se ověřuje: ověřované vlastní katalogy (včetně předvolby Filmy ve vysoké kvalitě)."""
+    return [c["id"] for c in mycat.verified(store)]
 
 
 def _verify_run(monitor, target, count, progress):
@@ -1274,7 +1251,7 @@ def _verify_run(monitor, target, count, progress):
 
 
 def verify_worker(monitor):
-    """Vlákno: průběžně ověřuje „Filmy ve vysoké kvalitě“ a vlastní katalogy po dávkách (po jednom titulu, viz
+    """Vlákno: průběžně ověřuje vlastní katalogy po dávkách (po jednom titulu, viz
     `_verify_run`), vždy jeden cíl na kolo, dokud se nehraje a je síť. Ruční dávku zadá vlastnost okna
     `VERIFY_MANUAL_PROP` („cíl:počet“), první dávku po otevření prázdného seznamu `VERIFY_TRIGGER_PROP` (cíl)."""
     win = xbmcgui.Window(10000)
@@ -1300,7 +1277,7 @@ def verify_worker(monitor):
             targets = verify_targets(store)
             if manual:
                 target, _sep, count = manual.partition(":")
-                if target not in targets:   # vypnutá položka / smazaný katalog = nic se neověřuje
+                if target not in targets:   # smazaný katalog = nic se neověřuje
                     continue
                 waited = 0
                 _key, title, _cat = _verify_names(store, target)
@@ -1310,7 +1287,7 @@ def verify_worker(monitor):
                     L(30898, "Dávka hotová – ověřeno %s, vyhovuje %s (v seznamu celkem %s)") % (done, matched, total),
                     xbmcgui.NOTIFICATION_INFO, 4000)
                 continue
-            target = ("hq" if trigger == "1" else trigger) if trigger else None
+            target = trigger or None
             if target is None and targets:
                 target, turn = targets[turn % len(targets)], turn + 1
             if target in targets:

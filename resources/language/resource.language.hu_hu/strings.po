@@ -934,14 +934,6 @@ msgctxt "#30393"
 msgid "Most watched this week"
 msgstr "Legnézettebb a héten"
 
-msgctxt "#30398"
-msgid "Popular on TMDB"
-msgstr "Népszerű a TMDB-n"
-
-msgctxt "#30399"
-msgid "Top rated"
-msgstr "Legjobbra értékelt"
-
 msgctxt "#30402"
 msgid "Measuring download speed…"
 msgstr "Letöltési sebesség mérése…"
@@ -2821,22 +2813,6 @@ msgctxt "#30994"
 msgid "Minimum quality"
 msgstr "Minimális minőség"
 
-msgctxt "#30995"
-msgid "Defines which movies appear in the list. “Any” means the parameter does not matter. Full description: open Movies in high quality → How it works."
-msgstr "Meghatározza, mely filmek jelennek meg a listában. A „Bármilyen” azt jelenti, hogy az adott paraméter nem számít. Teljes leírás: nyisd meg a Filmek magas minőségben → Hogyan működik elemet."
-
-msgctxt "#30997"
-msgid "Audio language for high quality"
-msgstr "Hangnyelv a magas minőséghez"
-
-msgctxt "#30998"
-msgid "The list is being prepared – movies are verified in the background."
-msgstr "A lista készül – a filmek a háttérben ellenőrződnek."
-
-msgctxt "#30882"
-msgid "Show the item in the Movies menu"
-msgstr "Elem megjelenítése a Filmek menüben"
-
 msgctxt "#30883"
 msgid "Audio channels"
 msgstr "Hangcsatornák"
@@ -2853,49 +2829,9 @@ msgctxt "#30886"
 msgid "Any channels"
 msgstr "Bármennyi"
 
-msgctxt "#30887"
-msgid "Any subtitles"
-msgstr "Bármilyen"
-
 msgctxt "#30888"
 msgid "5.1 or more"
 msgstr "5.1 vagy több"
-
-msgctxt "#30889"
-msgid "Set: %s"
-msgstr "Beállítás: %s"
-
-msgctxt "#30890"
-msgid "%s · %s · audio %s · subtitles %s"
-msgstr "%s · %s · hang %s · felirat %s"
-
-msgctxt "#30891"
-msgid "How it works"
-msgstr "Hogyan működik"
-
-msgctxt "#30892"
-msgid "The list is built from popular, most watched and top rated movies.\nIn the background, the add-on checks which of them have a stream matching your parameters: quality, audio channels, audio language and subtitles. File headers are read for that, so the first fill takes hours.\nNew movies are added, those that no longer match disappear, and the check repeats after a few days.\nChanging the parameters recalculates the list.\n“Any” means the parameter does not matter.\nAudio language and subtitles are taken from the stream information. 3D versions are never shown.\nThe list keeps itself up to date in the background even when you do not open it; you can start a check batch manually with Run a batch now.\nA hidden item can be shown again in Settings → Playback (Show item in the Movies menu)."
-msgstr "A lista a népszerű, a legnézettebb és a legjobban értékelt filmekből készül.\nA háttérben a kiegészítő ellenőrzi, melyeknek van a paramétereidnek megfelelő streamje: minőség, hangcsatornák, hangnyelv és felirat. Ehhez a fájlok fejlécét olvassa, ezért az első feltöltés órákig tart.\nAz új filmek bekerülnek, a már nem megfelelők eltűnnek, az ellenőrzés néhány naponta ismétlődik.\nA paraméterek módosítása újraszámolja a listát.\nA „Bármilyen” azt jelenti, hogy az adott paraméter nem számít.\nA hangnyelv és a feliratok a stream adataiból származnak. A 3D változatok soha nem jelennek meg.\nA lista a háttérben magától frissül, akkor is, ha nem nyitod meg; az ellenőrzési kört kézzel is elindíthatod a Kör indítása most elemmel.\nAz elrejtett elemet a Beállítások → Lejátszás alatt kapcsolhatod vissza (Elem megjelenítése a Filmek menüben)."
-
-msgctxt "#30893"
-msgid "Saved – the list is recalculated in the background."
-msgstr "Mentve – a lista a háttérben újraszámolódik."
-
-msgctxt "#30894"
-msgid "Yes"
-msgstr "Igen"
-
-msgctxt "#30895"
-msgid "No"
-msgstr "Nem"
-
-msgctxt "#30896"
-msgid "The item is hidden from the Movies menu. You can show it again in Settings → Playback."
-msgstr "Az elem el van rejtve a Filmek menüből. A Beállítások → Lejátszás alatt újra bekapcsolhatod."
-
-msgctxt "#30897"
-msgid "Run a batch now – checked %s of %s"
-msgstr "Kör indítása most – ellenőrizve: %s / %s"
 
 msgctxt "#30898"
 msgid "Batch done – checked %s, matching %s (in the list: %s in total)"
@@ -3152,3 +3088,23 @@ msgstr "Elindítod most a koncertek keresését?"
 msgctxt "#30750"
 msgid "The first batch searches more artists at once so the catalog has something to show right away. It runs in the background."
 msgstr "Az első adag egyszerre több előadót keres át, hogy a katalógusban rögtön legyen mit mutatni. A háttérben fut."
+
+msgctxt "#30007"
+msgid "Popular"
+msgstr "Népszerű"
+
+msgctxt "#30008"
+msgid "Top rated"
+msgstr "Legjobbra értékelt"
+
+msgctxt "#30015"
+msgid "New with Czech dubbing"
+msgstr "Új cseh szinkronnal"
+
+msgctxt "#30016"
+msgid "Czech movies"
+msgstr "Cseh filmek"
+
+msgctxt "#30017"
+msgid "Czech series"
+msgstr "Cseh sorozatok"
