@@ -8,9 +8,11 @@ v souboru a servery WebShare, Sosáče i HellSpy umí vydat jen jeho výřez
 Umí tři kontejnery, jiné se tiše přeskočí:
 
 * **Matroska** – stopy jsou hned na začátku, jeden dotaz stačí.
-* **AVI** – totéž, jen se v RIFF hledá `strh`/`strf`.
+* **AVI** – totéž, jen se v RIFF hledá `strh`/`strf` (u obrazu i FourCC kodeku).
 * **MP4** – popis stop (`moov`) bývá až na konci souboru, pak se dotahuje
   druhým dotazem na jeho konec.
+
+Kodek obrazu jde do výsledku `probe()` jako `vcodec` (HEVC, AVC, AV1…).
 
 Výstup je řetězec ve tvaru, který čte `streams.parse_stream`, tedy
 `Zvuk: CZ 5.1 EN 2.0`. Jazyky se překládají na dvoupísmenné kódy; co se přeložit
@@ -41,7 +43,43 @@ LANGS = {
     "fre": "FR", "fra": "FR", "fr": "FR",
     "spa": "ES", "es": "ES",
     "ita": "IT", "it": "IT",
+    "jpn": "JP", "ja": "JP",
+    "kor": "KR", "ko": "KR",
+    "chi": "CN", "zho": "CN", "zh": "CN", "cmn": "CN", "yue": "CN",
+    "ukr": "UA", "uk": "UA",      # ne „UK“: to streams.LANG_ALIASES čte jako angličtinu
+    "dut": "NL", "nld": "NL", "nl": "NL",
+    "swe": "SE", "sv": "SE",
+    "nor": "NO", "nob": "NO", "nno": "NO", "no": "NO", "nb": "NO", "nn": "NO",
+    "dan": "DK", "da": "DK",
+    "fin": "FI", "fi": "FI",
+    "por": "PT", "pt": "PT",
+    "tur": "TR", "tr": "TR",
+    "rum": "RO", "ron": "RO", "ro": "RO",
+    "bul": "BG", "bg": "BG",
+    "gre": "GR", "ell": "GR", "el": "GR",
 }
+# kodek obrazu: MKV CodecID přesně, MP4/AVI FourCC malými písmeny
+VIDEO_CODECS = {}
+for _name, _ids in (
+    ("HEVC", ("V_MPEGH/ISO/HEVC", "hvc1", "hev1", "dvh1", "dvhe", "hevc", "h265", "x265")),
+    ("AVC", ("V_MPEG4/ISO/AVC", "avc1", "avc3", "dva1", "dvav", "h264", "x264", "davc")),
+    ("AV1", ("V_AV1", "av01", "dav1")),
+    ("VP9", ("V_VP9", "vp09")),
+    ("VP8", ("V_VP8",)),
+    ("MPEG-4", ("V_MPEG4/ISO/ASP", "V_MPEG4/ISO/SP", "V_MPEG4/ISO/AP", "mp4v", "xvid", "divx", "dx50",
+                "div3", "fmp4", "3iv2")),
+    ("MPEG-2", ("V_MPEG2", "mpg2")),
+    ("MPEG-1", ("V_MPEG1",)),
+):
+    for _id in _ids:
+        VIDEO_CODECS[_id.lower()] = _name
+
+
+def video_codec_name(raw):
+    """CodecID / FourCC obrazu na zkratku do popisku; neznámý kodek → prázdný řetězec (nevypisuje se nic)."""
+    return VIDEO_CODECS.get(str(raw or "").strip().lower(), "")
+
+
 # počet kanálů → zápis, na který je zvyklý zbytek doplňku
 CHANNELS = {1: "1.0", 2: "2.0", 3: "2.1", 6: "5.1", 7: "6.1", 8: "7.1"}
 # AC-3: skutečné rozložení kanálů je v `dac3`, ne v hlavičce stopy (tam bývá 2)
@@ -228,6 +266,10 @@ def _from_avi(head):
             elif size >= 12:
                 tracks[-1]["width"] = struct.unpack("<i", head[body + 4:body + 8])[0]
                 tracks[-1]["height"] = abs(struct.unpack("<i", head[body + 8:body + 12])[0])
+                if size >= 20:   # FourCC kodeku (biCompression)
+                    fourcc = head[body + 16:body + 20].decode("ascii", "ignore").strip("\x00 ")
+                    if fourcc:
+                        tracks[-1]["codec"] = fourcc
         i = body + size + (size & 1)
     return tracks, duration
 
@@ -449,6 +491,9 @@ def probe(url, opener=None):
     height = max((int(t.get("height") or 0) for t in video), default=0)
     out = {"audio": audio, "subs": subs, "width": width, "height": height,
            "duration": duration, "size": total_size}
+    vcodec = next((c for c in (video_codec_name(t.get("codec")) for t in video) if c), "")
+    if vcodec:
+        out["vcodec"] = vcodec
     if any(t.get("stereo") for t in video):
         out["stereo3d"] = True
     return out

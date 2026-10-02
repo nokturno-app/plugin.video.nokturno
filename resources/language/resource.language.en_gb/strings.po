@@ -2804,7 +2804,7 @@ msgid "Hide cinema recordings"
 msgstr ""
 
 msgctxt "#30992"
-msgid "Streams marked CAM, HDCAM, TS, telesync or screener are hidden. If only a cinema recording exists so far, it is shown so the list is not empty."
+msgid "Streams marked CAM, HDCAM, TS, telesync or KINO are hidden. If only a cinema recording exists so far, it is shown so the list is not empty."
 msgstr ""
 
 msgctxt "#30993"

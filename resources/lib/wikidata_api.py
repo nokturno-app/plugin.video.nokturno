@@ -7,7 +7,7 @@ názvu je pak zahodil jako jiný titul. Wikidata mají u filmů i seriálů vazb
 IMDb (vlastnost P345) a lokalizované názvy:
 
     action=query&list=search&srsearch=haswbstatement:P345=<tt…>   → Q-id
-    action=wbgetentities&ids=<Q>&props=labels|aliases&languages=cs|sk
+    action=wbgetentities&ids=<Q>&props=labels|aliases&languages=cs|sk|en
 
 Wikimedia chce popisný User-Agent. Výsledek si jádro cachuje (30 dní).
 """
@@ -19,7 +19,7 @@ from keepalive import urlopen as pooled_urlopen
 API = "https://www.wikidata.org/w/api.php"
 TIMEOUT = 10
 UA = "Nokturno/3 (https://github.com/nokturno-app/nokturno-core)"
-LANGS = ("cs", "sk")
+LANGS = ("cs", "sk", "en")
 ALIASES_MAX = 2
 
 
@@ -38,7 +38,10 @@ def _get(**params):
 
 
 def local_titles(imdb_id):
-    """[český název, slovenský název, české alternativní názvy…] — bez duplicit, může být prázdné."""
+    """[český, slovenský a anglický název, české alternativní názvy…] — bez duplicit, může být prázdné.
+
+    Anglický název je tu proto, že u cizojazyčných filmů je v Cinemetě originál („La tregua“),
+    ale soubory se jmenují anglicky („The Truce“)."""
     if not str(imdb_id or "").startswith("tt"):
         return []
     found = (_get(action="query", list="search", srsearch=f"haswbstatement:P345={imdb_id}", srlimit=1)

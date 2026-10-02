@@ -34,7 +34,7 @@ from sosac_api import is_sosac_id as _is_legacy_sosac_id
 from sosac_direct import SosacDirect, is_direct_id
 from store import Store
 from streams import (arrange, assume_origin_language, estimate_rank, expand_groups, fold, group_streams,
-                            is_surround, langs_from_name, parse_stream, stream_3d, stream_hdr)
+                            is_surround, langs_from_name, parse_stream, stream_3d, stream_hdr, stream_lowq)
 from tracks import SUBTITLE_FALLBACK
 from hellspy_api import HellspyApi, HellspyError, HellspyRateLimited
 from sledujteto_api import SledujtetoApi, SledujtetoError
@@ -59,6 +59,8 @@ PT_LIMIT = 32    # totéž pro Přehraj.to — jedna strana výpisu, bez účtu 
 EPISODE_ANY_RE = re.compile(r"(?<![a-z0-9])s\d{1,2}\s?e\d{1,2}(?!\d)|(?<!\d)\d{1,2}x\d{2}(?!\d)", re.I)
 AUDIO_PROBE_MAX = 24          # u kolika streamů se ještě vyplatí číst hlavičku souboru
 ENRICH_PROGRESS_ESTIMATE = 10  # počáteční odhad délky enrichu, než search() zjistí skutečný počet
+# „2“: hlavičky přečtené dřív nemají kodek obrazu ani nové jazyky stop (jpn, kor, chi, ukr…)
+MEDIA_KEY = "media2:"
 AUDIO_TTL = 30 * 24 * 3600    # obsah souboru se nemění, stačí zjistit jednou
 # Hlavička, ze které nic nevzešlo (`probe()` bez zvuku, rozlišení i velikosti), se do `media:` nezapisuje —
 # jenže pak se celé čtení opakovalo při každém otevření titulu: odkaz se rozklíčoval (WebShare = dotaz na
@@ -254,6 +256,8 @@ ONE_WORD_NEXT = RELEASE_TAGS | frozenset((
     "extended", "remastered", "directors", "cut", "uncut", "unrated", "proper", "repack", "limited",
     "internal", "imax", "hdr", "sdr", "dv", "atmos", "dts", "ac3", "aac", "ddp", "multi", "dual",
     "amzn", "nf", "dsnp", "hmax", "atvp", "bd", "dvd", "rip", "tv", "verze", "prodlouzena",
+    "cam", "camrip", "hdcam", "ts", "hdts", "telesync", "tc", "telecine", "kino", "kinorip",
+    "scr", "dvdscr", "screener", "hdrip", "czsk",
 ))
 # „See - Vidět“, „Avengers (The Avengers)“ — jiné slovo za oddělovačem je jiný název téhož titulu
 ONE_WORD_SEP_RE = re.compile(r"\s[-–|:]\s|[(\[]")
@@ -302,7 +306,31 @@ def _prefix_ok(folded, spans, first):
     return prefix.endswith(("-", "–", "|", ":", "]", ")"))
 
 
-def _title_leads(folded, pattern, movie, variants=()):
+def _next_breaks_title(folded, spans, last, end, group, variants, strict_next=False):
+    """Patří slovo hned za názvem jinému titulu? („See You at Work Tomorrow“, „Resident Evil Apocalypse“)
+    Smí tam být značka (`ONE_WORD_NEXT`), číslo, oddělovač (` - `, závorka) nebo jiná varianta téhož názvu.
+    `strict_next` (nový film, soubor bez roku): navíc samotné „1“ za názvem je první díl staré série."""
+    if last + 1 >= len(spans):
+        return False
+    word, word_end = spans[last + 1]
+    if strict_next and word in ("1", "01") and not re.match(r"[.,]\d", folded[word_end:word_end + 2]):
+        return True
+    if not word.isalpha() or word in ONE_WORD_NEXT:
+        return False
+    if ONE_WORD_SEP_RE.search(folded, end, word_end - len(word)):
+        return False
+    following = spans[last + 1:]
+    for other in variants:
+        if other == group:
+            continue
+        # varianta za názvem: buď všechna slova, nebo jen ta delší než dva znaky („Avatar Ohen a popel“)
+        if [t for t, _e in following[:len(other)]] == other \
+                or [t for t, _e in following if len(t) > 2][:len(other)] == other:
+            return False
+    return True
+
+
+def _title_leads(folded, pattern, movie, variants=(), strict_next=False):
     """Začíná název souboru tímhle názvem titulu? (přísný filtr)
 
     Slova názvu musí být v souboru za sebou a skoro na začátku. Pouhé „všechna
@@ -317,6 +345,9 @@ def _title_leads(folded, pattern, movie, variants=()):
     ním smí být jen rok, kvalita nebo značka jazyka — jinak projde „What
     Happened to Monday" i „Někdo to rád horké". Výjimkou je jiná varianta
     téhož názvu hned za ním („To - It (2017)").
+
+    `strict_next` (nový film, soubor bez roku v názvu) pro slovo za názvem platí
+    stejnou kontrolu i u víceslovného názvu a samotné „1“ za ním je starší série.
     """
     group, tail, short = pattern
     spans = [(m.group(), m.end()) for m in re.finditer(r"[a-z0-9]+", folded)]
@@ -356,12 +387,9 @@ def _title_leads(folded, pattern, movie, variants=()):
             last += len(tail)
         end = spans[last][1]
         # jednoslovný název („See“, „Avengers“) je začátkem spousty jiných titulů:
-        # „See You at Work Tomorrow“, „Avengers Infinity War“, „Avengers Grimm“
-        nxt = spans[last + 1] if n == 1 and last + 1 < len(spans) else None
-        if nxt and nxt[0].isalpha() and nxt[0] not in ONE_WORD_NEXT \
-                and not ONE_WORD_SEP_RE.search(folded, end, nxt[1] - len(nxt[0])) \
-                and not any(other != group and [t for t, _e in spans[last + 1:last + 1 + len(other)]] == other
-                            for other in variants):
+        # „See You at Work Tomorrow“, „Avengers Infinity War“, „Avengers Grimm“;
+        # u nového filmu bez roku totéž platí i pro delší názvy („Resident Evil Apocalypse“)
+        if (n == 1 or strict_next) and _next_breaks_title(folded, spans, last, end, group, variants, strict_next):
             return False
     return not (movie and SEQUEL_AFTER_RE.match(folded, end))
 
@@ -1585,6 +1613,8 @@ class Engine:
             "audio": [{"lang": tr.get("lang") or "", "channels": tr.get("channels") or "",
                        "codec": tr.get("codec") or ""} for tr in tracks],
             "subs": stream.get("subs") or [],
+            "vcodec": (stream.get("_media") or {}).get("vcodec") or "",
+            "lowq": stream_lowq(stream),
             "url": stream.get("url") or "",
             "subtitles": stream.get("subtitles") or [],
         }
@@ -1631,7 +1661,7 @@ class Engine:
                     _LOGGER.debug("Wikidata %s: %s", imdb, err)
                     return {"ok": False, "names": []}
             # výpadek Wikidat se necachuje, jinak by titul měsíc zůstal bez českého názvu
-            local = self.shared.cached_if(f"wdname:{imdb}", 30 * 86400, load_local, ok=lambda d: d.get("ok"))
+            local = self.shared.cached_if(f"wdname2:{imdb}", 30 * 86400, load_local, ok=lambda d: d.get("ok"))
             wd_ok = bool((local or {}).get("ok"))
             names += (local or {}).get("names") or []
             if self.tmdb:   # Wikidata nové tituly často česky nemají, TMDB ano
@@ -1698,6 +1728,8 @@ class Engine:
         # rok v názvu souboru rozliší stejnojmenné filmy („pět švestek“ 1983 vs. 2026);
         # roky, které patří k názvu titulu („Blade Runner 2049“), se ignorují
         want_year = None if video else self._year(meta)
+        # nový film: staré tituly se stejným začátkem názvu soubory bez roku mívají, nový film skoro vždy s rokem
+        new_film = bool(want_year) and want_year >= time.localtime().tm_year - 1
         title_years = _years(_fold(title) + " " + " ".join(_fold(o) for o in origs))
 
         def year_ok(folded):
@@ -1711,7 +1743,9 @@ class Engine:
             folded = _fold_name(name)
             if wanted:
                 if strict:
-                    if not any(_title_leads(folded, pattern, not video, variants) for pattern in wanted):
+                    strict_next = new_film and not _years(folded)
+                    if not any(_title_leads(folded, pattern, not video, variants, strict_next)
+                               for pattern in wanted):
                         return False
                 elif not any(all(w in folded for w in group) for group, _tail, _short in wanted):
                     return False
@@ -1865,7 +1899,7 @@ class Engine:
             return info if self._media_usable(info) else self._media_failed(store, url, info)
         # `probe()` při selhání vrací slovník s nulami — ten se nesmí pamatovat 30 dní,
         # jinak stream po jednom timeoutu měsíc nemá zvuk ani rozlišení
-        return store.cached_if(f"media:{url}", AUDIO_TTL, load, ok=self._media_usable) or {}
+        return store.cached_if(f"{MEDIA_KEY}{url}", AUDIO_TTL, load, ok=self._media_usable) or {}
 
     @staticmethod
     def _media_usable(info):
@@ -1899,13 +1933,13 @@ class Engine:
         if not self._opt("media_hints", False):
             return
         want = [u for u in dict.fromkeys(urls)
-                if u and u.startswith(SHARED_MEDIA) and self.shared.peek_cached(f"media:{u}", AUDIO_TTL) is None]
+                if u and u.startswith(SHARED_MEDIA) and self.shared.peek_cached(f"{MEDIA_KEY}{u}", AUDIO_TTL) is None]
         if not want:
             return
         t0 = time.time()
         hits = self.dash.media(want)
         for url, info in hits.items():
-            self.shared.cached_if(f"media:{url}", AUDIO_TTL, lambda info=info: info, fresh=True)
+            self.shared.cached_if(f"{MEDIA_KEY}{url}", AUDIO_TTL, lambda info=info: info, fresh=True)
         self.last_timings["hlavičky ze serveru"] = f"{len(hits)}/{len(want)} za {time.time() - t0:.1f}s"
 
     def _fastshare_unlimited(self):

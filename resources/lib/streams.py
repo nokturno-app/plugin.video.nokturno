@@ -272,9 +272,10 @@ def stream_3d(s):
     return bool(STEREO_3D_RE.search(text))
 
 
-# nahrávky z kina a obrazovky: krátké zkratky jen velkými písmeny (nechytí běžná slova a názvy), dlouhé i malými
-LOWQ_SHORT_RE = re.compile(r"(?<![A-Za-z0-9])(?:HD)?(?:CAM|TS|TC|SCR|R5)(?:Rip)?(?![A-Za-z0-9])")
-LOWQ_LONG_RE = re.compile(r"(?<![A-Za-z0-9])(?:(?:hq|hd)cam|camrip|telesync|telecine|screener|dvdscr|workprint)(?![A-Za-z0-9])",
+# nahrávky z kina: screener a R5 jsou uniklé předverze v dobré kvalitě, proto je filtr nechytá;
+# KINO/KinoRip je české označení nahrávky z kina. Krátké zkratky jen velkými písmeny (nechytí běžná slova a názvy), dlouhé i malými
+LOWQ_SHORT_RE = re.compile(r"(?<![A-Za-z0-9])(?:HD)?(?:CAM|TS|TC)(?:Rip)?(?![A-Za-z0-9])")
+LOWQ_LONG_RE = re.compile(r"(?<![A-Za-z0-9])(?:(?:hq|hd)cam|camrip|telesync|telecine|workprint|kino(?:[ ._-]?rip)?)(?![A-Za-z0-9])",
                           re.IGNORECASE)
 
 
