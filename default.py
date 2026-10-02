@@ -5268,7 +5268,7 @@ def mycat_first_batch(cat):
         return
     if cat.get("kind") == "concert":
         heading, text = (L(30740, "Spustit hledání koncertů nyní?"),
-                         L(30750, "První dávka prohledá víc interpretů najednou, ať je v katalogu hned co ukázat. "
+                         L(30018, "První dávka prohledá víc interpretů najednou, ať je v katalogu hned co ukázat. "
                                   "Běží na pozadí."))
     else:
         heading, text = (L(30737, "Spustit ověření streamů nyní?"),

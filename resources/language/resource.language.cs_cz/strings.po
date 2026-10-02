@@ -3087,7 +3087,7 @@ msgctxt "#30740"
 msgid "Start the concert search now?"
 msgstr "Spustit hledání koncertů nyní?"
 
-msgctxt "#30750"
+msgctxt "#30018"
 msgid "The first batch searches more artists at once so the catalog has something to show right away. It runs in the background."
 msgstr "První dávka prohledá víc interpretů najednou, ať je v katalogu hned co ukázat. Běží na pozadí."
 
