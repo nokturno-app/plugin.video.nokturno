@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="9.8.4" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="9.9.1" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>9.8.4 – Spolehlivější aktualizace: repozitář si nový seznam verzí stáhne celý, i když GitHub zrovna vydá jeho starší kopii.
+    <news>9.9.1 – Hledání najde i soubory pojmenované anglicky u filmů, které mají v databázi původní název, a u filmů v kině se mezi streamy nepletou starší filmy se stejným začátkem názvu. Nahrávky z kina se poznají i podle označení KINO, screener a R5 se už neskrývají. Zvuk v japonštině, korejštině, čínštině, ukrajinštině a dalších jazycích se pozná z hlavičky souboru.
+9.8.4 – Spolehlivější aktualizace: repozitář si nový seznam verzí stáhne celý, i když GitHub zrovna vydá jeho starší kopii.
 9.8.3 – Doplněk zase dostává aktualizace i tam, kde zůstal na verzi 9.0.0: repozitář se sám přepojí na novou adresu.
 9.8.0 – Filmy ve vysoké kvalitě v menu Filmů: populární a nejsledovanější filmy, které mají stream podle tvé definice (kvalita, 5.1, jazyk zvuku), rozdělené podle žánrů. Datum premiéry v detailu. Další strana ve výpisech se otevře na první klik a začíná nahoře.
 9.7.0~beta1 – Detail filmu a seriálu ukazuje datum premiéry (vzhledy jako Arctic Fuse 3 ho kreslí místo roku).
