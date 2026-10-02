@@ -42,7 +42,7 @@ ACCOUNT_KEYS = frozenset({
     "pt_email", "pt_password",
     "os_username", "os_password",
     "luna_url", "token",
-    "tmdb_api_key",
+    "tmdb_api_key", "lastfm_key",
     "trakt_client_id", "trakt_client_secret",
     "dav1_url", "dav1_username", "dav1_password", "dav1_name",
     "dav2_url", "dav2_username", "dav2_password", "dav2_name",
