@@ -6529,31 +6529,40 @@ class TestAktualizaceDoplnku(unittest.TestCase):
         self.assertEqual(update_info.info(lambda _q: "nesmysl", tempfile.mkdtemp()), {})
 
     def test_preklopeni_stareho_repozitare(self):
+        import update_info
+
+        def dirs(root):
+            return [(e.tag, e.text, e.get("verify")) for e in root.iter() if e.tag in ("info", "checksum", "datadir")]
+
+        target = ET.parse(str(ROOT / "repository.nokturno" / "addon.xml")).getroot()
+        self.assertEqual(target.get("version"), update_info.REPO_VERSION)
+        self.assertTrue(all(v == "md5" for t, _u, v in dirs(target) if t == "checksum"))
         old = ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'
                '<addon id="repository.nokturno" name="Nokturno repozitář" version="1.0.3" provider-name="matata86">\n'
                '  <extension point="xbmc.addon.repository" name="Nokturno repozitář"><dir>\n'
                '    <info compressed="false">https://raw.githubusercontent.com/matata86/plugin.video.nokturno/main/repo/addons.xml</info>\n'
+               '    <checksum>https://raw.githubusercontent.com/matata86/plugin.video.nokturno/main/repo/addons.xml.md5</checksum>\n'
                '    <datadir zip="true">https://raw.githubusercontent.com/matata86/plugin.video.nokturno/main/repo/</datadir>\n'
                '  </dir></extension>\n</addon>\n')
-        addons = tempfile.mkdtemp()
-        os.makedirs(os.path.join(addons, "repository.nokturno"))
-        path = os.path.join(addons, "repository.nokturno", "addon.xml")
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(old)
-        xbmc.builtins.clear()
-        with mock.patch.object(service.xbmcvfs, "translatePath", lambda p: addons if "addons" in p else self._db("")):
-            service.heal_repos()
-        root = ET.parse(path).getroot()
-        self.assertEqual((root.get("version"), root.get("provider-name")), ("1.1.0", "Nokturno"))
-        text = open(path, encoding="utf-8").read()
-        self.assertNotIn("matata86", text)
-        self.assertEqual(text.count("raw.githubusercontent.com/nokturno-app/plugin.video.nokturno/main/repo/"), 2)
-        self.assertEqual(xbmc.builtins, ["UpdateLocalAddons", "UpdateAddonRepos"])
-        # podruhé už není co přepojit
-        xbmc.builtins.clear()
-        with mock.patch.object(service.xbmcvfs, "translatePath", lambda p: addons):
-            service.heal_repos()
-        self.assertEqual(xbmc.builtins, [])
+        # 1.0.3 (staré repo) i 1.1.0 (bez verify) skončí jako 1.1.1 se stejnými adresami
+        for text in (old, old.replace("matata86/", "nokturno-app/").replace('"1.0.3"', '"1.1.0"')):
+            addons = tempfile.mkdtemp()
+            os.makedirs(os.path.join(addons, "repository.nokturno"))
+            path = os.path.join(addons, "repository.nokturno", "addon.xml")
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(text)
+            xbmc.builtins.clear()
+            with mock.patch.object(service.xbmcvfs, "translatePath", lambda p: addons if "addons" in p else self._db("")):
+                service.heal_repos()
+            root = ET.parse(path).getroot()
+            self.assertEqual((root.get("version"), root.get("provider-name")), ("1.1.1", "Nokturno"))
+            self.assertEqual(dirs(root), dirs(target))
+            self.assertEqual(xbmc.builtins, ["UpdateLocalAddons", "UpdateAddonRepos"])
+            # podruhé už není co srovnat
+            xbmc.builtins.clear()
+            with mock.patch.object(service.xbmcvfs, "translatePath", lambda p: addons):
+                service.heal_repos()
+            self.assertEqual(xbmc.builtins, [])
 
     def test_stop_jen_bez_vypinani_kodi(self):
         class S:

@@ -138,15 +138,15 @@ def refresh_tmdbhelper_player():
 
 
 def heal_repos():
-    """Repozitář, který pořád čte staré repo matata86, přepojí na nokturno-app
-    (`update_info.heal_repos`) a hned ho nechá zkontrolovat."""
+    """Repozitáře, které Kodi samo nesrovnalo na 1.1.1, srovná (`update_info.heal_repos`)
+    a hned je nechá zkontrolovat."""
     healed = update_info.heal_repos(xbmcvfs.translatePath("special://home/addons/"))
     if not healed:
         return
     db = update_info.find_db(xbmcvfs.translatePath("special://database/"))
     for repo_id in healed:
         # původ a pravidlo z databáze Kodi – proč se repozitář sám neaktualizoval
-        log(f"{repo_id} přepojen na nokturno-app (původ, pravidlo: {update_info.read_db(db, repo_id)})")
+        log(f"{repo_id} srovnán na {update_info.REPO_VERSION} (původ, pravidlo: {update_info.read_db(db, repo_id)})")
     xbmc.executebuiltin("UpdateLocalAddons", True)
     xbmc.executebuiltin("UpdateAddonRepos")
 

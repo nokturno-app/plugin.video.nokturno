@@ -81,25 +81,32 @@ def info(execute, db_dir, addon_id=ADDON_ID):
 OLD_REPO = "raw.githubusercontent.com/matata86/plugin.video.nokturno/"
 NEW_REPO = "raw.githubusercontent.com/nokturno-app/plugin.video.nokturno/"
 REPO_IDS = ("repository.nokturno", "repository.nokturno.beta")
+REPO_VERSION = "1.1.1"   # = verze v repository.nokturno*/addon.xml, hlídá test
 _REPO_VERSION_RE = re.compile(r'(<addon\b[^>]*?\bversion=")[^"]*(")')
 
 
 def heal_repos(addons_dir):
-    """Přepojí repozitáře 1.0.x ze starého repa matata86 na nokturno-app.
+    """Srovná nainstalované repozitáře s verzí 1.1.1, když Kodi samo nestihlo.
 
-    Staré repo nabízí jako poslední doplněk 9.0.0 a k tomu repozitář 1.1.0 s novými
-    adresami. Doplněk se z něj aktualizoval, repozitář na části zařízení ne (2026-10-02:
-    ~550 instalací stojí na 9.0.0 s repozitářem 1.0.3), takže se tu `addon.xml`
-    přepíše na adresy a verzi 1.1.0. Vrací id přepsaných repozitářů."""
+    - 1.0.x míří na staré repo matata86, kde je poslední doplněk 9.0.0. Kodi je mělo
+      samo aktualizovat na 1.1.0 (nové adresy), na části zařízení se to ale nestalo
+      (2026-10-02: ~550 instalací stojí na 9.0.0 s repozitářem 1.0.3).
+    - 1.1.0 nemá u `<checksum>` `verify`: když cache raw.githubusercontent vydá nový
+      otisk a ještě starý `addons.xml`, Kodi si uloží starý obsah s novým otiskem a nové
+      vydání uvidí až při dalším. S `verify="md5"` index odmítne a zkusí ho za 24 h.
+
+    Přepíše `addon.xml` na adresy nokturno-app, `verify="md5"` a verzi 1.1.1.
+    Vrací id přepsaných repozitářů."""
     healed = []
     for repo_id in REPO_IDS:
         path = os.path.join(addons_dir, repo_id, "addon.xml")
         try:
             with open(path, encoding="utf-8") as f:
                 text = f.read()
-            if OLD_REPO not in text:
-                continue
-            text = _REPO_VERSION_RE.sub(r"\g<1>1.1.0\2", text.replace(OLD_REPO, NEW_REPO), count=1)
+            if OLD_REPO not in text and not (NEW_REPO in text and "<checksum>" in text):
+                continue   # srovnaný, nebo cizí adresa (1.0.0 mířila na plugin.video.luna)
+            text = text.replace(OLD_REPO, NEW_REPO).replace("<checksum>", '<checksum verify="md5">')
+            text = _REPO_VERSION_RE.sub(r"\g<1>%s\2" % REPO_VERSION, text, count=1)
             text = text.replace('provider-name="matata86"', 'provider-name="Nokturno"')
             with open(path + ".tmp", "w", encoding="utf-8") as f:
                 f.write(text)
