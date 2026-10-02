@@ -2900,7 +2900,7 @@ msgid "Checking %s of %s – %s"
 msgstr ""
 
 msgctxt "#30999"
-msgid "Refresh – loaded"
+msgid "Refresh stream dialog"
 msgstr ""
 
 msgctxt "#30005"
@@ -2908,5 +2908,5 @@ msgid "Loading stream details"
 msgstr ""
 
 msgctxt "#30006"
-msgid "Details loaded – click Refresh"
+msgid "Details loaded – click Refresh stream dialog"
 msgstr ""

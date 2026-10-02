@@ -2080,15 +2080,24 @@ def reading_progress(count, total):
     bar = xbmcgui.DialogProgressBG()
     bar.create(L(30000, "Nokturno"), "")
 
+    closed = threading.Lock()   # zavírá ho buď konec dočítání, nebo zavření výběru — jen jednou
+
+    def close_bar():
+        if closed.acquire(blocking=False):
+            bar.close()
+
     def run():
         while True:
             left = count()
-            if left:
-                done = total - left
-                bar.update(int(done * 100 / total), message=f"{L(30005, 'Dočítám údaje o streamech')} {done}/{total}")
-            else:
-                bar.update(100, message=L(30006, "Údaje dočteny – klikni na Obnovit"))
-            if not left or stop.wait(0.5):
+            if not left:
+                # hotovo: ukazatel pryč (jinak se v rohu dál točí kolečko na 100 %) a krátké oznámení
+                close_bar()
+                if not stop.is_set():
+                    notify(L(30006, "Údaje dočteny – klikni na Obnovit modal streamů"))
+                return
+            done = total - left
+            bar.update(int(done * 100 / total), message=f"{L(30005, 'Dočítám údaje o streamech')} {done}/{total}")
+            if stop.wait(0.5):
                 return
     worker = threading.Thread(target=run, name="nokturno-reading", daemon=True)
     worker.start()
@@ -2096,7 +2105,7 @@ def reading_progress(count, total):
     def close():
         stop.set()
         worker.join(1)
-        bar.close()
+        close_bar()
     return close
 
 
@@ -2128,7 +2137,7 @@ def choose_stream(streams, preferred=None, relax=False, expand=None, refresh=Non
             active, shown = {}, list(streams)
         entries = []   # (popisek, volba) nad seznamem streamů
         if waiting:
-            entries.append((f"{L(30999, 'Obnovit – dočteno')}  {wait_total - waiting}/{wait_total}", "refresh"))
+            entries.append((L(30999, "Obnovit modal streamů"), "refresh"))
         if len(streams) > 1:
             on = any(active.values())
             count = f"({len(shown)}/{len(streams)})" if on else f"({len(streams)})"

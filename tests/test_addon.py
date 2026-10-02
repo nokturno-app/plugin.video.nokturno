@@ -4348,8 +4348,8 @@ class TestSloucenéVerze(unittest.TestCase):
                 mock.patch.object(default, "reading_progress", wraps=default.reading_progress) as roh:
             self.assertIsNone(default.choose_stream([self.alt], refresh=refresh))
         self.assertEqual(roh.call_count, 2, "ukazatel v rohu jen u otevření, kde se ještě čeká")
-        self.assertEqual(dialogy[0][0], "Obnovit – dočteno  0/2")
-        self.assertEqual(dialogy[1][0], "Obnovit – dočteno  1/2")
+        self.assertEqual(dialogy[0][0], "Obnovit modal streamů")
+        self.assertEqual(dialogy[1][0], "Obnovit modal streamů")
         self.assertFalse(any(label.startswith("Obnovit") for label in dialogy[2]))
 
     def test_ukazatel_v_rohu_pocita_dokud_se_ceka(self):
@@ -4357,16 +4357,18 @@ class TestSloucenéVerze(unittest.TestCase):
         zpravy = []
         bar = mock.MagicMock()
         bar.update.side_effect = lambda pct, message="": zpravy.append(message)
-        with mock.patch.object(xbmcgui, "DialogProgressBG", return_value=bar):
+        with mock.patch.object(xbmcgui, "DialogProgressBG", return_value=bar), \
+                mock.patch.object(default, "notify") as oznameni:
             zavrit = default.reading_progress(lambda: next(cekani), 3)
             for _ in range(50):
-                if len(zpravy) >= 3:
+                if oznameni.called:
                     break
                 time.sleep(0.05)
+            bar.close.assert_called_once_with()   # po dočtení hned pryč, žádné kolečko na 100 %
             zavrit()
-        self.assertEqual(zpravy[:2], ["Dočítám údaje o streamech 0/3", "Dočítám údaje o streamech 1/3"])
-        self.assertTrue(zpravy[2].startswith("Údaje dočteny"))
-        bar.close.assert_called_once()
+        self.assertEqual(zpravy, ["Dočítám údaje o streamech 0/3", "Dočítám údaje o streamech 1/3"])
+        self.assertTrue(oznameni.call_args[0][0].startswith("Údaje dočteny"))
+        bar.close.assert_called_once_with()
 
     def test_fulltext_zustava_posledni_volbou(self):
         with mock.patch.object(xbmcgui.Dialog, "select", return_value=2):

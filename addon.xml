@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="9.10.0~beta3" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="9.10.0~beta4" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>9.10.0~beta3 – Zatímco je výběr streamu otevřený, ukazatel v rohu průběžně počítá dočtené údaje o streamech.
+    <news>9.10.0~beta4 – Ukazatel dočítání se po dočtení zavře (už se netočí na 100 %), řádek v dialogu se jmenuje „Obnovit modal streamů“.
+9.10.0~beta3 – Zatímco je výběr streamu otevřený, ukazatel v rohu průběžně počítá dočtené údaje o streamech.
 9.10.0~beta2 – Soubor, který minule nešel stáhnout, už nezdržuje výběr streamu: zkusí se znovu na pozadí.
 9.10.0~beta1 – Dialog výběru streamu: hlavičky souborů, které se nestihly přečíst, se dočítají dál a řádek „Obnovit“ nahoře je do seznamu doplní (jazyk, kanály, rozlišení).
 9.9.1 – Hledání najde i soubory pojmenované anglicky u filmů, které mají v databázi původní název, a u filmů v kině se mezi streamy nepletou starší filmy se stejným začátkem názvu. Nahrávky z kina se poznají i podle označení KINO, screener a R5 se už neskrývají. Zvuk v japonštině, korejštině, čínštině, ukrajinštině a dalších jazycích se pozná z hlavičky souboru.

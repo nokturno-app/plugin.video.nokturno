@@ -2900,13 +2900,13 @@ msgid "Checking %s of %s – %s"
 msgstr "Overujem %s z %s – %s"
 
 msgctxt "#30999"
-msgid "Refresh – loaded"
-msgstr "Obnoviť – dočítané"
+msgid "Refresh stream dialog"
+msgstr "Obnoviť modal streamov"
 
 msgctxt "#30005"
 msgid "Loading stream details"
 msgstr "Dočítavam údaje o streamoch"
 
 msgctxt "#30006"
-msgid "Details loaded – click Refresh"
-msgstr "Údaje dočítané – klikni na Obnoviť"
+msgid "Details loaded – click Refresh stream dialog"
+msgstr "Údaje dočítané – klikni na Obnoviť modal streamov"
