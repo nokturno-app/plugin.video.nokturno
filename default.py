@@ -2072,6 +2072,34 @@ def filter_dialog(streams, active=None):
 FULLTEXT = "fulltext"
 
 
+def reading_progress(count, total):
+    """Ukazatel v rohu „Dočítám údaje N/M“, zatímco je výběr streamu otevřený — `Dialog().select`
+    se za běhu měnit nedá, `DialogProgressBG` ano. `count()` vrátí, na kolik streamů se ještě čeká
+    (`Engine.refresh_media(..., apply=False)`). Vrátí funkci, která ukazatel zavře."""
+    stop = threading.Event()
+    bar = xbmcgui.DialogProgressBG()
+    bar.create(L(30000, "Nokturno"), "")
+
+    def run():
+        while True:
+            left = count()
+            if left:
+                done = total - left
+                bar.update(int(done * 100 / total), message=f"{L(30005, 'Dočítám údaje o streamech')} {done}/{total}")
+            else:
+                bar.update(100, message=L(30006, "Údaje dočteny – klikni na Obnovit"))
+            if not left or stop.wait(0.5):
+                return
+    worker = threading.Thread(target=run, name="nokturno-reading", daemon=True)
+    worker.start()
+
+    def close():
+        stop.set()
+        worker.join(1)
+        bar.close()
+    return close
+
+
 def choose_stream(streams, preferred=None, relax=False, expand=None, refresh=None):
     """Výběr streamu v dialogu na dva řádky — jediný způsob výběru od `5.2.14~beta2` (klik ve výpisu,
     Přehrát v detailu, widget, TMDb Helper), od `beta4` i jediné místo (výpis streamů jako složka zrušen).
@@ -2134,8 +2162,13 @@ def choose_stream(streams, preferred=None, relax=False, expand=None, refresh=Non
             tail.append(FULLTEXT)
             rows.append(xbmcgui.ListItem(label=L(30335, "Hledat volněji podle názvu souboru")))
         focus = next((i for i, st in enumerate(shown) if st is preferred), None)
-        idx = xbmcgui.Dialog().select(L(30024), rows, useDetails=True,
-                                      preselect=len(entries) + focus if focus is not None else -1)
+        close_bar = reading_progress(lambda: refresh(streams, apply=False), wait_total) if waiting else None
+        try:
+            idx = xbmcgui.Dialog().select(L(30024), rows, useDetails=True,
+                                          preselect=len(entries) + focus if focus is not None else -1)
+        finally:
+            if close_bar:
+                close_bar()
         if idx < 0:
             return None
         if idx >= len(entries) + len(shown):

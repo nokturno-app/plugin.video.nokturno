@@ -2902,3 +2902,11 @@ msgstr "Ověřuji %s z %s – %s"
 msgctxt "#30999"
 msgid "Refresh – loaded"
 msgstr "Obnovit – dočteno"
+
+msgctxt "#30005"
+msgid "Loading stream details"
+msgstr "Dočítám údaje o streamech"
+
+msgctxt "#30006"
+msgid "Details loaded – click Refresh"
+msgstr "Údaje dočteny – klikni na Obnovit"

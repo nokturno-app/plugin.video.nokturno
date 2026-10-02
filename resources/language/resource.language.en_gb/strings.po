@@ -2902,3 +2902,11 @@ msgstr ""
 msgctxt "#30999"
 msgid "Refresh – loaded"
 msgstr ""
+
+msgctxt "#30005"
+msgid "Loading stream details"
+msgstr ""
+
+msgctxt "#30006"
+msgid "Details loaded – click Refresh"
+msgstr ""

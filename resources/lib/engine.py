@@ -2107,10 +2107,11 @@ class Engine:
             # při stejném dotazu na hlavičku, který se dělal pro zvuk
             stream["size_gb"] = info["size"] / 2 ** 30
 
-    def refresh_media(self, streams):
+    def refresh_media(self, streams, apply=True):
         """Doplní do `streams` hlavičky, které se po `PROBE_DEADLINE` mezitím dočetly na pozadí
         (Kodi: „Obnovit“ v dialogu výběru streamu). Na síť nesahá, jen sebere hotové úlohy.
-        Vrátí, na kolik zobrazených streamů se ještě čeká; pořadí streamů se nemění."""
+        Vrátí, na kolik zobrazených streamů se ještě čeká; pořadí streamů se nemění.
+        `apply=False` jen počítá a streamy nemění (ukazatel v rohu, zatímco je dialog otevřený)."""
         waiting = 0
         for stream in streams:
             future = self._reading.get(self._probe_url(stream))
@@ -2118,6 +2119,8 @@ class Engine:
                 continue
             if not future.done():
                 waiting += 1
+                continue
+            if not apply:
                 continue
             try:
                 info = future.result()

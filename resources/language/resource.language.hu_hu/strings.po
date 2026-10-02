@@ -2900,3 +2900,11 @@ msgstr "Ellenőrzés: %s / %s – %s"
 msgctxt "#30999"
 msgid "Refresh – loaded"
 msgstr "Frissítés – betöltve"
+
+msgctxt "#30005"
+msgid "Loading stream details"
+msgstr "Stream adatok betöltése"
+
+msgctxt "#30006"
+msgid "Details loaded – click Refresh"
+msgstr "Adatok betöltve – kattints a Frissítésre"

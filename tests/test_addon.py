@@ -4332,17 +4332,41 @@ class TestSloucenéVerze(unittest.TestCase):
         """„Obnovit – dočteno N/M“ nahoře, dokud se hlavičky dočítají na pozadí; klik
         dialog otevře znovu s doplněnými údaji, po dočtení řádek zmizí."""
         cekani = iter([2, 1, 0])
+        stav = [None]
         volby = iter([0, 0, -1])
         dialogy = []
+
+        def refresh(streams, apply=True):
+            if apply:
+                stav[0] = next(cekani)
+            return stav[0]
 
         def select(heading, rows, **kw):
             dialogy.append([r.getLabel() for r in rows])
             return next(volby)
-        with mock.patch.object(xbmcgui.Dialog, "select", side_effect=select):
-            self.assertIsNone(default.choose_stream([self.alt], refresh=lambda streams: next(cekani)))
+        with mock.patch.object(xbmcgui.Dialog, "select", side_effect=select), \
+                mock.patch.object(default, "reading_progress", wraps=default.reading_progress) as roh:
+            self.assertIsNone(default.choose_stream([self.alt], refresh=refresh))
+        self.assertEqual(roh.call_count, 2, "ukazatel v rohu jen u otevření, kde se ještě čeká")
         self.assertEqual(dialogy[0][0], "Obnovit – dočteno  0/2")
         self.assertEqual(dialogy[1][0], "Obnovit – dočteno  1/2")
         self.assertFalse(any(label.startswith("Obnovit") for label in dialogy[2]))
+
+    def test_ukazatel_v_rohu_pocita_dokud_se_ceka(self):
+        cekani = iter([3, 2, 0])
+        zpravy = []
+        bar = mock.MagicMock()
+        bar.update.side_effect = lambda pct, message="": zpravy.append(message)
+        with mock.patch.object(xbmcgui, "DialogProgressBG", return_value=bar):
+            zavrit = default.reading_progress(lambda: next(cekani), 3)
+            for _ in range(50):
+                if len(zpravy) >= 3:
+                    break
+                time.sleep(0.05)
+            zavrit()
+        self.assertEqual(zpravy[:2], ["Dočítám údaje o streamech 0/3", "Dočítám údaje o streamech 1/3"])
+        self.assertTrue(zpravy[2].startswith("Údaje dočteny"))
+        bar.close.assert_called_once()
 
     def test_fulltext_zustava_posledni_volbou(self):
         with mock.patch.object(xbmcgui.Dialog, "select", return_value=2):
