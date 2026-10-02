@@ -4328,6 +4328,22 @@ class TestSloucenéVerze(unittest.TestCase):
         self.assertEqual(rozbaleno, [1])
         self.assertFalse(any(label.startswith("Zobrazit všechny") for label in dialogy[1]), "po rozbalení už není co")
 
+    def test_obnovit_doplni_dochozi_hlavicky(self):
+        """„Obnovit – dočteno N/M“ nahoře, dokud se hlavičky dočítají na pozadí; klik
+        dialog otevře znovu s doplněnými údaji, po dočtení řádek zmizí."""
+        cekani = iter([2, 1, 0])
+        volby = iter([0, 0, -1])
+        dialogy = []
+
+        def select(heading, rows, **kw):
+            dialogy.append([r.getLabel() for r in rows])
+            return next(volby)
+        with mock.patch.object(xbmcgui.Dialog, "select", side_effect=select):
+            self.assertIsNone(default.choose_stream([self.alt], refresh=lambda streams: next(cekani)))
+        self.assertEqual(dialogy[0][0], "Obnovit – dočteno  0/2")
+        self.assertEqual(dialogy[1][0], "Obnovit – dočteno  1/2")
+        self.assertFalse(any(label.startswith("Obnovit") for label in dialogy[2]))
+
     def test_fulltext_zustava_posledni_volbou(self):
         with mock.patch.object(xbmcgui.Dialog, "select", return_value=2):
             self.assertIs(default.choose_stream([self.rep], relax=True, expand=lambda: []), default.FULLTEXT)

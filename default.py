@@ -2072,13 +2072,15 @@ def filter_dialog(streams, active=None):
 FULLTEXT = "fulltext"
 
 
-def choose_stream(streams, preferred=None, relax=False, expand=None):
+def choose_stream(streams, preferred=None, relax=False, expand=None, refresh=None):
     """Výběr streamu v dialogu na dva řádky — jediný způsob výběru od `5.2.14~beta2` (klik ve výpisu,
     Přehrát v detailu, widget, TMDb Helper), od `beta4` i jediné místo (výpis streamů jako složka zrušen).
     Nahoře Filtr streamů, Zrušit filtr, Použít poslední filtr. `preferred` (zapamatovaná volba
     u seriálu) je předvybraný. `relax=True` přidá dole „Zkusit uvolněný fulltext“ a jeho volba
     vrátí `FULLTEXT`. `expand()` vrátí seznam se sloučenými verzemi (`_alts`) každou zvlášť —
     nabízí se jako „Zobrazit všechny streamy“ před fulltextem, jen když je co rozbalit.
+    `refresh(streams)` (`Engine.refresh_media`) doplní hlavičky dočtené po `PROBE_DEADLINE`
+    a vrátí, na kolik streamů se ještě čeká — dokud nějaké, je nahoře „Obnovit – dočteno N/M“.
     Vrací stream, `FULLTEXT`, nebo None."""
     active = {}
     if setting("stream_filter_last") == "true":
@@ -2088,12 +2090,17 @@ def choose_stream(streams, preferred=None, relax=False, expand=None):
         last = {k: list(last.get(k) or []) for k in FILTER_KINDS}
         if any(last.values()) and apply_stream_filter(streams, **filter_params(last)):
             active = last
+    wait_total = 0
     while True:
+        waiting = refresh(streams) if refresh else 0
+        wait_total = max(wait_total, waiting) if waiting else 0
         shown = apply_stream_filter(streams, **filter_params(active))
         if not shown:
             notify(L(30214, "Filtr nic nenechal, zobrazeny všechny streamy"), xbmcgui.NOTIFICATION_WARNING)
             active, shown = {}, list(streams)
         entries = []   # (popisek, volba) nad seznamem streamů
+        if waiting:
+            entries.append((f"{L(30999, 'Obnovit – dočteno')}  {wait_total - waiting}/{wait_total}", "refresh"))
         if len(streams) > 1:
             on = any(active.values())
             count = f"({len(shown)}/{len(streams)})" if on else f"({len(streams)})"
@@ -2139,6 +2146,8 @@ def choose_stream(streams, preferred=None, relax=False, expand=None):
         if idx >= len(entries):
             return shown[idx - len(entries)]
         volba = entries[idx][1]
+        if volba == "refresh":
+            continue
         if volba == "filter":
             new = filter_dialog(streams, active)
             if new is not None:
@@ -6767,7 +6776,8 @@ def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, d
     pref_key = (series_id or split_episode_id(item_id)[0]) if video else None
     remembered = preferred_stream(streams, STORE.stream_pref(pref_key)) if pref_key else None
     picked = choose_stream(streams, remembered, relax=strict and has_fulltext_source,
-                           expand=lambda: expand_streams(apis, streams, meta, video))
+                           expand=lambda: expand_streams(apis, streams, meta, video),
+                           refresh=engine_of(apis).refresh_media)
     if picked == FULLTEXT:
         pick_title(apis, ctype, item_id, series_id, alt, fulltext=True, download=download)
         return
@@ -6854,7 +6864,8 @@ def play(apis, ctype, item_id, series_id=None, url=None, alt=None, subs="", pref
         remembered = preferred_stream(streams, STORE.stream_pref(pref_key)) if pref_key else None
         chosen = remembered or streams[0]
         if ask and not sw:
-            picked = choose_stream(streams, remembered, expand=lambda: expand_streams(apis, streams, meta, video))
+            picked = choose_stream(streams, remembered, expand=lambda: expand_streams(apis, streams, meta, video),
+                                   refresh=engine_of(apis).refresh_media)
             if picked is None:
                 xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
                 return

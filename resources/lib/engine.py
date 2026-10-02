@@ -513,6 +513,8 @@ class Engine:
         self._tl = threading.local()
         self._last_timings = {}
         self.last_timings = {}
+        # hlavičky, které se po `PROBE_DEADLINE` dočítají na pozadí — viz `refresh_media()`
+        self._reading = {}   # adresa → Future
         # hostitel sem může dát funkci, která počká, až hlavní hledání (to, na které uživatel čeká)
         # skončí — práce na pozadí (`background()`) ji volá před sítí. Kodi: vlastnost okna.
         self.gate = None
@@ -1826,7 +1828,7 @@ class Engine:
         self.last_timings["hlavičky na pozadí"] = len(urls)
         pool = ThreadPoolExecutor(max_workers=PROBE_WORKERS)
         for url in urls:
-            pool.submit(self._media_from_file, url)
+            self._reading.setdefault(url, pool.submit(self._media_from_file, url))
         pool.shutdown(wait=False)
 
     @staticmethod
@@ -2035,6 +2037,8 @@ class Engine:
         gather(pool, list(futures), self.should_stop, on_done=hotovo, deadline=PROBE_DEADLINE)
         detail["čtení"] = time.monotonic() - t_read
         self.last_timings["hlaviček nedočteno"] = len(todo) - len(results)
+        # nedočtené doběhnou na pozadí (`gather` je neruší) — `refresh_media()` je pak doplní
+        self._reading.update((self._probe_url(s), f) for f, s in futures.items() if id(s) not in results)
         t_bg = time.monotonic()
         self._probe_in_background(rest)
         detail["pozadí"] = time.monotonic() - t_bg
@@ -2042,40 +2046,65 @@ class Engine:
         for stream, info in ((s, results.get(id(s))) for s in todo):
             if info is None:
                 continue        # nedočteno v PROBE_DEADLINE — neznámé, ne mrtvé
-            if info.get("unreachable"):
-                stream["_dead"] = True
-                continue
-            if not info:
-                continue
-            text = describe_media(info)
-            if text and text not in (stream.get("detail") or ""):
-                stream["detail"] = f"{stream['detail']} | {text}" if stream.get("detail") else text
-            tracks = [dict(t) for t in info.get("audio") or []]
-            known = [t for t in stream.get("_tracks") or [] if t.get("lang")]
-            if len(known) == len(tracks):   # stopa bez jazyka v souboru dostane jazyk od zdroje (Luna)
-                for mine, theirs in zip(tracks, known):
-                    mine["lang"] = mine.get("lang") or theirs["lang"]
-            stream["_tracks"] = tracks
-            stream["_media"] = info
-            if info.get("duration"):
-                # z hlavičky je i skutečná délka streamu — přesnější základ pro
-                # datový tok v `_ensure_bitrate()` než odhad ze stopáže titulu
-                stream["_duration"] = info["duration"]
-            # parse_stream je idempotentní podle `quality_rank`; po změně popisku
-            # se musí přepočítat, jinak by jazyky a kanály zůstaly prázdné
-            stream.pop("quality_rank", None)
-            parse_stream(stream)
-            # rozlišení ze souboru přebíjí název: ten u řady souborů slibuje
-            # „4k", a přitom je uvnitř 1080p
-            real = quality_from_size(info.get("width") or 0, info.get("height") or 0)
-            if real:
-                stream["quality_rank"] = QUALITY_RANKS[real]
-            if not stream.get("size_gb") and info.get("size"):
-                # Sosáč velikost vůbec neříká, server ji ale poslal v Content-Range
-                # při stejném dotazu na hlavičku, který se dělal pro zvuk
-                stream["size_gb"] = info["size"] / 2 ** 30
+            self._apply_media(stream, info)
         detail["zpracování"] = time.monotonic() - t_apply
         return streams
+
+    @staticmethod
+    def _apply_media(stream, info):
+        """Přenese přečtenou hlavičku souboru (`_media_from_file`) do streamu."""
+        if info.get("unreachable"):
+            stream["_dead"] = True
+            return
+        if not info:
+            return
+        text = describe_media(info)
+        if text and text not in (stream.get("detail") or ""):
+            stream["detail"] = f"{stream['detail']} | {text}" if stream.get("detail") else text
+        tracks = [dict(t) for t in info.get("audio") or []]
+        known = [t for t in stream.get("_tracks") or [] if t.get("lang")]
+        if len(known) == len(tracks):   # stopa bez jazyka v souboru dostane jazyk od zdroje (Luna)
+            for mine, theirs in zip(tracks, known):
+                mine["lang"] = mine.get("lang") or theirs["lang"]
+        stream["_tracks"] = tracks
+        stream["_media"] = info
+        if info.get("duration"):
+            # z hlavičky je i skutečná délka streamu — přesnější základ pro
+            # datový tok v `_ensure_bitrate()` než odhad ze stopáže titulu
+            stream["_duration"] = info["duration"]
+        # parse_stream je idempotentní podle `quality_rank`; po změně popisku
+        # se musí přepočítat, jinak by jazyky a kanály zůstaly prázdné
+        stream.pop("quality_rank", None)
+        parse_stream(stream)
+        # rozlišení ze souboru přebíjí název: ten u řady souborů slibuje
+        # „4k", a přitom je uvnitř 1080p
+        real = quality_from_size(info.get("width") or 0, info.get("height") or 0)
+        if real:
+            stream["quality_rank"] = QUALITY_RANKS[real]
+        if not stream.get("size_gb") and info.get("size"):
+            # Sosáč velikost vůbec neříká, server ji ale poslal v Content-Range
+            # při stejném dotazu na hlavičku, který se dělal pro zvuk
+            stream["size_gb"] = info["size"] / 2 ** 30
+
+    def refresh_media(self, streams):
+        """Doplní do `streams` hlavičky, které se po `PROBE_DEADLINE` mezitím dočetly na pozadí
+        (Kodi: „Obnovit“ v dialogu výběru streamu). Na síť nesahá, jen sebere hotové úlohy.
+        Vrátí, na kolik zobrazených streamů se ještě čeká; pořadí streamů se nemění."""
+        waiting = 0
+        for stream in streams:
+            future = self._reading.get(self._probe_url(stream))
+            if future is None or stream.get("_media"):
+                continue
+            if not future.done():
+                waiting += 1
+                continue
+            try:
+                info = future.result()
+            except Exception as err:  # noqa: BLE001 – zrušená nebo spadlá hlavička, stream zůstane bez ní
+                _LOGGER.debug("hlavička na pozadí: %s", err)
+                info = {}
+            self._apply_media(stream, info or {})
+        return waiting
 
     WRONG_LENGTH_MIN_S = 80 * 60   # kratší soubor za film pod cizím názvem nepovažujeme
     WRONG_LENGTH_RATIO = 2.0

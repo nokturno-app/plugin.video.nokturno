@@ -2898,3 +2898,7 @@ msgstr "Dávka hotová – ověřeno %s, vyhovuje %s (v seznamu celkem %s)"
 msgctxt "#30899"
 msgid "Checking %s of %s – %s"
 msgstr "Ověřuji %s z %s – %s"
+
+msgctxt "#30999"
+msgid "Refresh – loaded"
+msgstr "Obnovit – dočteno"

@@ -2898,3 +2898,7 @@ msgstr ""
 msgctxt "#30899"
 msgid "Checking %s of %s – %s"
 msgstr ""
+
+msgctxt "#30999"
+msgid "Refresh – loaded"
+msgstr ""
