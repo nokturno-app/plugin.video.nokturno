@@ -3382,3 +3382,11 @@ msgstr "TMDB se nepodařilo zeptat. Zkus to později."
 msgctxt "#31030"
 msgid "Without your own key, TMDB is queried through the Nokturno server."
 msgstr "Bez vlastního klíče se TMDB ptá přes server Nokturna."
+
+msgctxt "#31031"
+msgid "Show in main menu"
+msgstr "Zobrazit v hlavním menu"
+
+msgctxt "#31032"
+msgid "Remove from main menu"
+msgstr "Odebrat z hlavního menu"

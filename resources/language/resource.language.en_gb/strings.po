@@ -3382,3 +3382,11 @@ msgstr ""
 msgctxt "#31030"
 msgid "Without your own key, TMDB is queried through the Nokturno server."
 msgstr ""
+
+msgctxt "#31031"
+msgid "Show in main menu"
+msgstr ""
+
+msgctxt "#31032"
+msgid "Remove from main menu"
+msgstr ""

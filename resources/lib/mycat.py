@@ -84,6 +84,8 @@ def save(store, cat):
     with store.updating(DEFS, []) as items:
         for i, c in enumerate(items):
             if isinstance(c, dict) and c.get("id") == cat.get("id"):
+                if "menu" not in cat and "menu" in c:   # formulář umístění v menu nezná, úprava ho nesmí zahodit
+                    cat = dict(cat, menu=c["menu"])
                 items[i] = cat
                 break
         else:

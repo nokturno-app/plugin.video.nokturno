@@ -4985,6 +4985,9 @@ def browse_menu(apis, ctype):
     folder_item(L(30393, "Nejsledovanější tento týden"),
                 build_url(action="catalog", type=ctype, catalog=TREND_CATALOG_ID, src="trend"),
                 icon="DefaultFavourites.png")
+    for cat in mycats(kind):
+        if cat.get("menu"):   # katalog, který si uživatel dal do hlavního menu
+            mycat_folder(cat, ctype)
     folder_item(L(30944, "Vlastní katalogy"), build_url(action="mycats", type=ctype),
                 icon="DefaultVideoPlaylists.png")
     # „Náhodný film/seriál" je ne-složka: klik ji Kodi spustí jako skript s handle −1
@@ -5337,6 +5340,14 @@ def mycat_delete(cat_id):
     xbmc.executebuiltin("Container.Refresh")
 
 
+def mycat_menu(cat_id, on):
+    """Zobrazí katalog přímo v menu Filmy/Seriály, nebo ho odtamtud odebere."""
+    cat = next((c for c in mycats() if c.get("id") == cat_id), None)
+    if cat:
+        mycat.save(STORE, dict(cat, menu=on))
+        xbmc.executebuiltin("Container.Refresh")
+
+
 def mycat_batch(cat_id):
     """Ruční „Načíst teď“ ověřovaného katalogu nebo koncertů: úkol dostane služba."""
     xbmcgui.Window(10000).setProperty(VERIFY_MANUAL_PROP, "%s:%s" % (cat_id, MANUAL_BATCH_SIZE))
@@ -5519,7 +5530,10 @@ def mycat_trigger_due(index):
 def mycat_folder(cat, ctype):
     context = [(L(30946, "Upravit katalog"), runplugin(action="mycat_edit", id=cat["id"])),
                (L(30205, "Upravit na mobilu"), runplugin(action="mycat_remote", id=cat["id"], type=ctype)),
-               (L(30947, "Smazat katalog"), runplugin(action="mycat_delete", id=cat["id"]))]
+               (L(30947, "Smazat katalog"), runplugin(action="mycat_delete", id=cat["id"])),
+               (L(31032, "Odebrat z hlavního menu"), runplugin(action="mycat_menu", id=cat["id"], on="0"))
+               if cat.get("menu") else
+               (L(31031, "Zobrazit v hlavním menu"), runplugin(action="mycat_menu", id=cat["id"], on="1"))]
     folder_item(cat.get("name") or L(30972, "Vlastní katalog"),
                 build_url(action="mycat", type=ctype, id=cat["id"]), icon=mycat.icon_for(cat), context=context)
 
@@ -7729,6 +7743,7 @@ def router(query):
         "tmdb_check": lambda: _tlacitko(tmdb_check),
         "mycat_edit": lambda: _tlacitko(lambda: mycat_edit(p.get("id", ""))),
         "mycat_delete": lambda: _tlacitko(lambda: mycat_delete(p.get("id", ""))),
+        "mycat_menu": lambda: _tlacitko(lambda: mycat_menu(p.get("id", ""), p.get("on") == "1")),
         "mycat_batch": lambda: _tlacitko(lambda: mycat_batch(p.get("id", ""))),
         "toggle_watched": lambda: toggle_watched(p["id"]),
         "remove_progress": lambda: remove_progress(p["id"], p.get("series")),
@@ -7998,7 +8013,7 @@ MARKS_SKIP = frozenset((
     "cztor_status", "cztor_logout", "clear_cache", "stats_send", "log_send", "website_info",
     "test_sources", "source_pause", "remote_setup", "stream_layout_reset", "setup_wizard", "sub_status",
     "luna_check", "luna_find", "os_check", "speedtest", "update_repos", "tmdbhelper_player", "sync_now",
-    "sync_create", "sync_join", "sync_leave", "mycats", "mycat_artist", "lastfm_check", "tmdb_check", "mycat_new", "mycat_edit", "mycat_delete",
+    "sync_create", "sync_join", "sync_leave", "mycats", "mycat_artist", "lastfm_check", "tmdb_check", "mycat_new", "mycat_edit", "mycat_delete", "mycat_menu",
     "mycat_remote", "concerts", "concerts_recent", "concerts_tags", "concerts_tag", "concerts_letters",
     "concerts_letter", "concerts_artist", "concerts_setup",
     "watch_series", "want", "watch_episode", "watch_flag", "watch_seen", "watch_check", "watch_check_now",

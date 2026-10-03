@@ -3102,13 +3102,23 @@ class TestPredvolbyKatalogu(unittest.TestCase):
             default.migrate_catalogs_v2()
         self.assertFalse(default.STORE.load("catalogs_v2", ""))
 
-    def test_menu_bez_vlastnich_katalogu(self):
-        default.mycat.save(default.STORE, {"id": "k1", "kind": "movie", "name": "V menu", "menu": True})
+    def test_katalog_v_hlavnim_menu(self):
+        default.mycat.save(default.STORE, {"id": "k1", "kind": "movie", "name": "V menu"})
+        default.mycat.save(default.STORE, {"id": "k2", "kind": "series", "name": "Seriály", "menu": True})
         xbmcplugin.reset()
         default.browse_menu({}, "movie")
         akce = [params_of(u).get("action") for u in xbmcplugin.urls()]
-        self.assertNotIn("mycat", akce)
         self.assertEqual(akce, ["catalog", "mycats", "random"])
+        default.mycat_menu("k1", True)
+        default.mycat.save(default.STORE, {"id": "k1", "kind": "movie", "name": "Přejmenovaný"})   # úprava formulářem
+        xbmcplugin.reset()
+        default.browse_menu({}, "movie")
+        akce = [params_of(u).get("action") for u in xbmcplugin.urls()]
+        self.assertEqual(akce, ["catalog", "mycat", "mycats", "random"])
+        default.mycat_menu("k1", False)
+        xbmcplugin.reset()
+        default.browse_menu({}, "movie")
+        self.assertNotIn("mycat", [params_of(u).get("action") for u in xbmcplugin.urls()])
 
     def test_stary_odkaz_hq_nespadne(self):
         for k in ("hq", "hq_setup", "hq_info", "hq_batch", "hq_refresh"):
