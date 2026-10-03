@@ -258,8 +258,9 @@ def sig(cat):
 
 
 def verified(store):
-    """Ověřované katalogy (režim „jen tituly se streamem“)."""
-    return [c for c in catalogs(store) if c.get("verify")][:MAX_VERIFIED]
+    """Ověřované katalogy (režim „jen tituly se streamem“). Koncertní katalogy z bety 1 (druh `concert`)
+    se neověřují – koncerty jsou od 10.0.0 samostatný modul (`concertcat`)."""
+    return [c for c in catalogs(store) if c.get("verify") and c.get("kind") in ("movie", "series")][:MAX_VERIFIED]
 
 
 def pool(dash, cat):
