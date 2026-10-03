@@ -15,6 +15,8 @@ se objeví v Pokračovat ve sledování a Naposledy zhlédnuté.
 - Přijatý záznam dostane `rts` (čas příjmu), aby ho synchronizace poslala dál,
   i když jeho `ts` (čas na Traktu) je starší než poslední výměna.
 - Odebrání zhlédnutí na Traktu se nepřenáší — jen přibývá.
+- Týž dotaz `last_activities` řekne i o změně Watchlistu (`watchlisted_at`):
+  `on_watchlist` pak spustí kontrolu Hlídaných hned, ne až v denním kole.
 """
 import calendar
 import time
@@ -100,11 +102,25 @@ def apply_playback(data, items, now):
     return n
 
 
-def pull(store, trakt, now=None):
-    """Jedno kolo. Vrací počet přijatých záznamů; výjimky Traktu (`TraktError`) letí ven."""
+def _watchlist(act):
+    return {k: (act.get(k) or {}).get("watchlisted_at") for k in ("movies", "shows")}
+
+
+def pull(store, trakt, now=None, on_watchlist=None):
+    """Jedno kolo. Vrací počet přijatých záznamů; výjimky Traktu (`TraktError`) letí ven.
+
+    `on_watchlist()` se zavolá, když se od minulého kola změnil Watchlist (první
+    kolo jen zapamatuje stav — denní kontrola Hlídaných ho stejně projde)."""
     now = int(now or time.time())
     state = store.reload(STATE, {}) or {}
-    act = _activities(trakt.last_activities())
+    raw = trakt.last_activities()
+    act, wl = _activities(raw), _watchlist(raw)
+    if wl != state.get("watchlist"):
+        known = "watchlist" in state
+        state = dict(state, watchlist=wl)
+        store.save(STATE, state)
+        if known and on_watchlist:
+            on_watchlist()
     if act == state.get("activities"):
         return 0
     start = state.get("history_at") or _iso(now - FIRST_DAYS * 86400)
@@ -122,6 +138,6 @@ def pull(store, trakt, now=None):
         if n:
             store._trim(data, WATCHED_MAX)
     newest = max([_epoch(e.get("watched_at")) for e in events] or [0])
-    store.save(STATE, {"activities": act,
+    store.save(STATE, {"activities": act, "watchlist": wl,
                        "history_at": _iso(newest + 1) if newest else start})
     return n

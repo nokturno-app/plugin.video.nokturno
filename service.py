@@ -903,7 +903,8 @@ class TraktPuller:
     Jen dotazy na Trakt, žádné zdroje — běží tedy přímo ve službě, ne přes plugin.
     Ne při přehrávání (vlastní scrobble by se vracel jako ozvěna dřív, než se
     pozice zapíše) a ne bez sítě. Po přijetí se hned synchronizuje a značky
-    v databázi Kodi srovná `KodiMarks`.
+    v databázi Kodi srovná `KodiMarks`. Změněný Watchlist spustí kontrolu
+    Hlídaných hned (`WatchChecker`), ne až v denním kole.
     """
 
     def __init__(self, store):
@@ -929,7 +930,8 @@ class TraktPuller:
                 trakt = get_trakt(self.store)
                 if not trakt:
                     return
-                n = trakt_pull.pull(self.store, trakt)
+                n = trakt_pull.pull(self.store, trakt, on_watchlist=lambda: xbmcgui.Window(10000)
+                                    .setProperty(WATCH_TRIGGER_PROP, "1"))
                 if n:
                     log(f"Trakt: přijato {n} zhlédnutých/rozkoukaných")
                     xbmcgui.Window(10000).setProperty(SYNC_PROP, "1")
