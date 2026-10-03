@@ -16,8 +16,9 @@ jádro má na desítkách míst „výpadek jednoho zdroje nesmí shodit ostatn�
 který ví, jak skončit (Kodi: zavřít handle bez hlášky). Výsledek přerušené práce
 se nikdy necachuje — výjimka projde i `Store.cached_if()` dřív, než zapíše.
 """
+import threading
 import time
-from concurrent.futures import FIRST_COMPLETED, wait
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 
 STOP_POLL = 1.0   # s – jak často se při čekání na vlákna ptát should_stop()
 
@@ -27,6 +28,49 @@ class Aborted(BaseException):
 
     def __init__(self, message="Přerušeno na žádost hostitele."):
         super().__init__(message)
+
+
+class BackgroundPool(ThreadPoolExecutor):
+    """Fond pro práci, na kterou nikdo nečeká (`shutdown(wait=False)`): opozdilé zdroje,
+    hlavičky na pozadí, obnova starého seznamu. `shutdown(wait=False)` nechá doběhnout
+    i celou frontu úloh — a Kodi při vypnutí čeká na každé vlákno interpretu (Office
+    2026-10-03: přes 6 minut). `cancel_background()` frontu zahodí; rozběhnuté síťové
+    volání doběhne na vlastní timeout."""
+
+    def submit(self, fn, *args, **kwargs):
+        def run():
+            # fronta se rozjíždí i dlouho po návratu hostitele (reuse invoker v Kodi) —
+            # úloha, na kterou přišla řada až po žádosti o konec, se nespustí vůbec
+            check(_HOST_STOP[0])
+            return fn(*args, **kwargs)
+
+        future = super().submit(run)
+        with _LOCK:
+            _PENDING.add(future)
+        future.add_done_callback(_forget)
+        return future
+
+
+_LOCK = threading.Lock()
+_HOST_STOP = [None]   # `should_stop` hostitele pro úlohy na pozadí — `set_host_stop()`
+_PENDING = set()   # nedokončené úlohy všech `BackgroundPool` v procesu
+
+
+def _forget(future):
+    with _LOCK:
+        _PENDING.discard(future)
+
+
+def set_host_stop(should_stop):
+    """Hostitel (Kodi) řekne, jak poznat konec; jádro ho jinak nezná."""
+    _HOST_STOP[0] = should_stop
+
+
+def cancel_background():
+    """Zruší všechny ještě nezačaté úlohy na pozadí. Vrací jejich počet."""
+    with _LOCK:
+        pending = list(_PENDING)
+    return sum(1 for f in pending if f.cancel())
 
 
 def never():

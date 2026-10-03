@@ -83,7 +83,7 @@ import kodi_marks  # noqa: E402 – vedle default.py, ne kopie jádra (čte vide
 import mylist  # noqa: E402 – vedle default.py, vlastní seznam z JSON
 import kodi_sources  # noqa: E402 – vedle default.py, sdílený výčet zdrojů do statistik
 from engine import AUDIO_PROBE_MAX, DEFAULT_RUNTIME_S, Engine, NokturnoError, runtime_minutes  # noqa: E402
-from abort import Aborted  # noqa: E402
+from abort import Aborted, cancel_background, set_host_stop  # noqa: E402
 from hedge import first_success  # noqa: E402
 import keepalive  # noqa: E402
 from crash import CrashReporter  # noqa: E402
@@ -5914,7 +5914,7 @@ def list_favourites():
         snap = STORE.item(key)
         if snap and thin_snapshot(snap):
             apis = apis or get_apis()
-            snap = recover_snapshot(apis, key) or snap
+            snap = recover_snapshot(apis, key, (snap or {}).get("type")) or snap
         if snap:
             add_snapshot_item(key, snap)
     # z hlavního menu sem — patří k „mým“ titulům a synchronizuje se s nimi
@@ -6201,7 +6201,7 @@ def list_recent():
         # dohledání by je výpis tiše vynechal a „Naposledy" na druhém Kodi zůstalo prázdné
         if not snap or thin_snapshot(snap):
             apis = apis or get_apis()
-            snap = recover_snapshot(apis, key) or snap
+            snap = recover_snapshot(apis, key, (snap or {}).get("type")) or snap
         if snap:
             add_snapshot_item(key, snap)
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
@@ -6253,7 +6253,7 @@ def next_episode(apis, snap):
             return v, meta
 
 
-def recover_snapshot(apis, key):
+def recover_snapshot(apis, key, ctype=None):
     """Snímek pro titul, který má záznam o rozkoukání, ale v `items.json` chybí,
     nebo je „hubený" (`thin_snapshot` — bez popisu i fotky, viz volající).
 
@@ -6269,7 +6269,10 @@ def recover_snapshot(apis, key):
     if key.startswith(("ws:", "hs:", "dav:", "dl:")):
         return None
     base, season, _episode = split_episode_id(key)
-    ctype = "series" if season is not None else "movie"
+    # typ z hubeného snímku (seriál z Watchlistu Traktu nemá číslo dílu, a jako film
+    # by se dohledal úplně jiný titul — Black Warrant jako „Roshagadu", 2026-10-03)
+    if season is not None or ctype not in ("movie", "series"):
+        ctype = "series" if season is not None else "movie"
     try:
         meta, video = load_meta(apis, ctype, key)
         snap = snapshot(meta, ctype, video, base if video else None, None)
@@ -6289,7 +6292,7 @@ def list_continue(apis):
     for key, _entry in STORE.in_progress():
         snap = STORE.item(key)
         if not snap or thin_snapshot(snap):
-            snap = recover_snapshot(apis, key) or snap
+            snap = recover_snapshot(apis, key, (snap or {}).get("type")) or snap
         if snap:
             add_snapshot_item(key, snap, [(L(30365, "Odebrat z Pokračovat ve sledování"),
                                           runplugin(action="remove_progress", id=key))])
@@ -7653,6 +7656,9 @@ def _tlacitko(fn):
             xbmcplugin.endOfDirectory(HANDLE, succeeded=False, cacheToDisc=False)
 
 
+set_host_stop(should_stop)   # úlohy na pozadí v jádru se po žádosti o konec už nespustí
+
+
 def main(query):
     try:
         # zrušená volba střediska „HA i dashboard"; patří sem, ne do `migrate_on_start`
@@ -7677,6 +7683,8 @@ def main(query):
         # „Nově přidané" zablokoval Application.Quit natrvalo). Rozběhnuté dotazy doběhnou
         # do cache; když Kodi končí, nezačaté se zruší.
         release_enrich(cancel=should_stop())
+        if should_stop():
+            cancel_background()   # fronta hlaviček a opozdilých zdrojů — Kodi by na ni čekalo
 
 
 if __name__ == "__main__":

@@ -20,7 +20,7 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 
-from abort import Aborted, check as check_stop, gather, never
+from abort import Aborted, BackgroundPool, check as check_stop, gather, never
 import accounts as accounts_lib
 import deadhost
 from const import (CONF_CZ_ENABLED, CONF_HS_ENABLED, CONF_PT_ENABLED, DEFAULT_SORT, LANGS,
@@ -1828,7 +1828,7 @@ class Engine:
             return
         if not force:
             self.last_timings["hlavičky na pozadí"] = len(urls)
-        pool = ThreadPoolExecutor(max_workers=PROBE_WORKERS)
+        pool = BackgroundPool(max_workers=PROBE_WORKERS)
         for url in urls:
             self._reading.setdefault(url, pool.submit(self._media_from_file, url))
         pool.shutdown(wait=False)
@@ -2042,7 +2042,7 @@ class Engine:
         # ne `with ThreadPoolExecutor()`: jeho `__exit__` čeká na všechna vlákna, i když
         # hostitel končí — `gather()` se mezi tím ptá `should_stop()` a při přerušení
         # nezačaté hlavičky zruší (viz `lib/abort.py`)
-        pool = ThreadPoolExecutor(max_workers=PROBE_WORKERS)
+        pool = BackgroundPool(max_workers=PROBE_WORKERS)
         t_read = time.monotonic()
         futures = {pool.submit(self._media_from_file, self._probe_url(s)): s for s in todo}
         results = {}
@@ -2950,7 +2950,7 @@ class Engine:
         def _fetch_streams():
             # fond pro předčítání hlaviček (`_preread`) musí skončit při každém odchodu, i při přerušení —
             # nečinná vlákna by držela hostitele (Kodi na ně čeká při vypínání)
-            pre = ThreadPoolExecutor(max_workers=PROBE_WORKERS) if preread else None
+            pre = BackgroundPool(max_workers=PROBE_WORKERS) if preread else None
             try:
                 return _fetch_inner(pre)
             finally:
@@ -3066,7 +3066,7 @@ class Engine:
                 # minimum nesmí přerůst samotný rozpočet — jinak by malý `SOURCE_DEADLINE`
                 # (test, nebo kdyby ho někdo stáhl) čekání naopak prodloužil
                 zbytek = max(min(SOURCE_DEADLINE, MIN_ROUND_DEADLINE), zbytek)
-                pool = ThreadPoolExecutor(max_workers=len(ulohy))
+                pool = BackgroundPool(max_workers=len(ulohy))
                 futures = [pool.submit(bezpecne, label, fetch) for label, fetch in ulohy]
                 label_by_future = dict(zip(futures, (label for label, _fetch in ulohy)))
                 rozpocty = {f: rozpocet(label_by_future[f], zbytek) for f in futures}
@@ -3209,7 +3209,7 @@ class Engine:
                 on_source_done("Vlastní úložiště", len(result))
             return result
 
-        storage_pool = ThreadPoolExecutor(max_workers=1)
+        storage_pool = BackgroundPool(max_workers=1)
         storage_future = storage_pool.submit(_run_storage)
         try:
             if strict and probe_audio:
@@ -3338,7 +3338,7 @@ class Engine:
                 with self._swr_lock:
                     self._swr_running.discard(key)
 
-        pool = ThreadPoolExecutor(max_workers=1)
+        pool = BackgroundPool(max_workers=1)
         pool.submit(run)
         pool.shutdown(wait=False)
 
