@@ -2563,14 +2563,6 @@ msgctxt "#30948"
 msgid "Genres (none = all)"
 msgstr ""
 
-msgctxt "#30949"
-msgid "Original language"
-msgstr ""
-
-msgctxt "#30950"
-msgid "Any"
-msgstr ""
-
 msgctxt "#30951"
 msgid "From year (empty = no limit)"
 msgstr ""
@@ -2605,54 +2597,6 @@ msgstr ""
 
 msgctxt "#30959"
 msgid "The catalog could not be loaded. Try again later."
-msgstr ""
-
-msgctxt "#30960"
-msgid "Czech"
-msgstr ""
-
-msgctxt "#30961"
-msgid "Slovak"
-msgstr ""
-
-msgctxt "#30962"
-msgid "Czech or Slovak"
-msgstr ""
-
-msgctxt "#30963"
-msgid "English"
-msgstr ""
-
-msgctxt "#30964"
-msgid "German"
-msgstr ""
-
-msgctxt "#30965"
-msgid "French"
-msgstr ""
-
-msgctxt "#30966"
-msgid "Spanish"
-msgstr ""
-
-msgctxt "#30967"
-msgid "Italian"
-msgstr ""
-
-msgctxt "#30968"
-msgid "Polish"
-msgstr ""
-
-msgctxt "#30969"
-msgid "Hungarian"
-msgstr ""
-
-msgctxt "#30970"
-msgid "Korean"
-msgstr ""
-
-msgctxt "#30971"
-msgid "Japanese"
 msgstr ""
 
 msgctxt "#30972"
@@ -2807,10 +2751,6 @@ msgctxt "#30992"
 msgid "Streams marked CAM, HDCAM, TS, telesync or KINO are hidden. If only a cinema recording exists so far, it is shown so the list is not empty."
 msgstr ""
 
-msgctxt "#30993"
-msgid "Movies in high quality"
-msgstr ""
-
 msgctxt "#30994"
 msgid "Minimum quality"
 msgstr ""
@@ -2895,24 +2835,8 @@ msgctxt "#30771"
 msgid "How many last years"
 msgstr ""
 
-msgctxt "#30772"
-msgid "Verify stream availability?"
-msgstr ""
-
-msgctxt "#30773"
-msgid "The catalog will then show only titles with a stream matching your requirements. It is verified in the background – on Home Assistant in the sync group, otherwise on this device."
-msgstr ""
-
 msgctxt "#30774"
 msgid "Show sorted by"
-msgstr ""
-
-msgctxt "#30775"
-msgid "Placement"
-msgstr ""
-
-msgctxt "#30776"
-msgid "Show the catalog directly in the Movies/TV Shows menu?"
 msgstr ""
 
 msgctxt "#30777"
@@ -2935,10 +2859,6 @@ msgctxt "#30782"
 msgid "Definitions of own catalogs and verification results. When Home Assistant is in the sync group, it verifies and the other devices only display."
 msgstr ""
 
-msgctxt "#30783"
-msgid "Audio language"
-msgstr ""
-
 msgctxt "#30784"
 msgid "Last.fm"
 msgstr ""
@@ -2957,18 +2877,6 @@ msgstr ""
 
 msgctxt "#30788"
 msgid "Checks that Last.fm accepts the key."
-msgstr ""
-
-msgctxt "#30789"
-msgid "New concert catalog"
-msgstr ""
-
-msgctxt "#30790"
-msgid "A concert catalog needs your own Last.fm API key. Enter it in Settings → Sources and accounts → Last.fm."
-msgstr ""
-
-msgctxt "#30791"
-msgid "Open settings"
 msgstr ""
 
 msgctxt "#30792"
@@ -3039,18 +2947,6 @@ msgctxt "#30858"
 msgid "World"
 msgstr ""
 
-msgctxt "#30859"
-msgid "Popularity"
-msgstr ""
-
-msgctxt "#30912"
-msgid "Alphabet"
-msgstr ""
-
-msgctxt "#30921"
-msgid "Show the catalog directly in the main menu?"
-msgstr ""
-
 msgctxt "#30922"
 msgid "Concerts"
 msgstr ""
@@ -3071,10 +2967,6 @@ msgctxt "#30779"
 msgid "The catalog is being prepared – artists are searched in the background."
 msgstr ""
 
-msgctxt "#30731"
-msgid "Last.fm API key missing – open settings"
-msgstr ""
-
 msgctxt "#30737"
 msgid "Run stream verification now?"
 msgstr ""
@@ -3091,22 +2983,274 @@ msgctxt "#30018"
 msgid "The first batch searches more artists at once so the catalog has something to show right away. It runs in the background."
 msgstr ""
 
-msgctxt "#30007"
-msgid "Popular"
+msgctxt "#30241"
+msgid "Catalog mode"
 msgstr ""
 
-msgctxt "#30008"
-msgid "Top rated"
+msgctxt "#30242"
+msgid "Catalog from TMDB"
 msgstr ""
 
-msgctxt "#30015"
-msgid "New with Czech dubbing"
+msgctxt "#30243"
+msgid "Only titles with a stream"
 msgstr ""
 
-msgctxt "#30016"
+msgctxt "#30244"
+msgid "Countries of origin (up to 5)"
+msgstr ""
+
+msgctxt "#30245"
+msgid "Catalog icon"
+msgstr ""
+
+msgctxt "#30246"
+msgid "Template"
+msgstr ""
+
+msgctxt "#30247"
+msgid "Load template"
+msgstr ""
+
+msgctxt "#30248"
+msgid "No template"
+msgstr ""
+
+msgctxt "#30249"
+msgid "List"
+msgstr ""
+
+msgctxt "#30250"
+msgid "Chart"
+msgstr ""
+
+msgctxt "#30251"
+msgid "Genre"
+msgstr ""
+
+msgctxt "#30252"
+msgid "Year"
+msgstr ""
+
+msgctxt "#30253"
+msgid "Country"
+msgstr ""
+
+msgctxt "#30254"
+msgid "Collection"
+msgstr ""
+
+msgctxt "#30255"
+msgid "Studios"
+msgstr ""
+
+msgctxt "#30256"
+msgid "Set up concerts"
+msgstr ""
+
+msgctxt "#30257"
+msgid "By genre"
+msgstr ""
+
+msgctxt "#30258"
+msgid "By letter"
+msgstr ""
+
+msgctxt "#30259"
+msgid "Choose at least one music genre."
+msgstr ""
+
+msgctxt "#30260"
+msgid "Template loaded – edit it and save."
+msgstr ""
+
+msgctxt "#30262"
+msgid "Czechia"
+msgstr ""
+
+msgctxt "#30263"
+msgid "Slovakia"
+msgstr ""
+
+msgctxt "#30264"
+msgid "USA"
+msgstr ""
+
+msgctxt "#30265"
+msgid "United Kingdom"
+msgstr ""
+
+msgctxt "#30266"
+msgid "France"
+msgstr ""
+
+msgctxt "#30267"
+msgid "Germany"
+msgstr ""
+
+msgctxt "#30268"
+msgid "Italy"
+msgstr ""
+
+msgctxt "#30269"
+msgid "Spain"
+msgstr ""
+
+msgctxt "#30270"
+msgid "Poland"
+msgstr ""
+
+msgctxt "#30271"
+msgid "Hungary"
+msgstr ""
+
+msgctxt "#30272"
+msgid "South Korea"
+msgstr ""
+
+msgctxt "#30273"
+msgid "Japan"
+msgstr ""
+
+msgctxt "#30274"
+msgid "Denmark"
+msgstr ""
+
+msgctxt "#30275"
+msgid "Sweden"
+msgstr ""
+
+msgctxt "#30276"
+msgid "Norway"
+msgstr ""
+
+msgctxt "#30277"
+msgid "Popular movies"
+msgstr ""
+
+msgctxt "#30278"
+msgid "Popular series"
+msgstr ""
+
+msgctxt "#30279"
+msgid "Top rated movies"
+msgstr ""
+
+msgctxt "#30280"
+msgid "Top rated series"
+msgstr ""
+
+msgctxt "#30281"
+msgid "New movies with Czech dubbing"
+msgstr ""
+
+msgctxt "#30282"
+msgid "New series with Czech dubbing"
+msgstr ""
+
+msgctxt "#30283"
+msgid "4K movies with Czech dubbing"
+msgstr ""
+
+msgctxt "#30284"
 msgid "Czech movies"
 msgstr ""
 
-msgctxt "#30017"
+msgctxt "#30285"
 msgid "Czech series"
+msgstr ""
+
+msgctxt "#30286"
+msgid "Fairy tales with Czech dubbing"
+msgstr ""
+
+msgctxt "#30287"
+msgid "Dubbing language"
+msgstr ""
+
+msgctxt "#30289"
+msgid "Pick music genres and enter your Last.fm key. Concerts are searched in the background."
+msgstr ""
+
+msgctxt "#30290"
+msgid "Pick a template or fill in the catalog by hand, then save."
+msgstr ""
+
+msgctxt "#30291"
+msgid "{} dubbing"
+msgstr ""
+
+msgctxt "#30292"
+msgid "subtitles {}"
+msgstr ""
+
+msgctxt "#30293"
+msgid "5.1"
+msgstr ""
+
+msgctxt "#30294"
+msgid "last {} years"
+msgstr ""
+
+msgctxt "#30295"
+msgid "from {}"
+msgstr ""
+
+msgctxt "#30296"
+msgid "to {}"
+msgstr ""
+
+msgctxt "#30297"
+msgid "{}–{}"
+msgstr ""
+
+msgctxt "#30200"
+msgid "Shows all titles matching the filters right away. For a title without a stream you can turn on watching – Watched will tell you when a stream appears."
+msgstr ""
+
+msgctxt "#30202"
+msgid "A stream matching your requirements (dubbing, subtitles, quality, 5.1) is searched for each title in the background. The catalog fills up gradually and shows only what can be played."
+msgstr ""
+
+msgctxt "#30203"
+msgid "On the TV"
+msgstr ""
+
+msgctxt "#30204"
+msgid "On the phone (QR)"
+msgstr ""
+
+msgctxt "#30205"
+msgid "Edit on the phone"
+msgstr ""
+
+msgctxt "#30206"
+msgid "Star"
+msgstr ""
+
+msgctxt "#30217"
+msgid "New releases"
+msgstr ""
+
+msgctxt "#30218"
+msgid "Actors"
+msgstr ""
+
+msgctxt "#30219"
+msgid "Searched %s of %s – load now"
+msgstr ""
+
+msgctxt "#30226"
+msgid "Concerts need your own Last.fm API key. It is free at last.fm/api – create one and copy it here."
+msgstr ""
+
+msgctxt "#30227"
+msgid "Start the first batch right away"
+msgstr ""
+
+msgctxt "#30228"
+msgid "Catalog type"
+msgstr ""
+
+msgctxt "#30235"
+msgid "Catalog saved."
 msgstr ""

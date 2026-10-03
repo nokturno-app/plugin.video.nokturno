@@ -68,6 +68,7 @@ import kodi_sources  # noqa: E402 – vedle service.py, sdílený výčet zdroj�
 import setsync  # noqa: E402
 import watch as watch_lib  # noqa: E402
 import catindex  # noqa: E402
+import concertcat  # noqa: E402
 import mycat  # noqa: E402
 
 PROP = "nokturno.playing"
@@ -107,8 +108,8 @@ WARM_PROP = "nokturno.warm"    # plugin při zahřívání cache API jen zapisuj
 WARM_RETRY = 10 * 60      # když se zrovna přehrává, zahřívání počká
 VERIFY_TRIGGER_PROP = "nokturno.verify.trigger"   # stejný literál jako v default.py; hodnota = id katalogu
 VERIFY_MANUAL_PROP = "nokturno.verify.manual"     # stejný literál jako v default.py; „cíl:počet“
-HQ_EVERY = 600            # dávka ověřování (ověřované vlastní katalogy) po 10 minutách
-HQ_FIRST = 120
+VERIFY_EVERY = 600            # automatická dávka ověřování (vlastní katalogy, koncerty) po 10 minutách
+VERIFY_START_DELAY = 120     # první dávka brzy po startu – boxy se vypínají, mobil má síť jen v popředí
 FORYOU_SEEN_KEY = "foryou_seen"      # stejný literál jako v default.py (note_foryou_open)
 FORYOU_SEEN_DAYS = 14                # a stejná lhůta jako v default.py
 QUIT_PROP = "nokturno.quitting"   # stejný literál jako v default.py — Kodi končí, viz ServiceMonitor
@@ -1207,14 +1208,19 @@ def _verify_url(target, size, pool_only=False):
 
 
 def _verify_names(store, target):
-    """(klíč indexu, název pro ukazatel, katalog nebo None) pro id katalogu."""
+    """(klíč indexu, název pro ukazatel, katalog nebo None) pro id katalogu nebo `concerts`."""
+    if target == CONCERTS:
+        return concertcat.INDEX, L(30922, "Koncerty"), None
     cat = next((c for c in mycat.catalogs(store) if c.get("id") == target), None)
     return mycat.INDEX + target, (cat or {}).get("name") or target, cat
 
 
+CONCERTS = "concerts"   # cíl ověřování: modul Koncerty (`concertcat`), ne vlastní katalog
+
+
 def verify_targets(store):
-    """Co se ověřuje: ověřované vlastní katalogy (včetně předvolby Filmy ve vysoké kvalitě)."""
-    return [c["id"] for c in mycat.verified(store)]
+    """Co se ověřuje: ověřované vlastní katalogy a koncerty, jsou-li nastavené."""
+    return [c["id"] for c in mycat.verified(store)] + ([CONCERTS] if concertcat.configured(store) else [])
 
 
 def _verify_run(monitor, target, count, progress):
@@ -1261,7 +1267,7 @@ def verify_worker(monitor):
     `_verify_run`), vždy jeden cíl na kolo, dokud se nehraje a je síť. Ruční dávku zadá vlastnost okna
     `VERIFY_MANUAL_PROP` („cíl:počet“), první dávku po otevření prázdného seznamu `VERIFY_TRIGGER_PROP` (cíl)."""
     win = xbmcgui.Window(10000)
-    waited = HQ_EVERY - HQ_FIRST
+    waited = VERIFY_EVERY - VERIFY_START_DELAY
     turn = 0
     while not monitor.abortRequested():
         if monitor.waitForAbort(5):
@@ -1269,7 +1275,7 @@ def verify_worker(monitor):
         waited += 5
         manual = win.getProperty(VERIFY_MANUAL_PROP)
         trigger = win.getProperty(VERIFY_TRIGGER_PROP)
-        if waited < HQ_EVERY and not trigger and not manual:
+        if waited < VERIFY_EVERY and not trigger and not manual:
             continue
         try:
             if QUITTING.is_set() or xbmc.Player().isPlaying() or not terms_ok():
@@ -1298,9 +1304,9 @@ def verify_worker(monitor):
                 target, turn = targets[turn % len(targets)], turn + 1
             if target in targets:
                 waited = 0
-                _verify_run(monitor, target, 8, False)
+                _verify_run(monitor, target, mycat.AUTO_BATCH, False)
         except Exception as e:  # noqa: BLE001 – vlákno nesmí spadnout
-            log(f"verify_worker: {e}", xbmc.LOGWARNING)
+            log(f"verify_worker: {e}", xbmc.LOGDEBUG)   # výpadek zdroje = šum v logu
 
 
 class ServiceMonitor(xbmc.Monitor):

@@ -85,14 +85,15 @@ ORIG_MEMO_FAIL_S = 30         # po výpadku Wikidat jen tak dlouho, aby to pokry
 SIZE_TOLERANCE = 0.25  # GB – Luna a WebShare zaokrouhlují velikost jinak
 SUBS_MAX = 3
 SEARCH_CACHE_TTL = 43200      # 12 h – seznam nalezených titulů podle dotazu (Luna, WebShare fulltext)
-STREAMS_CACHE_TTL = 259200    # 72 h – seznam streamů k titulu, ale JEN když nějaké našel (viz `cached_if`)
-# Seznam, ke kterému některý zdroj neodpověděl, se do 72h cache nesmí (zdroj se po návratu musí
-# projevit), jenže bez jakékoli cache se při dalším otevření titulu zopakuje celé hledání — až 20 s
-# čekání na tentýž zdroj. Krátká cache tohle otevření zlevní a výpadek se opraví sám za 10 minut.
+STREAMS_CACHE_TTL = 259200    # 72 h – výsledek jednoho zdroje k titulu (`src1:`, viz `Engine._source_sigs`)
+# Zdroj, který neodpověděl, se 10 minut nezkouší znovu (prázdný záznam `src1:…:p`) — jinak by se
+# při dalším otevření titulu čekalo až 20 s na tentýž zdroj. Výpadek se opraví sám za 10 minut.
 STREAMS_PARTIAL_TTL = 600
-# S volbou `stale_streams` se seznam starší než 72 h, ale ne než tohle, ukáže hned a na pozadí se
-# obnoví (`_cached_streams`). Konec lhůty drží i `Store.prune_cache`, který staré soubory maže.
+# S volbou `stale_streams` se výsledek zdroje starší než 72 h, ale ne než tohle, použije hned a celý
+# seznam se na pozadí obnoví. Konec lhůty drží i `Store.prune_cache`, který staré soubory maže.
 STREAMS_STALE_TTL = 14 * 86400
+# Verze klíče cache zdrojů — zvednout, když se změní tvar nebo filtr výsledku zdroje.
+SOURCE_CACHE_PREFIX = "src1:"
 
 _LOGGER = logging.getLogger(__name__)
 # hlavičky souborů se čtou souběžně. 16 vláken místo 8 nic nezrychlilo (Office 2026-09-18,
@@ -125,11 +126,10 @@ MIN_ROUND_DEADLINE = 2.0
 # ne obnova na pozadí a ne Hlídané): výpis se nezdržuje kvůli zdroji, který je pomalý, i když ještě neselhal. Čeká se,
 # dokud rozpočet má aspoň jeden ze zdrojů, které zbývají; Přehraj.to bez účtu (HTML scraping, rozestup 1,5 s mezi
 # dotazy) bývá nejpomalejší (Office 2026-10-01: 5,3 s při ostatních do 2,5 s). Opozdilec se nehlásí jako výpadek,
-# doběhne na pozadí a jakmile skončí, seznam v cache se obnoví (`_refresh_streams_later`). Hlavní zdroj
+# doběhne na pozadí a jakmile skončí, zapíše svůj výsledek do cache zdrojů. Hlavní zdroj
 # (Luna/Sosáč) má jen tvrdý `SOURCE_DEADLINE`.
 SOURCE_SOFT_DEADLINE = 8.0
 SOURCE_SOFT_BUDGETS = {"Přehraj.to": 4.0}
-LATE_REFRESH_DELAY = 0.5
 # Hlavičky souborů se začnou číst, jakmile zdroj odpoví, ne až po posledním (`Engine._preread`): na pomalejší zdroje se
 # čeká tak jako tak, a `_fill_audio` pak najde nejlepší kandidáty hotové v cache. Nejvýš tolik z jednoho zdroje
 # (celkem `AUDIO_PROBE_MAX`) — vybírá se podle výsledného řazení, co nevyjde, dočte `_fill_audio` jako dřív.
@@ -1005,11 +1005,9 @@ class Engine:
         return bool(ts) and time.time() - float(ts) < within
 
     def _streams_cache_key(self, ctype, item_id, alt=None):
-        """Klíč 72h cache streamů — nese i otisk zapnutých zdrojů a účtů. Bez něj měl titul po
-        zapnutí nového zdroje (nebo změně účtu) 72 h stejný seznam bez něj a Kodi to obcházelo
-        ručním `clear_cache()` jen u CZtoru (audit 2026-09-19). `streams5` = oprava filtru
-        (krátké slovo na začátku názvu), `streams6` = otisk zdrojů, `streams7` = skryté soubory s
-        hlasy ≤ WS_HIDE_SCORE."""
+        """Klíč titulu s otiskem zapnutých zdrojů a účtů profilu — pro cache odvozené z celého
+        seznamu (`classify_langs`, jazykové katalogy) a pro obnovu na pozadí. Samotné streamy se
+        od 2026-10-03 cachují po zdrojích (`_source_sigs`), ne jako celý seznam (`streams7`)."""
         podpis = {**self.sources(), "ws": self._opt("ws_username").strip(), "st": str(self._opt("st_email") or "").strip(),
                   "fs": str(self._opt("fs_username") or "").strip(),
                   # účet Přehraj.to mění výsledek, ne jen rychlost: bez něj je vidět jen první
@@ -1018,7 +1016,36 @@ class Engine:
                   "dav": [str(self._opt(f"dav{n}_url") or "").strip() for n in range(1, 4)],
                   "search": bool(self._opt("search_streams", True)), "cross": bool(self._opt("cross_search", True))}
         otisk = hashlib.sha1(json.dumps(podpis, sort_keys=True, default=str).encode("utf-8")).hexdigest()[:10]
-        return f"streams7:{ctype}:{item_id}:{alt or ''}:{otisk}"
+        return f"titul1:{ctype}:{item_id}:{alt or ''}:{otisk}"
+
+    def _source_sigs(self):
+        """Podpis každého zdroje pro sdílenou cache výsledků (`SOURCE_CACHE_PREFIX`).
+
+        Jen to, co mění výsledek hledání u daného zdroje — ne celý profil. Dva profily
+        se stejným WebShare sdílí jeho výsledek, i když jeden má navíc FastShare.
+        `None` = zdroj vypnutý, necachuje se (prázdný výsledek by jinak dostal i profil,
+        kde zapnutý je). Účet se do podpisu dává jen tam, kde mění výsledek: Luna (token),
+        Přehraj.to (s účtem víc stran a původní soubor). Odkazy ostatních zdrojů jsou
+        vnitřní (`ws:`, `fs:`, `cz:`…) a účet se k nim přidá až při přehrání."""
+        src = self.sources()
+
+        def on(key, sig=""):
+            return sig if src.get(key) else None
+        luna = hashlib.sha1("|".join((
+            str(self._opt("luna_url") or ""), parse_token(self._opt("luna_token")) or "",
+            str(bool(self._opt("search_streams", True))))).encode("utf-8")).hexdigest()[:10]
+        return {
+            "Luna": on("luna", luna),
+            "Sosáč": on("sosac", "s"),
+            "WebShare": on("webshare"),
+            "HellSpy": on("hellspy"),
+            "Sledujteto": on("sledujteto"),
+            "FastShare": on("fastshare", str(self._opt("fs_provider") or "fastshare")),
+            "Přehraj.to": on("prehrajto", "ucet" if str(self._opt("pt_email") or "").strip() else "anon"),
+            "CZtor": on("cztor"),
+            SUBS_TASK: on("webshare", str(self._opt("pref_lang", "") or "")),
+            OSUB_TASK: ",".join(self._subtitle_langs()) if self.osub is not None else None,
+        }
 
     def api_for(self, item_id):
         api = self.sosac if is_sosac_id(item_id) else self.luna
@@ -2774,11 +2801,15 @@ class Engine:
         return not surround or bool(is_surround(stream, "" if "|" in audio else audio))
 
     def classify_quality(self, ctype, item_id, min_quality=4, surround=False, audio="CZ", subs="",
-                         ttl=QUALITY_CLASS_TTL):
+                         ttl=QUALITY_CLASS_TTL, skip_sources=frozenset()):
         """Má titul aspoň jeden stream odpovídající definici? `True`/`False`, `None` = zdroje
-        nedoběhly (výpadek) nebo nic nevrátily – nic se neukládá a volající to zkusí později."""
+        nedoběhly (výpadek) nebo nic nevrátily – nic se neukládá a volající to zkusí později.
+        `skip_sources` jsou zdroje, které se nevolají; patří do klíče cache, jinak by se výsledek bez
+        FastShare použil i tam, kde FastShare je."""
+        skip_sources = frozenset(skip_sources or ())
         key = (f"qualclass2:{ctype}:{item_id}:{min_quality}:{int(bool(surround))}:{audio}:{subs}:"
-               f"{self._streams_cache_key(ctype, item_id)}")
+               f"{self._streams_cache_key(ctype, item_id)}"
+               + (":skip=" + ",".join(sorted(skip_sources)) if skip_sources else ""))
 
         def _spocitat():
             # rychlá cesta: kolo zdrojů skončí u prvního streamu, který by definici splnil bez ohledu
@@ -2786,7 +2817,8 @@ class Engine:
             def volne(s):
                 return self.quality_match(s, min_quality, False, audio, subs)
             rychle = self.raw_streams(ctype, item_id, strict=True, probe_audio=False, failures=[],
-                                      stop_when=lambda st: any(volne(s) for s in st or []))
+                                      stop_when=lambda st: any(volne(s) for s in st or []),
+                                      skip_sources=skip_sources)
             kandidati = sorted((s for s in rychle or [] if volne(s)),
                                key=lambda s: -(s.get("quality_rank") or 0))[:3]
             for kand in kandidati:
@@ -2794,18 +2826,35 @@ class Engine:
                 if self.quality_match(kand, min_quality, surround, audio, subs):
                     return True
             failures = []
-            streams = self.raw_streams(ctype, item_id, strict=True, probe_audio=True, failures=failures)
+            streams = self.raw_streams(ctype, item_id, strict=True, probe_audio=True, failures=failures,
+                                       skip_sources=skip_sources)
             if any(self.quality_match(s, min_quality, surround, audio, subs) for s in streams):
                 return True
             return None if failures or not streams else False
 
         return self.store.cached_if(key, ttl, _spocitat, ok=lambda d: d is not None)
 
-    def verify_title(self, ctype, item_id, min_quality=0, surround=False, audio="", subs=""):
+    def verify_sources(self):
+        """Zdroje, které se při ověřování na pozadí **nevolají** (bez dotazu na síť, ze stavu účtů):
+        FastShare bez kreditu (a bez neomezeného tarifu), Přehraj.to bez Premium (bez účtu 429 už po 3 titulech
+        a pauza 10 min), zdroje v pauze po 429 a kdykoli stav neznáme (nikdy neověřeno). HellSpy bez omezení."""
+        skip = set()
+        by = {a["source"]: a for a in self.accounts()}
+        if (by.get("fastshare") or {}).get("code") not in ("unlimited", "credit"):
+            skip.add("fastshare")
+        if (by.get("prehrajto") or {}).get("code") not in ("premium", "expires_soon"):
+            skip.add("prehrajto")
+        if (by.get("hellspy") or {}).get("code") == "paused":
+            skip.add("hellspy")
+        return frozenset(skip)
+
+    def verify_title(self, ctype, item_id, min_quality=0, surround=False, audio="", subs="", skip_sources=None):
         """Ověření titulu pro vlastní katalog. Film = `classify_quality`, seriál podle posledního
-        odvysílaného dílu (`watch.aired_episodes`). True/False, None = zkusit později."""
+        odvysílaného dílu (`watch.aired_episodes`). True/False, None = zkusit později.
+        Zdroje, které se na pozadí volat nemají (`verify_sources`), se vynechají; `skip_sources` to přepíše."""
+        skip = self.verify_sources() if skip_sources is None else frozenset(skip_sources)
         if ctype != "series":
-            return self.classify_quality("movie", item_id, min_quality, surround, audio, subs)
+            return self.classify_quality("movie", item_id, min_quality, surround, audio, subs, skip_sources=skip)
         from watch import aired_episodes
         try:
             episodes = self.episodes(item_id)
@@ -2815,7 +2864,8 @@ class Engine:
         aired = aired_episodes(episodes, datetime.now().strftime("%Y-%m-%d"))
         if not aired:
             return False
-        return self.classify_quality("series", aired[-1]["id"], min_quality, surround, audio, subs)
+        return self.classify_quality("series", aired[-1]["id"], min_quality, surround, audio, subs,
+                                     skip_sources=skip)
 
     def _max_bitrate(self):
         """Strop datového toku z nastavení (Mb/s), 0 = bez omezení."""
@@ -2852,8 +2902,11 @@ class Engine:
 
     def raw_streams(self, ctype, item_id, alt=None, series_id=None, on_progress=None, failures=None,
                     strict=True, meta_video=None, probe_audio=True, on_source_done=None,
-                    on_audio_progress=None, stop_when=None, refresh=False):
+                    on_audio_progress=None, stop_when=None, refresh=False, skip_sources=frozenset()):
         """Seřazené streamy titulu ze všech dostupných zdrojů — surové slovníky.
+
+        `skip_sources` (klíče zdrojů jako `fastshare`, `prehrajto`, `hellspy`) se nevolají — pro ověřování
+        katalogů na pozadí (`verify_sources`). Výchozí prázdné = beze změny.
 
         `probe_audio=False`: vynechá `_fill_audio()` (čtení hlaviček souborů) — pro
         případy, kdy stačí odhad jazyka z popisku/názvu (Sosáč, Luna a `langs_from_name`/
@@ -2863,18 +2916,20 @@ class Engine:
         odlehčený výsledek na 72 h zablokoval opravdové ověření hlaviček v dialogu
         streamů pro tentýž titul.
 
-        Síťové dohledání streamů se cachuje 72 h, ale JEN když něco našlo (`cached_if`) —
-        prázdný výsledek by mohl být jen dočasný výpadek zdroje, takže se zkusí znovu
-        hned příště. Řazení/filtrování podle uživatelských preferencí (jazyk, velikost,
-        pořadí) běží vždy nad čerstvě načtenými daty, aby se projevila okamžitě.
+        Výsledek každého zdroje se cachuje 72 h zvlášť, ve sdíleném úložišti (`self.shared`)
+        pod klíčem s podpisem zdroje (`_source_sigs`) — profily na Stremiu tak sdílí, co mají
+        společné, a chybějící zdroj se doptá. Prázdný výsledek zdroje se uloží, jen když
+        titul něco našel jinde (jinak to mohl být dočasný výpadek a zkusí se hned znovu).
+        Řazení/filtrování podle uživatelských preferencí (jazyk, velikost, pořadí) běží vždy
+        nad hotovým seznamem, aby se projevilo okamžitě.
 
         `on_progress(done, total)`, je-li dán, se volá po každé fázi — synchronně,
         přímo z tohohle (executor) vlákna. Volající (`__init__.py`) si musí sám
         ošetřit bezpečný přechod zpátky na event loop, engine o hass/asyncio nic neví.
 
-        Cache streamů (`_cached_streams`) má kromě 72h záznamu i krátký „částečný“ (10 min, když
-        některý zdroj neodpověděl) a s volbou `stale_streams` ukáže hned i starší seznam (do 14 dní)
-        a obnoví ho na pozadí. `refresh=True` cache jen zapíše, nečte — tak se seznam obnovuje
+        Zdroj, který neodpověděl, má krátký prázdný záznam (10 min, `STREAMS_PARTIAL_TTL`);
+        s volbou `stale_streams` se použije i starší výsledek zdroje (do 14 dní) a seznam se
+        obnoví na pozadí. `refresh=True` cache jen zapíše, nečte — tak se seznam obnovuje
         (stejně jako volba `fresh`).
 
         Výpadek jednoho zdroje nezastaví ostatní. `failures`, je-li dán (seznam), dostane
@@ -2884,7 +2939,7 @@ class Engine:
 
         `strict=False` = ruční „zkusit uvolněný fulltext“: WebShare/HellSpy/Sledujteto
         s volnějším filtrem názvu (viz `_title_queries`), výsledek značený `_loose`
-        a mimo cache. `meta_video`: (meta, video) už načtené volajícím, ať se nečtou dvakrát.
+        a mimo cache zdrojů. `meta_video`: (meta, video) už načtené volajícím, ať se nečtou dvakrát.
 
         `on_source_done(label, count)`, je-li dán, se volá po dokončení každého jednotlivého
         zdroje (na rozdíl od `on_progress` ví odkud a kolik) — jen při čerstvém hledání,
@@ -2900,10 +2955,10 @@ class Engine:
         (už prohnanými `parse_stream()`, takže `langs`/`subs` jsou k dispozici) — vrátí-li
         pravdu, na zbývající zdroje se přestane čekat (`gather(on_done=...)`). Pro hromadnou
         klasifikaci jazykových katalogů (`classify_langs()`), kde stačí první nalezený
-        dabing. S cachovanou cestou (`strict and probe_audio`) se **ignoruje** — neúplný
-        výsledek se nesmí dostat do 72h cache streamů.
+        dabing. Zdroje, na které se přestalo čekat, do cache nic nezapíšou, dokud nedoběhnou.
         """
         failures = [] if failures is None else failures
+        refresh = refresh or bool(self._opt("fresh", False))
         late = []   # zdroje, které nestihly měkký rozpočet — nejsou výpadek, seznam se jen necachuje na 72 h
         # měkké rozpočty jen tam, kde někdo čeká a výsledek jde do cache (viz `SOURCE_SOFT_DEADLINE`)
         soft = bool(strict and probe_audio and not stop_when and not refresh
@@ -2941,11 +2996,21 @@ class Engine:
         meta, video = meta_video if meta_video else self.meta(ctype, item_id, series_id)
         loaded = (meta, video)   # obnova na pozadí nenačítá metadata znovu — `_fetch_streams` níž `meta` mění
         cache_key = self._streams_cache_key(ctype, item_id, alt)
+        skip_sources = frozenset(skip_sources or ())   # vynechaný zdroj se nevolá, takže se ani necachuje
 
         def obnovit():
             self._refresh_streams_later(cache_key, ctype, item_id, alt, series_id, loaded)
         base_id = split_episode_id(item_id)[0]
         include_search = bool(self._opt("search_streams", True))
+        # cache zdrojů: jen přísný filtr (uvolněný fulltext je ruční a jednorázový)
+        sigs = self._source_sigs() if strict else {}
+        if not self._opt("cross_search", True):
+            sigs.pop("Sosáč" if is_sosac_id(base_id) else "Luna", None)   # křížový zdroj vypnutý
+        stale = bool(self._opt("stale_streams", False)) and not refresh
+        shared = self.shared
+        necachovat = set()   # úlohy, jejichž prázdný výsledek není výsledek (uspaný zdroj)
+        prazdne = set()      # klíče zdrojů, které čistě nic nenašly — uloží se, když titul něco má jinde
+        vadne = set()        # klíče zdrojů, které selhaly nebo nestihly deadline
 
         def _fetch_streams():
             # fond pro předčítání hlaviček (`_preread`) musí skončit při každém odchodu, i při přerušení —
@@ -2959,16 +3024,17 @@ class Engine:
 
         def _fetch_inner(pre):
             nonlocal meta
-            timings["cache"] = False
+            timings["cache"] = True   # dokud se nemusí na síť (`z_cache`)
             self._check_stop()
             taken = set()   # adresy, jejichž hlavička se už předčítá
             sort_pre = self._sorter(length_basis(meta, video)) if pre is not None else None
             primary_label = "Sosáč" if is_sosac_id(base_id) else "Luna"
 
-            def primary():
+            def primary(chyby):
                 if str(base_id).startswith("tmdb:"):
                     return []   # titul bez IMDb id: Luna i Sosáč ho neznají, hledá se jen podle názvu
                 if accounts_lib.paused_for(self.store, "sosac" if is_sosac_id(base_id) else "luna") > 0:
+                    necachovat.add(primary_label)
                     return []   # uspání je volba uživatele, ne výpadek — nejde do failures
                 try:
                     api = self.api_for(base_id)
@@ -2984,7 +3050,7 @@ class Engine:
                         _LOGGER.debug("streamy %s: %s", item_id, err)
                     else:
                         _LOGGER.warning("streamy %s: %s", item_id, err)
-                        failures.append((primary_label, err))
+                        chyby.append((primary_label, err))
                     return []
 
             # Líné klienty (login WebShare) založit ještě tady, v hlavním vlákně, ať se
@@ -3001,53 +3067,92 @@ class Engine:
                 katalogu ho proto vynechá úplně, stejně jako titulky. S Premium účtem
                 (JSON API, bez 429) zůstává."""
                 ulohy = [
-                    ("Luna" if is_sosac_id(base_id) else "Sosáč", lambda: cross(ctype, item_id, m, alt, failures)),
-                    ("WebShare", lambda: self._webshare_streams(m, video, ctype, alt, strict, failures)),
-                    ("HellSpy", lambda: self._hellspy_streams(m, video, ctype, alt, strict, failures)),
-                    ("Sledujteto", lambda: self._sledujteto_streams(m, video, ctype, alt, strict, failures)),
-                    ("FastShare", lambda: self._fastshare_streams(m, video, ctype, alt, strict, failures)),
+                    ("Luna" if is_sosac_id(base_id) else "Sosáč", lambda f: cross(ctype, item_id, m, alt, f)),
+                    ("WebShare", lambda f: self._webshare_streams(m, video, ctype, alt, strict, f)),
+                    ("HellSpy", lambda f: self._hellspy_streams(m, video, ctype, alt, strict, f)),
+                    ("Sledujteto", lambda f: self._sledujteto_streams(m, video, ctype, alt, strict, f)),
+                    ("FastShare", lambda f: self._fastshare_streams(m, video, ctype, alt, strict, f)),
                 ]
                 if probe_audio or getattr(self.pt, "_account", False):
                     ulohy.append(("Přehraj.to",
-                                  lambda: self._prehrajto_streams(m, video, ctype, alt, strict, failures)))
-                ulohy.append(("CZtor", lambda: self._cztor_streams(m, video, ctype, alt, failures)))
+                                  lambda f: self._prehrajto_streams(m, video, ctype, alt, strict, f)))
+                ulohy.append(("CZtor", lambda f: self._cztor_streams(m, video, ctype, alt, f)))
                 if probe_audio:
-                    ulohy.append((SUBS_TASK, lambda: self._webshare_subtitles(m, video, ctype, alt)))
-                    ulohy.append((OSUB_TASK, lambda: self._opensubtitles_subtitles(m, video, ctype)))
+                    ulohy.append((SUBS_TASK, lambda f: self._webshare_subtitles(m, video, ctype, alt)))
+                    ulohy.append((OSUB_TASK, lambda f: self._opensubtitles_subtitles(m, video, ctype)))
                 # ručně uspaný zdroj (menu „Uspat zdroj") se nevolá vůbec — SUBS_TASK/OSUB_TASK
                 # nejsou v PAUSE_KEYS, takže titulky projdou vždy
                 return [(label, fetch) for label, fetch in ulohy
-                        if label not in PAUSE_KEYS or accounts_lib.paused_for(self.store, PAUSE_KEYS[label]) <= 0]
+                        if PAUSE_KEYS.get(label) not in skip_sources
+                        and (label not in PAUSE_KEYS or accounts_lib.paused_for(self.store, PAUSE_KEYS[label]) <= 0)]
 
-            def bezpecne(label, fetch):
+            def bezpecne(label, fetch, key):
+                """Zdroj s vlastním seznamem chyb — podle něj se pozná, jestli jeho výsledek
+                smí do cache. Nenulový výsledek se zapíše hned, i když mezitím vypršel rozpočet
+                (opozdilec si tak doplní cache sám, příští otevření titulu ho už má)."""
+                chyby = []
                 try:
-                    return fetch()
+                    data = fetch(chyby)
                 except Exception as err:  # noqa: BLE001 – ani nečekaná chyba zdroje nesmí shodit ostatní
                     _LOGGER.warning("streamy %s (%s): %s", item_id, label, err)
                     if label not in SUBS_TASKS:   # bez titulků se streamy cachovat smí
-                        failures.append((label, err))
-                    return []
+                        chyby.append((label, err))
+                    data = []
+                failures.extend(chyby)
+                if key and label not in necachovat:
+                    if chyby:
+                        vadne.add(key)
+                    elif data:
+                        self._save_source(key, data)
+                    else:
+                        prazdne.add(key)
+                return data
 
-            # neúplný výsledek se nikdy nesmí uložit do 72h cache streamů — proto se
-            # `stop_when` bere v potaz jen mimo cachovanou cestu (viz `_fetch_streams()` volání níž)
-            stop_when_ = None if (strict and probe_audio) else stop_when
+            def z_cache(ulohy, kolo_tag):
+                """Úlohy doplněné o klíč cache; zdroje s platným záznamem se rovnou vrátí z cache.
+
+                Čte se tady, v hlavním vlákně — omezení stáří z `Store.fresher()` (kontrola
+                Hlídaných) platí jen v něm."""
+                out = []
+                stara = False
+                for label, fetch in ulohy:
+                    sig = sigs.get(label)
+                    key = None if sig is None else \
+                        f"{SOURCE_CACHE_PREFIX}{label}:{sig}:{ctype}:{item_id}:{alt or ''}:{kolo_tag}"
+                    hit = None
+                    if key and not refresh:
+                        # omezení `fresher()` drží `self.store`; sdílené úložiště je na Stremiu jiný objekt
+                        def ttl(t):
+                            return self.store.cap_ttl(key, t)
+                        hit = shared.peek_cached(key, ttl(STREAMS_CACHE_TTL))
+                        if hit is None and not self.store.capped(key):
+                            hit = shared.peek_cached(key + ":p", STREAMS_PARTIAL_TTL)
+                            if hit is not None:
+                                timings["částečná cache"] = True
+                            if hit is None and stale:
+                                hit = shared.peek_cached(key, STREAMS_STALE_TTL)
+                                stara = stara or hit is not None
+                    if hit is not None:
+                        out.append((label, lambda f, h=hit: h, None))
+                    else:
+                        out.append((label, fetch, key))
+                        if key or not strict:   # vypnutý zdroj (bez podpisu) na síť nesahá
+                            timings["cache"] = False
+                if stara:
+                    timings["stará cache"] = True
+                    obnovit()
+                if not timings["cache"]:
+                    self._yield_to_foreground()
+                return out
+
+            stop_when_ = stop_when
 
             def rozpocet(label, zbytek):
                 if not soft or label == primary_label:
                     return zbytek
                 return min(zbytek, SOURCE_SOFT_BUDGETS.get(label, SOURCE_SOFT_DEADLINE))
 
-            def dohnat(future):
-                """Opozdilec doběhl: seznam v cache se obnoví, ať ho má i další otevření titulu.
-
-                S malým odkladem: kdyby opozdilec skončil, dokud hlavní hledání ještě drží zámek klíče
-                cache, obnova by od `Store.cached_if` dostala jeho (neúplný) výsledek místo vlastního."""
-                if not future.cancelled() and future.exception() is None:
-                    timer = threading.Timer(LATE_REFRESH_DELAY, obnovit)
-                    timer.daemon = True
-                    timer.start()
-
-            def kolo(ulohy):
+            def kolo(ulohy, kolo_tag=""):
                 """Jedna souběžná dávka: vrátí `{label: výsledek}`. Zdroje jsou nezávislé
                 a každý má vlastní timeouty (15–40 s) — za sebou byl studený výpis 8–15
                 sériových dotazů. `gather` čeká po vteřinách a ptá se `should_stop()`;
@@ -3066,9 +3171,11 @@ class Engine:
                 # minimum nesmí přerůst samotný rozpočet — jinak by malý `SOURCE_DEADLINE`
                 # (test, nebo kdyby ho někdo stáhl) čekání naopak prodloužil
                 zbytek = max(min(SOURCE_DEADLINE, MIN_ROUND_DEADLINE), zbytek)
+                ulohy = z_cache(ulohy, kolo_tag)
                 pool = BackgroundPool(max_workers=len(ulohy))
-                futures = [pool.submit(bezpecne, label, fetch) for label, fetch in ulohy]
-                label_by_future = dict(zip(futures, (label for label, _fetch in ulohy)))
+                futures = [pool.submit(bezpecne, label, fetch, key) for label, fetch, key in ulohy]
+                label_by_future = dict(zip(futures, (label for label, _fetch, _key in ulohy)))
+                key_by_future = dict(zip(futures, (key for _label, _fetch, key in ulohy)))
                 rozpocty = {f: rozpocet(label_by_future[f], zbytek) for f in futures}
                 zacatek = time.monotonic()
                 stopped = [False]
@@ -3107,13 +3214,14 @@ class Engine:
                         late.append(label)
                         _LOGGER.info("streamy %s: %s je pomalý (>%.0f s), bere se bez něj a doplní se na pozadí",
                                      item_id, label, rozpocty[future])
-                        future.add_done_callback(dohnat)
                         continue
                     timings["zdroje"][label] = f">{zbytek:.0f}s"
                     if label not in SUBS_TASKS:
                         _LOGGER.info("streamy %s: %s neodpověděl do %.0f s, bere se bez něj", item_id, label,
                                      zbytek)
                         failures.append((label, TimeoutError(f"neodpověděl do {zbytek:.0f} s")))
+                        if key_by_future[future]:
+                            vadne.add(key_by_future[future])
                 return out
 
             def slozit(vysledky, ulohy):
@@ -3142,13 +3250,20 @@ class Engine:
                     timings["znovu česky"] = True
                     self._check_stop()
                     ulohy = ostatni(meta)
-                    vysledky = kolo(ulohy)
+                    vysledky = kolo(ulohy, "l")   # jiný dotaz (český název) = jiný klíč cache
             timings["souběžně"] = since(mark)
             if late:
                 timings["pozdě"] = list(late)
             subs = vysledky.get(SUBS_TASK) or []
             osubs = vysledky.get(OSUB_TASK) or []
             found = found + slozit(vysledky, ulohy)
+            if found:
+                # titul něco má — čisté prázdné výsledky zdrojů jsou tedy pravda, ne výpadek;
+                # zdroj, který selhal, se 10 minut nezkouší znovu
+                for key in list(prazdne - vadne):
+                    self._save_source(key, [])
+                for key in list(vadne):
+                    self._save_source(key + ":p", [], STREAMS_PARTIAL_TTL)
             for stream in found:
                 parse_stream(stream)
                 # bez kvality v názvu („Matrix (1999).mkv") by soubor spadl na konec seznamu,
@@ -3185,9 +3300,7 @@ class Engine:
                     stream["subs"] = sorted(stream["subs"])
             return found
 
-        # „streams2“: seznamy uložené před doplněním českých názvů z Wikidat byly u titulů
-        # bez Luny/TMDB ořezané přísným filtrem — nový klíč je jednorázově obnoví
-        # vlastní úložiště mimo 72h cache streamů — nový soubor se má ukázat hned,
+        # vlastní úložiště mimo cache zdrojů — nový soubor se má ukázat hned,
         # jak ho uvidí seznam úložiště (ten si drží vlastní hodinovou paměť). S
         # `probe_audio=False` (hromadná klasifikace) se přeskakuje úplně — cizí
         # úložiště titul ze Sosáčova katalogu stejně nerozhodne a při nedostupném
@@ -3212,11 +3325,7 @@ class Engine:
         storage_pool = BackgroundPool(max_workers=1)
         storage_future = storage_pool.submit(_run_storage)
         try:
-            if strict and probe_audio:
-                found = self._cached_streams(cache_key, _fetch_streams, failures, late, timings, refresh, obnovit)
-            else:
-                self._yield_to_foreground()
-                found = _fetch_streams()
+            found = _fetch_streams()
         except BaseException:
             # přerušení (`Aborted`) i chyba: na průchod úložiště se nečeká — to se
             # přeruší samo mezi vrstvami (`StorageApi._crawl`), vlákno doběhne bez nás
@@ -3279,37 +3388,9 @@ class Engine:
         timings["celkem"] = since()
         return ordered
 
-    def _cached_streams(self, cache_key, fetch, failures, late, timings, refresh, again):
-        """Seznam streamů titulu z cache, jinak z `fetch()` (hledání napříč zdroji).
-
-        Pořadí: platný záznam (72 h) → částečný (10 min — některý zdroj minule neodpověděl nebo
-        nestihl měkký rozpočet, takže se hned nehledá znovu) → starý záznam (do 14 dní, jen s volbou `stale_streams`:
-        ukáže se hned a `again()` ho na pozadí obnoví) → hledání. Ve vlákně `fresher()`
-        (kontrola Hlídaných) se z cache čte jen přes `cached_if`, který omezení stáří zná;
-        tam se krátký ani starý záznam nepoužije. `refresh` / volba `fresh` cache nečtou."""
-        store = self.store
-        refresh = refresh or bool(self._opt("fresh", False))
-        partial_key = cache_key + ":partial"
-        if not refresh and not store.capped(cache_key):
-            for key, ttl, flag in ((cache_key, STREAMS_CACHE_TTL, None),
-                                   (partial_key, STREAMS_PARTIAL_TTL, "částečná cache")):
-                data = store.peek_cached(key, ttl)
-                if data:
-                    if flag:
-                        timings[flag] = True
-                    return data
-            if self._opt("stale_streams", False):
-                data = store.peek_cached(cache_key, STREAMS_STALE_TTL)
-                if data:
-                    timings["stará cache"] = True
-                    again()
-                    return data
-        self._yield_to_foreground()   # před zámkem klíče, ne pod ním: hlavní hledání téhož titulu by čekalo
-        found = store.cached_if(cache_key, STREAMS_CACHE_TTL, fetch,
-                                ok=lambda data: bool(data) and not failures and not late, fresh=refresh)
-        if found and (failures or late):
-            store.cached_if(partial_key, STREAMS_PARTIAL_TTL, lambda: found, fresh=True)
-        return found
+    def _save_source(self, key, data, ttl=STREAMS_CACHE_TTL):
+        """Zapíše výsledek jednoho zdroje do sdílené cache (`raw_streams`, `SOURCE_CACHE_PREFIX`)."""
+        self.shared.cached_if(key, ttl, lambda: data, ok=lambda _d: True, fresh=True)
 
     def _yield_to_foreground(self):
         """Práce na pozadí (`background()`) počká na `gate`, než sáhne na síť — dokud skončí

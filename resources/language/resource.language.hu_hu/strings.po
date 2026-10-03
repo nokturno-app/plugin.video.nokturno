@@ -2561,14 +2561,6 @@ msgctxt "#30948"
 msgid "Genres (none = all)"
 msgstr "Műfajok (semmi = mind)"
 
-msgctxt "#30949"
-msgid "Original language"
-msgstr "Eredeti nyelv"
-
-msgctxt "#30950"
-msgid "Any"
-msgstr "Bármelyik"
-
 msgctxt "#30951"
 msgid "From year (empty = no limit)"
 msgstr "Évtől (üres = nincs korlát)"
@@ -2604,54 +2596,6 @@ msgstr "Törlöd a(z) %s katalógust?"
 msgctxt "#30959"
 msgid "The catalog could not be loaded. Try again later."
 msgstr "A katalógust nem sikerült betölteni. Próbáld újra később."
-
-msgctxt "#30960"
-msgid "Czech"
-msgstr "Cseh"
-
-msgctxt "#30961"
-msgid "Slovak"
-msgstr "Szlovák"
-
-msgctxt "#30962"
-msgid "Czech or Slovak"
-msgstr "Cseh vagy szlovák"
-
-msgctxt "#30963"
-msgid "English"
-msgstr "Angol"
-
-msgctxt "#30964"
-msgid "German"
-msgstr "Német"
-
-msgctxt "#30965"
-msgid "French"
-msgstr "Francia"
-
-msgctxt "#30966"
-msgid "Spanish"
-msgstr "Spanyol"
-
-msgctxt "#30967"
-msgid "Italian"
-msgstr "Olasz"
-
-msgctxt "#30968"
-msgid "Polish"
-msgstr "Lengyel"
-
-msgctxt "#30969"
-msgid "Hungarian"
-msgstr "Magyar"
-
-msgctxt "#30970"
-msgid "Korean"
-msgstr "Koreai"
-
-msgctxt "#30971"
-msgid "Japanese"
-msgstr "Japán"
 
 msgctxt "#30972"
 msgid "Custom catalog"
@@ -2805,10 +2749,6 @@ msgctxt "#30992"
 msgid "Streams marked CAM, HDCAM, TS, telesync or KINO are hidden. If only a cinema recording exists so far, it is shown so the list is not empty."
 msgstr "A CAM, HDCAM, TS, telesync vagy KINO jelölésű streamek el vannak rejtve. Ha egyelőre csak mozis felvétel létezik, megjelenik, hogy a lista ne maradjon üres."
 
-msgctxt "#30993"
-msgid "Movies in high quality"
-msgstr "Filmek magas minőségben"
-
 msgctxt "#30994"
 msgid "Minimum quality"
 msgstr "Minimális minőség"
@@ -2893,25 +2833,9 @@ msgctxt "#30771"
 msgid "How many last years"
 msgstr "Hány utolsó év"
 
-msgctxt "#30772"
-msgid "Verify stream availability?"
-msgstr "Ellenőrizzem a streamek elérhetőségét?"
-
-msgctxt "#30773"
-msgid "The catalog will then show only titles with a stream matching your requirements. It is verified in the background – on Home Assistant in the sync group, otherwise on this device."
-msgstr "A katalógus ezután csak azokat a címeket mutatja, amelyekhez van a kéréseidnek megfelelő stream. Az ellenőrzés a háttérben fut – a szinkroncsoportban a Home Assistanton, egyébként ezen az eszközön."
-
 msgctxt "#30774"
 msgid "Show sorted by"
 msgstr "Rendezés"
-
-msgctxt "#30775"
-msgid "Placement"
-msgstr "Elhelyezés"
-
-msgctxt "#30776"
-msgid "Show the catalog directly in the Movies/TV Shows menu?"
-msgstr "Megjelenjen a katalógus közvetlenül a Filmek/Sorozatok menüben?"
 
 msgctxt "#30777"
 msgid "Verified %s of %s – run a batch now"
@@ -2933,10 +2857,6 @@ msgctxt "#30782"
 msgid "Definitions of own catalogs and verification results. When Home Assistant is in the sync group, it verifies and the other devices only display."
 msgstr "Saját katalógusok definíciói és az ellenőrzés eredményei. Ha a csoportban van Home Assistant, ő ellenőriz, a többi eszköz csak megjeleníti."
 
-msgctxt "#30783"
-msgid "Audio language"
-msgstr "Hang nyelve"
-
 msgctxt "#30784"
 msgid "Last.fm"
 msgstr "Last.fm"
@@ -2956,18 +2876,6 @@ msgstr "Kulcs ellenőrzése"
 msgctxt "#30788"
 msgid "Checks that Last.fm accepts the key."
 msgstr "Ellenőrzi, hogy a Last.fm elfogadja a kulcsot."
-
-msgctxt "#30789"
-msgid "New concert catalog"
-msgstr "Új koncertkatalógus"
-
-msgctxt "#30790"
-msgid "A concert catalog needs your own Last.fm API key. Enter it in Settings → Sources and accounts → Last.fm."
-msgstr "A koncertkatalógushoz saját Last.fm API-kulcs kell. Add meg itt: Beállítások → Források és fiókok → Last.fm."
-
-msgctxt "#30791"
-msgid "Open settings"
-msgstr "Beállítások megnyitása"
 
 msgctxt "#30792"
 msgid "Music genres of the catalog"
@@ -3037,18 +2945,6 @@ msgctxt "#30858"
 msgid "World"
 msgstr "World"
 
-msgctxt "#30859"
-msgid "Popularity"
-msgstr "Népszerűség"
-
-msgctxt "#30912"
-msgid "Alphabet"
-msgstr "Ábécé"
-
-msgctxt "#30921"
-msgid "Show the catalog directly in the main menu?"
-msgstr "Megjelenjen a katalógus közvetlenül a főmenüben?"
-
 msgctxt "#30922"
 msgid "Concerts"
 msgstr "Koncertek"
@@ -3069,10 +2965,6 @@ msgctxt "#30779"
 msgid "The catalog is being prepared – artists are searched in the background."
 msgstr "A katalógus készül – az előadók keresése a háttérben zajlik."
 
-msgctxt "#30731"
-msgid "Last.fm API key missing – open settings"
-msgstr "Hiányzik a Last.fm API-kulcs – beállítások megnyitása"
-
 msgctxt "#30737"
 msgid "Run stream verification now?"
 msgstr "Elindítod most a streamek ellenőrzését?"
@@ -3089,22 +2981,274 @@ msgctxt "#30018"
 msgid "The first batch searches more artists at once so the catalog has something to show right away. It runs in the background."
 msgstr "Az első adag egyszerre több előadót keres át, hogy a katalógusban rögtön legyen mit mutatni. A háttérben fut."
 
-msgctxt "#30007"
-msgid "Popular"
-msgstr "Népszerű"
+msgctxt "#30241"
+msgid "Catalog mode"
+msgstr "Katalógus módja"
 
-msgctxt "#30008"
-msgid "Top rated"
-msgstr "Legjobbra értékelt"
+msgctxt "#30242"
+msgid "Catalog from TMDB"
+msgstr "Katalógus a TMDB-ből"
 
-msgctxt "#30015"
-msgid "New with Czech dubbing"
-msgstr "Új cseh szinkronnal"
+msgctxt "#30243"
+msgid "Only titles with a stream"
+msgstr "Csak streammel rendelkező címek"
 
-msgctxt "#30016"
+msgctxt "#30244"
+msgid "Countries of origin (up to 5)"
+msgstr "Származási országok (legfeljebb 5)"
+
+msgctxt "#30245"
+msgid "Catalog icon"
+msgstr "Katalógus ikonja"
+
+msgctxt "#30246"
+msgid "Template"
+msgstr "Sablon"
+
+msgctxt "#30247"
+msgid "Load template"
+msgstr "Sablon betöltése"
+
+msgctxt "#30248"
+msgid "No template"
+msgstr "Sablon nélkül"
+
+msgctxt "#30249"
+msgid "List"
+msgstr "Lista"
+
+msgctxt "#30250"
+msgid "Chart"
+msgstr "Toplista"
+
+msgctxt "#30251"
+msgid "Genre"
+msgstr "Műfaj"
+
+msgctxt "#30252"
+msgid "Year"
+msgstr "Év"
+
+msgctxt "#30253"
+msgid "Country"
+msgstr "Ország"
+
+msgctxt "#30254"
+msgid "Collection"
+msgstr "Gyűjtemény"
+
+msgctxt "#30255"
+msgid "Studios"
+msgstr "Stúdiók"
+
+msgctxt "#30256"
+msgid "Set up concerts"
+msgstr "Koncertek beállítása"
+
+msgctxt "#30257"
+msgid "By genre"
+msgstr "Műfaj szerint"
+
+msgctxt "#30258"
+msgid "By letter"
+msgstr "ABC szerint"
+
+msgctxt "#30259"
+msgid "Choose at least one music genre."
+msgstr "Válassz legalább egy zenei műfajt."
+
+msgctxt "#30260"
+msgid "Template loaded – edit it and save."
+msgstr "Sablon betöltve – szerkeszd és mentsd."
+
+msgctxt "#30262"
+msgid "Czechia"
+msgstr "Csehország"
+
+msgctxt "#30263"
+msgid "Slovakia"
+msgstr "Szlovákia"
+
+msgctxt "#30264"
+msgid "USA"
+msgstr "USA"
+
+msgctxt "#30265"
+msgid "United Kingdom"
+msgstr "Egyesült Királyság"
+
+msgctxt "#30266"
+msgid "France"
+msgstr "Franciaország"
+
+msgctxt "#30267"
+msgid "Germany"
+msgstr "Németország"
+
+msgctxt "#30268"
+msgid "Italy"
+msgstr "Olaszország"
+
+msgctxt "#30269"
+msgid "Spain"
+msgstr "Spanyolország"
+
+msgctxt "#30270"
+msgid "Poland"
+msgstr "Lengyelország"
+
+msgctxt "#30271"
+msgid "Hungary"
+msgstr "Magyarország"
+
+msgctxt "#30272"
+msgid "South Korea"
+msgstr "Dél-Korea"
+
+msgctxt "#30273"
+msgid "Japan"
+msgstr "Japán"
+
+msgctxt "#30274"
+msgid "Denmark"
+msgstr "Dánia"
+
+msgctxt "#30275"
+msgid "Sweden"
+msgstr "Svédország"
+
+msgctxt "#30276"
+msgid "Norway"
+msgstr "Norvégia"
+
+msgctxt "#30277"
+msgid "Popular movies"
+msgstr "Népszerű filmek"
+
+msgctxt "#30278"
+msgid "Popular series"
+msgstr "Népszerű sorozatok"
+
+msgctxt "#30279"
+msgid "Top rated movies"
+msgstr "Legjobbra értékelt filmek"
+
+msgctxt "#30280"
+msgid "Top rated series"
+msgstr "Legjobbra értékelt sorozatok"
+
+msgctxt "#30281"
+msgid "New movies with Czech dubbing"
+msgstr "Új filmek cseh szinkronnal"
+
+msgctxt "#30282"
+msgid "New series with Czech dubbing"
+msgstr "Új sorozatok cseh szinkronnal"
+
+msgctxt "#30283"
+msgid "4K movies with Czech dubbing"
+msgstr "4K filmek cseh szinkronnal"
+
+msgctxt "#30284"
 msgid "Czech movies"
 msgstr "Cseh filmek"
 
-msgctxt "#30017"
+msgctxt "#30285"
 msgid "Czech series"
 msgstr "Cseh sorozatok"
+
+msgctxt "#30286"
+msgid "Fairy tales with Czech dubbing"
+msgstr "Mesék cseh szinkronnal"
+
+msgctxt "#30287"
+msgid "Dubbing language"
+msgstr "Szinkron nyelve"
+
+msgctxt "#30289"
+msgid "Pick music genres and enter your Last.fm key. Concerts are searched in the background."
+msgstr "Válassz zenei műfajokat és add meg a Last.fm kulcsot. A koncerteket a háttérben keressük."
+
+msgctxt "#30290"
+msgid "Pick a template or fill in the catalog by hand, then save."
+msgstr "Válassz sablont, vagy töltsd ki a katalógust kézzel, majd mentsd."
+
+msgctxt "#30291"
+msgid "{} dubbing"
+msgstr "{} szinkron"
+
+msgctxt "#30292"
+msgid "subtitles {}"
+msgstr "{} felirat"
+
+msgctxt "#30293"
+msgid "5.1"
+msgstr "5.1"
+
+msgctxt "#30294"
+msgid "last {} years"
+msgstr "utolsó {} év"
+
+msgctxt "#30295"
+msgid "from {}"
+msgstr "{}-től"
+
+msgctxt "#30296"
+msgid "to {}"
+msgstr "{}-ig"
+
+msgctxt "#30297"
+msgid "{}–{}"
+msgstr "{}–{}"
+
+msgctxt "#30200"
+msgid "Shows all titles matching the filters right away. For a title without a stream you can turn on watching – Watched will tell you when a stream appears."
+msgstr "Azonnal megmutat minden címet a szűrők szerint. Stream nélküli címnél bekapcsolhatod a figyelést – a Figyelt szól, ha lesz stream."
+
+msgctxt "#30202"
+msgid "A stream matching your requirements (dubbing, subtitles, quality, 5.1) is searched for each title in the background. The catalog fills up gradually and shows only what can be played."
+msgstr "A háttérben minden címhez a kéréseid szerinti streamet keres (szinkron, felirat, minőség, 5.1). A katalógus fokozatosan telik, és csak a lejátszható címeket mutatja."
+
+msgctxt "#30203"
+msgid "On the TV"
+msgstr "A tévén"
+
+msgctxt "#30204"
+msgid "On the phone (QR)"
+msgstr "Telefonon (QR)"
+
+msgctxt "#30205"
+msgid "Edit on the phone"
+msgstr "Szerkesztés telefonon"
+
+msgctxt "#30206"
+msgid "Star"
+msgstr "Csillag"
+
+msgctxt "#30217"
+msgid "New releases"
+msgstr "Újdonságok"
+
+msgctxt "#30218"
+msgid "Actors"
+msgstr "Színészek"
+
+msgctxt "#30219"
+msgid "Searched %s of %s – load now"
+msgstr "Átnézve %s / %s – betöltés most"
+
+msgctxt "#30226"
+msgid "Concerts need your own Last.fm API key. It is free at last.fm/api – create one and copy it here."
+msgstr "A koncertekhez saját Last.fm API-kulcs kell. Ingyenes a last.fm/api oldalon – hozd létre és írd be ide."
+
+msgctxt "#30227"
+msgid "Start the first batch right away"
+msgstr "Az első adag azonnali indítása"
+
+msgctxt "#30228"
+msgid "Catalog type"
+msgstr "Katalógus típusa"
+
+msgctxt "#30235"
+msgid "Catalog saved."
+msgstr "Katalógus mentve."

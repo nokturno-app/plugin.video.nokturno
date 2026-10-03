@@ -3030,115 +3030,63 @@ class TestPraceNaPozadiKodi(unittest.TestCase):
 
 
 class TestPredvolbyKatalogu(unittest.TestCase):
-    """Předdefinované vlastní katalogy (`mycat.PRESETS`) místo pevných položek menu a samostatného HQ."""
+    """Vlastní katalogy v2: předvolby z bety 1 zmizí, pokud je uživatel nezměnil; žádné pevné položky v menu."""
 
     def setUp(self):
         reset_kodi()
-        for k in ("mycatalogs", "mycatlog", "catalogs_seeded", "hq_index", "favourites", "watched"):
+        for k in ("mycatalogs", "mycatlog", "catalogs_v2", "hq_index", "favourites", "watched", "concerts"):
             default.STORE.save(k, [] if k in ("mycatalogs", "favourites") else {})
         default.STORE.save("wizard_done", True)
-        self.settings = os.path.join(default.PROFILE, "settings.xml")
-        if os.path.exists(self.settings):
-            os.remove(self.settings)
-        self.addCleanup(lambda: os.path.exists(self.settings) and os.remove(self.settings))
-
-    def hq_settings(self, **hodnoty):
-        with open(self.settings, "w", encoding="utf-8") as f:
-            f.write("<settings version=\"2\">%s</settings>" % "".join(
-                '<setting id="%s">%s</setting>' % kv for kv in hodnoty.items()))
 
     def ids(self):
         return [c["id"] for c in default.mycats()]
 
-    def test_seed_zalozi_devet_a_znacku_podruhe_nic(self):
-        default.seed_catalogs()
-        self.assertEqual(len(self.ids()), 9)
-        self.assertTrue(default.STORE.load("catalogs_seeded", ""))
-        names = {c["id"]: c["name"] for c in default.mycats()}
-        self.assertEqual(names["pre-movie-hq"], "Filmy ve vysoké kvalitě")
-        self.assertEqual(names["pre-series-czech"], "České seriály")
-        default.mycat.delete(default.STORE, "pre-movie-top")
-        default.seed_catalogs()
-        self.assertEqual(len(self.ids()), 8)
+    def _beta1(self, pid, **zmena):
+        _pid, kind, name, fields = next(p for p in default.mycat.BETA1_PRESETS if p[0] == pid)
+        default.mycat.save(default.STORE, dict({"id": pid, "kind": kind, "name": name, "menu": True}, **fields, **zmena))
 
-    def test_menu_ma_predvolby_s_umistenim(self):
-        default.seed_catalogs()
+    def test_nezmenena_predvolba_zmizi_upravena_zustane(self):
+        self._beta1("pre-movie-popular", name="Přejmenované")
+        self._beta1("pre-movie-top", years=3)
+        default.STORE.save("hq_index", {"items": {"tt1": {}}})
+        default.migrate_catalogs_v2()
+        self.assertEqual(self.ids(), ["pre-movie-top"])
+        self.assertFalse(default.STORE.load("hq_index", {}))
+        self.assertTrue(default.STORE.load("catalogs_v2", ""))
+        self.assertFalse(default.STORE.reload("mycatlog", {})["pre-movie-popular"]["on"], "smazání jde synchronizací")
+
+    def test_hq_nic_nezalozi_a_podruhe_nic(self):
+        default.migrate_catalogs_v2()
+        self.assertEqual(self.ids(), [])
+        self._beta1("pre-movie-popular")
+        default.migrate_catalogs_v2()   # značka: podruhé už nic
+        self.assertEqual(self.ids(), ["pre-movie-popular"])
+
+    def test_vyjimka_menu_neshodi_a_znacka_se_nezapise(self):
+        with mock.patch.object(default.concertcat, "migrate_catalogs", side_effect=RuntimeError("x")):
+            default.migrate_catalogs_v2()
+        self.assertFalse(default.STORE.load("catalogs_v2", ""))
+
+    def test_menu_bez_vlastnich_katalogu(self):
+        default.mycat.save(default.STORE, {"id": "k1", "kind": "movie", "name": "V menu", "menu": True})
         xbmcplugin.reset()
         default.browse_menu({}, "movie")
-        nazvy = [it[2].getLabel() for it in xbmcplugin.items]
-        self.assertEqual(nazvy[:6], ["Nejsledovanější tento týden", "Populární", "Nejlépe hodnocené",
-                                     "Nové s CZ dabingem", "Filmy ve vysoké kvalitě", "České filmy"])
-        xbmcplugin.reset()
-        default.browse_menu({}, "series")
-        self.assertEqual([it[2].getLabel() for it in xbmcplugin.items][1:5],
-                         ["Populární", "Nejlépe hodnocené", "Nové s CZ dabingem", "České seriály"])
-
-    def test_migrace_hq_vypnuta_predvolba_nevznikne(self):
-        self.hq_settings(hq_enabled="false")
-        default.seed_catalogs()
-        self.assertNotIn("pre-movie-hq", self.ids())
-        self.assertEqual(len(self.ids()), 8)
-
-    def test_migrace_hq_nastaveni(self):
-        self.hq_settings(hq_enabled="true", hq_min_quality="2", hq_channels="0", hq_audio="2", hq_subs="1")
-        default.seed_catalogs()
-        hq = next(c for c in default.mycats() if c["id"] == "pre-movie-hq")
-        self.assertEqual((hq["q"], hq["surround"], hq["audio"], hq["subs"]), (3.5, False, "SK", "CZ"))
-
-    def test_migrace_hq_chybejici_hodnoty_jsou_puvodni_vychozi(self):
-        self.hq_settings(hq_enabled="true")
-        default.seed_catalogs()
-        hq = next(c for c in default.mycats() if c["id"] == "pre-movie-hq")
-        self.assertEqual((hq["q"], hq["surround"], hq["audio"], hq["subs"]), (4, True, "CZ", ""))
-
-    def test_cista_instalace_ma_vychozi_predvolbu_hq(self):
-        default.seed_catalogs()
-        hq = next(c for c in default.mycats() if c["id"] == "pre-movie-hq")
-        self.assertEqual((hq["q"], hq["surround"], hq["audio"]), (4, False, ""))
-
-    def test_migrace_hq_prevezme_hotove_vysledky(self):
-        import catindex
-        self.hq_settings(hq_enabled="true")
-        idx = {"sig": "stary"}
-        catindex.merge_pool(idx, [meta_item("tt1"), meta_item("tt2")], 0)
-        catindex.record(idx, "tt1", True, 100)
-        default.STORE.save("hq_index", idx)
-        default.seed_catalogs()
-        cat = next(c for c in default.mycats() if c["id"] == "pre-movie-hq")
-        nove = default.mycat.load_index(default.STORE, cat)
-        self.assertEqual(nove["items"]["tt1"]["ok"], True)
-        self.assertEqual(nove["pool_ts"], 0)
-        self.assertEqual([m["id"] for m in default.mycat.visible(nove)], ["tt1"])
-        self.assertFalse(default.STORE.load("hq_index", {}))
-
-    def test_vyjimka_v_seedu_menu_neshodi_a_znacka_se_nezapise(self):
-        with mock.patch.object(default.mycat, "seed", side_effect=RuntimeError("x")):
-            default.seed_catalogs()
-        self.assertFalse(default.STORE.load("catalogs_seeded", ""))
+        akce = [params_of(u).get("action") for u in xbmcplugin.urls()]
+        self.assertNotIn("mycat", akce)
+        self.assertEqual(akce, ["catalog", "mycats", "random"])
 
     def test_stary_odkaz_hq_nespadne(self):
-        for k in (("hq", {}), ("hq_setup", {}), ("hq_info", {}), ("hq_batch", {}), ("hq_refresh", {})):
+        for k in ("hq", "hq_setup", "hq_info", "hq_batch", "hq_refresh"):
             xbmcplugin.reset()
-            default.router("?action=%s&type=movie" % k[0])
-        default.seed_catalogs()
-        default.STORE.save(default.mycat.INDEX + "pre-movie-hq", {})
-        xbmcplugin.reset()
-        with mock.patch.object(default, "get_apis", return_value={"dash": object()}):
-            default.router("?action=hq&type=movie")
+            default.router("?action=%s&type=movie" % k)
         self.assertTrue(xbmcplugin.items or xbmcplugin.ended)
-
-    def test_retezce_ve_ctyrech_jazycich(self):
-        for lang in ("cs_cz", "sk_sk", "en_gb", "hu_hu"):
-            po = (LANG_DIR / f"resource.language.{lang}" / "strings.po").read_text(encoding="utf-8")
-            for sid in (30007, 30008, 30015, 30016, 30017, 30993):
-                self.assertIn(f'msgctxt "#{sid}"', po, (lang, sid))
 
     def test_hq_funkce_zanikla(self):
         zdroj = (ROOT / "default.py").read_text(encoding="utf-8")
-        for jmeno in ("def hq_definition", "def list_hq", "def hq_setup", "HQ_INDEX_KEY"):
+        for jmeno in ("def hq_definition", "def list_hq", "def hq_setup", "HQ_INDEX_KEY", "def seed_catalogs",
+                      "def _hq_from_profile", "def concert_form"):
             self.assertNotIn(jmeno, zdroj)
         self.assertNotIn('id="hq_enabled"', (ROOT / "resources" / "settings.xml").read_text(encoding="utf-8"))
-
 
 if __name__ == "__main__":
     unittest.main()
@@ -6071,15 +6019,14 @@ class TestNotifikaceONedostupnychStreamech(unittest.TestCase):
 
 
 class TestBezKoncertu(unittest.TestCase):
-    """2026-09-28: katalog koncertů zrušený — v menu ani v routeru nesmí zůstat."""
+    """2026-09-28: katalog koncertů z dashboardu (gist) zrušený. Od 10.0.0 jsou Koncerty modul, který si
+    interprety bere z Last.fm vlastním klíčem uživatele a hledá v jeho zdrojích – server ani gist s nimi nic nemá."""
 
-    def test_menu_ani_router_koncerty_neznaji(self):
-        reset_kodi()
-        default.main_menu({"ws": object(), "hs": object(), "fs": object()})
-        akce = {params_of(u).get("action") for u in xbmcplugin.urls()}
-        self.assertIn("browse", akce)
-        self.assertFalse(akce & {"concerts", "concert_artist", "play_ref"})
-        self.assertFalse(hasattr(default, "list_concerts"))
+    def test_zadny_katalog_ze_serveru(self):
+        self.assertFalse([m for m in dir(default.DashApi) if "concert" in m])
+        zdroj = (ROOT / "default.py").read_text(encoding="utf-8")
+        self.assertNotIn("gist.githubusercontent", zdroj)
+        self.assertNotIn("CONCERTS_FEED", zdroj)
 
 
 class TestBez900(unittest.TestCase):
@@ -6820,44 +6767,74 @@ class TestLunaVychoziVypnuta(unittest.TestCase):
 
 
 class TestVlastniKatalogy(unittest.TestCase):
-    """Vlastní katalog: formulář v dialozích, uložené volby, tituly z dashboardu (`/discover`)."""
+    """Vlastní katalog: formulář na TV (režim, žánry, země, roky, řazení, ikona, název), tituly z `/discover`."""
 
     def setUp(self):
         reset_kodi()
         default.STORE.save("mycatalogs", [])
+        default.STORE.save("mycatlog", {})
+        xbmcgui.Window(10000).clearProperty(default.VERIFY_MANUAL_PROP)
 
-    def _vytvor(self, multiselect=(3, 7), selects=(0, 1, 1, 1), numeric=("1990", ""), name="", yesno=False):
-        # selects: spojení žánrů, jazyk, roky (1 = Od–do), řazení; ověřování a umístění jdou přes `yesno`
-        with mock.patch.object(xbmcgui.Dialog, "multiselect", return_value=list(multiselect)), \
-                mock.patch.object(xbmcgui.Dialog, "select", side_effect=list(selects)), \
+    def _vytvor(self, multiselect=((3, 7), (0,)), selects=(0, 0, 0, 1, 1, 0), numeric=("1990", ""), name="",
+                yesno=False):
+        # selects: TV/mobil, režim, spojení žánrů, roky (1 = Od–do), řazení, [požadavky na stream], ikona
+        with mock.patch.object(xbmcgui.Dialog, "multiselect", side_effect=[list(m) for m in multiselect]), \
+                mock.patch.object(xbmcgui.Dialog, "select", side_effect=list(selects)) as sel, \
                 mock.patch.object(xbmcgui.Dialog, "numeric", side_effect=list(numeric), create=True), \
                 mock.patch.object(xbmcgui.Dialog, "yesno", return_value=yesno), \
-                mock.patch.object(xbmcgui.Dialog, "input", return_value=name):
+                mock.patch.object(xbmcgui.Dialog, "input", side_effect=lambda h, d="", **k: name or d):
             default.main("action=mycat_new&type=movie")
+        self.selects = sel.call_count
         return default.mycats("movie")
 
-    def test_novy_katalog_ulozi_volby(self):
-        cats = self._vytvor()
-        self.assertEqual(len(cats), 1)
-        cat = cats[0]
-        self.assertEqual((cat["genres"], cat["join"], cat["lang"], cat["year_from"], cat["year_to"], cat["sort"]),
-                         ([35, 10751], "and", "cs", 1990, None, "vote_average.desc"))
-        self.assertTrue(cat["name"])
+    def test_katalog_z_tmdb_ulozi_volby_a_neptá_se_na_dabing(self):
+        cat = self._vytvor()[0]
+        self.assertEqual((cat["genres"], cat["join"], cat["countries"], cat["year_from"], cat["sort"], cat["verify"]),
+                         ([35, 10751], "and", ["CZ"], 1990, "vote_average.desc", False))
+        self.assertEqual(self.selects, 6, "režim TMDB: žádné dotazy na dabing, titulky ani kvalitu")
+        self.assertNotIn("menu", cat)
+        self.assertEqual(cat["icon"], "DefaultMovies.png")
+        self.assertEqual(cat["name"], default.mycat_auto_name(cat))
+        self.assertTrue(cat["name_auto"])
         self.assertIn("Container.Refresh", xbmc.builtins)
-        self.assertEqual(default.mycat_params(cat), {"with_genres": "35,10751", "with_original_language": "cs",
+        self.assertEqual(default.mycat_params(cat), {"with_genres": "35,10751", "with_origin_country": "CZ",
                                                      "sort_by": "vote_average.desc", "year_from": 1990})
-        self.assertEqual(default.mycat_params({**cat, "join": "or"})["with_genres"], "35|10751")
+
+    def test_rezim_se_streamem_se_pta_na_dabing_a_spusti_prvni_davku(self):
+        # TV, se streamem, roky Posledních X, řazení, dabing CZ, titulky, Full HD, 5.1, zobrazení, ikona Seznam
+        cat = self._vytvor(multiselect=((0,), ()), selects=(0, 1, 2, 0, 1, 0, 1, 1, 0, 2), numeric=("3",),
+                           yesno=True)[0]
+        self.assertEqual((cat["verify"], cat["years"], cat["audio"], cat["q"], cat["surround"], cat["icon"]),
+                         (True, 3, "CZ", 3, True, "DefaultVideoPlaylists.png"))
+        self.assertIn("CZ", cat["name"])
+        self.assertTrue(default.STORE.reload("mycatlog", {})[cat["id"]]["on"])
+        self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_MANUAL_PROP),
+                         "%s:%s" % (cat["id"], default.mycat.FIRST_BATCH))
+
+    def test_vlastni_nazev_zustane_pri_uprave(self):
+        cat = self._vytvor(name="Moje")[0]
+        self.assertEqual((cat["name"], cat["name_auto"]), ("Moje", False))
+        with mock.patch.object(xbmcgui.Dialog, "multiselect", side_effect=[[0], []]), \
+                mock.patch.object(xbmcgui.Dialog, "select", side_effect=[0, 0, 0, 0]), \
+                mock.patch.object(xbmcgui.Dialog, "input", side_effect=lambda h, d="", **k: d):
+            new = default.mycat_form("movie", cat)
+        self.assertEqual(new["name"], "Moje")
+
+    def test_stary_jazyk_se_predvyplni_jako_zeme(self):
+        cat = {"id": "k1", "kind": "movie", "name": "Staré", "lang": "cs|sk"}
+        with mock.patch.object(xbmcgui.Dialog, "multiselect", side_effect=[[], None]) as ms, \
+                mock.patch.object(xbmcgui.Dialog, "select", return_value=0):
+            default.mycat_form("movie", cat)
+        self.assertEqual(ms.call_args_list[1].kwargs["preselect"], [0, 1])
 
     def test_pohadky_jako_klicove_slovo(self):
-        cat = self._vytvor(multiselect=(18,), selects=(3, 1, 0))[0]
-        self.assertEqual((cat["genres"], cat["keywords"], cat["lang"]), ([], ["fairy"], "cs|sk"))
-        self.assertEqual(cat["name"], "Pohádky · Čeština nebo slovenština")
+        cat = self._vytvor(multiselect=((18,), ()), selects=(0, 0, 0, 0, 0))[0]
+        self.assertEqual((cat["genres"], cat["keywords"], cat["countries"]), ([], ["fairy"], []))
         self.assertEqual(default.mycat_params(cat), {"with_keywords": "3205|329731|358931|351899",
-                                                     "with_original_language": "cs|sk",
-                                                     "sort_by": "popularity.desc", "year_from": 1990})
+                                                     "sort_by": "popularity.desc"})
 
     def test_zruseni_nic_neulozi(self):
-        with mock.patch.object(xbmcgui.Dialog, "multiselect", return_value=None):
+        with mock.patch.object(xbmcgui.Dialog, "select", side_effect=[0, -1]):
             default.main("action=mycat_new&type=movie")
         self.assertEqual(default.mycats(), [])
 
@@ -6874,12 +6851,9 @@ class TestVlastniKatalogy(unittest.TestCase):
 
         dash = Dash()
         default.list_mycat({"dash": dash}, "movie", cat["id"], 1)
-        self.assertEqual(dash.calls[0][2], 1)
-        self.assertEqual(dash.calls[0][1]["with_original_language"], "cs")
-        urls = xbmcplugin.urls()
-        dalsi = params_of(urls[-1])
+        self.assertEqual(dash.calls[0][1]["with_origin_country"], "CZ")
+        dalsi = params_of(xbmcplugin.urls()[-1])
         self.assertEqual(dalsi, {"action": "mycat", "type": "movie", "id": cat["id"], "page": "2", "paged": "1"})
-        self.assertTrue(xbmcplugin.items[-1][3], "„Další“ je složka")
 
     def test_vypadek_serveru_ohlasi(self):
         cat = self._vytvor()[0]
@@ -6892,24 +6866,89 @@ class TestVlastniKatalogy(unittest.TestCase):
         default.list_mycat({"dash": Dash()}, "movie", cat["id"], 1)
         self.assertEqual([n[1] for n in xbmcgui.notifications], ["Katalog se nepodařilo načíst. Zkus to později."])
 
-    def test_seznam_a_smazani(self):
+    def test_seznam_ikona_kontext_a_smazani(self):
         cat = self._vytvor(name="Moje")[0]
         xbmcplugin.reset()
         default.main("action=mycats&type=movie")
-        urls = [params_of(u) for u in xbmcplugin.urls()]
-        self.assertEqual([u["action"] for u in urls], ["mycat", "mycat_new", "mycat_new"])   # + nový katalog koncertů
-        self.assertEqual(xbmcplugin.items[0][2].getLabel(), "Moje")
+        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["mycat", "mycat_new"])
+        li = xbmcplugin.items[0][2]
+        self.assertEqual(li.getLabel(), "Moje")
+        self.assertIn("mycat_remote", " ".join(c[1] for c in li.context))
         with mock.patch.object(xbmcgui.Dialog, "yesno", return_value=True):
             default.main(f"action=mycat_delete&id={cat['id']}")
         self.assertEqual(default.mycats(), [])
+
+    def test_ikony_jen_ze_sady_skinu(self):
+        self.assertEqual([i for i, _, _ in default.MYCAT_ICONS], list(default.mycat.ICONS))
+        self.assertTrue(all(i.startswith("Default") for i in default.mycat.ICONS))
+        self.assertEqual([c for c, _, _ in default.MYCAT_COUNTRIES], list(default.mycat.COUNTRIES))
+        self.assertEqual(set(default.MYCAT_TEMPLATE_NAMES), {t["key"] for t in default.mycat.TEMPLATES})
 
     def test_menu_filmu_nabizi_vlastni_katalogy(self):
         default.browse_menu({}, "movie")
         self.assertIn("mycats", [params_of(u).get("action") for u in xbmcplugin.urls()])
 
 
+class TestKatalogZMobilu(unittest.TestCase):
+    """Editor vlastního katalogu z mobilu (QR): schéma, šablony, automatický název, uložení."""
+
+    def setUp(self):
+        reset_kodi()
+        default.STORE.save("mycatalogs", [])
+        default.STORE.save("mycatlog", {})
+        xbmcgui.Window(10000).clearProperty(default.VERIFY_MANUAL_PROP)
+
+    def test_novy_katalog_nabidne_mobil(self):
+        with mock.patch.object(xbmcgui.Dialog, "select", return_value=1), \
+                mock.patch.object(default, "mycat_remote") as remote:
+            default.main("action=mycat_new&type=series")
+        remote.assert_called_once_with(None, "series")
+
+    def test_schema_ma_multi_a_auto(self):
+        fields = {f.get("id"): f for f in default.mycat_remote_schema("movie", True)[0]["fields"]}
+        self.assertEqual(fields["countries"]["type"], "multi")
+        self.assertEqual(fields["countries"]["max"], 5)
+        self.assertEqual(fields["genres_series"]["enable"], ("kind", "series"))
+        self.assertEqual(fields["name"]["auto"]["action"], "autoname")
+        self.assertIn("countries", fields["name"]["auto"]["inputs"])
+        self.assertEqual(fields["audio"]["enable"], ("verify", "1"))
+        upravit = {f.get("id") for f in default.mycat_remote_schema("series", False)[0]["fields"]}
+        self.assertNotIn("kind", upravit)
+        self.assertNotIn("genres_movie", upravit)
+
+    def test_akce_sablona_a_nazev(self):
+        out = default._mycat_remote_template(None)({"template": "movie-4k-cz-dub"})
+        self.assertEqual((out["level"], out["set"]["verify"], out["set"]["q"], out["set"]["audio"], out["set"]["kind"]),
+                         ("ok", "1", "4", "CZ", "movie"))
+        self.assertEqual(out["set"]["name"], "Filmy ve 4K s CZ dabingem")
+        self.assertEqual(default._mycat_remote_template("series")({"template": "movie-top"})["set"], {})
+        jmeno = default._mycat_remote_autoname(None)({"kind": "movie", "countries": "CZ", "verify": "0"})
+        self.assertEqual(jmeno["set"]["name"], default.L(30262, "Česko"))
+
+    def test_ulozeni_z_mobilu(self):
+        zmeny = {"verify": "1", "audio": "CZ", "countries": "CZ|SK", "genres_movie": "35", "years_mode": "last",
+                 "years": "3", "icon": "DefaultSets.png"}
+        with mock.patch.object(default, "_remote_form", return_value=zmeny):
+            default.mycat_remote(None, "movie")
+        cat = default.mycats("movie")[0]
+        self.assertEqual((cat["genres"], cat["countries"], cat["years"], cat["verify"], cat["audio"], cat["icon"]),
+                         ([35], ["CZ", "SK"], 3, True, "CZ", "DefaultSets.png"))
+        self.assertTrue(cat["name_auto"])
+        self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_MANUAL_PROP),
+                         "%s:%s" % (cat["id"], default.mycat.FIRST_BATCH))
+
+    def test_uprava_z_mobilu_zachova_druh_a_zruseni_nic(self):
+        default.mycat.save(default.STORE, {"id": "k1", "kind": "series", "name": "Moje", "name_auto": False})
+        with mock.patch.object(default, "_remote_form", return_value=None):
+            default.mycat_remote("k1", "series")
+        with mock.patch.object(default, "_remote_form", return_value={"kind": "movie", "sort": "vote_average.desc"}):
+            default.mycat_remote("k1", "series")
+        cat = default.mycats()[0]
+        self.assertEqual((cat["kind"], cat["name"], cat["sort"]), ("series", "Moje", "vote_average.desc"))
+
+
 class TestOverovaneKatalogy(unittest.TestCase):
-    """Vlastní katalog s ověřováním streamů: umístění v menu, výpis z indexu, dávka, deník synchronizace."""
+    """Vlastní katalog s ověřováním streamů: výpis z indexu, dávka, deník synchronizace."""
 
     def setUp(self):
         reset_kodi()
@@ -6917,36 +6956,37 @@ class TestOverovaneKatalogy(unittest.TestCase):
         default.STORE.save("mycatlog", {})
         default.STORE.save("favourites", [])
         default.STORE.save("watched", {})
+        xbmcgui.Window(10000).clearProperty(default.VERIFY_TRIGGER_PROP)
 
     def _cat(self, **k):
         cat = dict({"id": "k1", "kind": "movie", "name": "Ověřené", "verify": True, "q": 3, "audio": "CZ", "show": "found"}, **k)
         default.mycat.save(default.STORE, cat)
         return cat
 
-    def _index(self, cat):
+    def _index(self, cat, now=100):
         import catindex
         idx = {"sig": default.mycat.sig(cat)}
         catindex.merge_pool(idx, [meta_item("tt1"), meta_item("tt2"), meta_item("tt3")], 0)
-        catindex.record(idx, "tt1", True, 100)
-        catindex.record(idx, "tt2", False, 100)
-        catindex.record(idx, "tt3", True, 200)
+        catindex.record(idx, "tt1", True, now)
+        catindex.record(idx, "tt2", False, now)
+        catindex.record(idx, "tt3", True, now + 100)
         default.STORE.save(default.mycat.INDEX + cat["id"], idx)
-
-    def test_menu_ukaze_katalog_jen_s_umistenim(self):
-        self._cat(menu=True)
-        self._cat(id="k2", name="Skrytý", menu=False)
-        default.browse_menu({}, "movie")
-        ids = [params_of(u).get("id") for u in xbmcplugin.urls() if params_of(u).get("action") == "mycat"]
-        self.assertEqual(ids, ["k1"])
 
     def test_vypis_jen_overene_a_akce_davky(self):
         cat = self._cat()
-        self._index(cat)
+        self._index(cat, now=int(time.time()))
         default.list_mycat({}, "movie", "k1", 1)
         akce = [params_of(u) for u in xbmcplugin.urls()]
         self.assertEqual(akce[0]["action"], "mycat_batch")
         self.assertEqual([a.get("id") for a in akce[1:]], ["tt3", "tt1"])   # nově nalezené první
         self.assertFalse(xbmcgui.notifications)
+        self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_TRIGGER_PROP), "", "nic po termínu")
+
+    def test_tituly_po_terminu_popozenou_sluzbu(self):
+        cat = self._cat()
+        self._index(cat)   # ověřeno dávno
+        default.list_mycat({}, "movie", "k1", 1)
+        self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_TRIGGER_PROP), "k1")
 
     def test_jina_definice_nebo_prazdny_index_popozene_sluzbu(self):
         cat = self._cat()
@@ -6979,115 +7019,119 @@ class TestOverovaneKatalogy(unittest.TestCase):
 
     def test_batch_zada_ukol_sluzbe(self):
         default.main("action=mycat_batch&id=k1")
-        self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_MANUAL_PROP), "k1:%s" % default.MANUAL_BATCH_SIZE)
-
-    def test_novy_overovany_katalog_zapise_denik(self):
-        selects = (1, 2, 0, 1, 1, 0, 1, 0)   # jazyk cs, roky Posledních X, řazení výběru, Full HD, zvuk CZ, titulky 0, 5.1, zobrazení
-        with mock.patch.object(xbmcgui.Dialog, "multiselect", return_value=[0]), \
-                mock.patch.object(xbmcgui.Dialog, "select", side_effect=list(selects)), \
-                mock.patch.object(xbmcgui.Dialog, "numeric", return_value="3", create=True), \
-                mock.patch.object(xbmcgui.Dialog, "yesno", return_value=True), \
-                mock.patch.object(xbmcgui.Dialog, "input", return_value="Nové"):
-            default.main("action=mycat_new&type=movie")
-        cat = default.mycats("movie")[0]
-        self.assertEqual((cat["years"], cat["verify"], cat["menu"], cat["q"], cat["audio"], cat["surround"]),
-                         (3, True, True, 3, "CZ", True))
-        self.assertTrue(default.STORE.reload("mycatlog", {})[cat["id"]]["on"])
+        self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_MANUAL_PROP),
+                         "k1:%s" % default.mycat.MANUAL_BATCH)
 
 
-class TestKatalogKoncertu(unittest.TestCase):
-    """Vlastní katalog koncertů podle žánru (Last.fm): formulář, výpis z indexu, přehrání, první dávka."""
+class TestKoncerty(unittest.TestCase):
+    """Modul Koncerty: položka v hlavním menu, nastavení žánrů (a klíče Last.fm), pohledy z indexu, služba."""
 
     def setUp(self):
         reset_kodi()
         default.STORE.save("mycatalogs", [])
         default.STORE.save("mycatlog", {})
+        default.STORE.save("concerts", {})
+        default.STORE.save("concerts_index", {})
+        default.STORE.save("catalogs_v2", "1")
         xbmcaddon.settings["lastfm_key"] = "klic"
         xbmcgui.Window(10000).clearProperty(default.VERIFY_MANUAL_PROP)
+        xbmcgui.Window(10000).clearProperty(default.VERIFY_TRIGGER_PROP)
 
     def tearDown(self):
         xbmcaddon.settings.pop("lastfm_key", None)
 
-    def _vytvor(self, yesno=(True, False), multiselect=(0, 6), name="Moje koncerty"):
-        # yesno: umístění v menu, první dávka; select: řazení (1 = Nově nalezené)
-        with mock.patch.object(xbmcgui.Dialog, "multiselect", return_value=list(multiselect)), \
-                mock.patch.object(xbmcgui.Dialog, "select", return_value=1), \
-                mock.patch.object(xbmcgui.Dialog, "yesno", side_effect=list(yesno)), \
-                mock.patch.object(xbmcgui.Dialog, "input", return_value=name):
-            default.main("action=mycat_new&kind=concert")
-        return default.mycats("concert")
-
-    def _index(self, cat):
+    def _index(self, tags=("czech", "rock")):
         import catindex
-        idx = {"sig": default.mycat.sig(cat)}
-        catindex.merge_pool(idx, [{"id": "a:alfa", "name": "Alfa"}, {"id": "a:beta", "name": "Beta"}], 0)
-        catindex.record(idx, "a:alfa", True, 100)
+        default.concertcat.configure(default.STORE, list(tags))
+        idx = {"sig": default.concertcat.sig(default.concertcat.config(default.STORE)["tags"])}
+        catindex.merge_pool(idx, [{"id": "a:alfa", "name": "Alfa", "tags": ["rock"]},
+                                  {"id": "a:beta", "name": "Beta", "tags": ["czech"]}], 0)
+        catindex.record(idx, "a:alfa", True, int(time.time()))
         idx["items"]["a:alfa"]["files"] = [
-            {"ref": "ws:x", "name": "Alfa - Live 1990.mkv", "size": 3 * 2 ** 30, "duration": 0, "source": "ws"},
-            {"ref": "hs:1:h", "name": "Alfa - Live 1990 [DVD].mkv", "size": 2 ** 30, "duration": 5400, "source": "hs"}]
-        catindex.record(idx, "a:beta", False, 100)
-        default.STORE.save(default.mycat.INDEX + cat["id"], idx)
+            {"ref": "ws:x", "name": "Alfa - Live 1990.mkv", "size": 3 * 2 ** 30, "duration": 0, "source": "ws", "t": 5},
+            {"ref": "hs:1:h", "name": "Alfa - Live 1990 [DVD].mkv", "size": 2 ** 30, "duration": 5400, "source": "hs",
+             "t": 7}]
+        catindex.record(idx, "a:beta", False, int(time.time()))
+        default.STORE.save("concerts_index", idx)
 
     def test_klic_je_v_jadru(self):
         self.assertEqual(default.engine_options()["lastfm_key"], "klic")
-        self.assertEqual(default.KodiEngine()._opt("lastfm_key"), "klic")
 
-    def test_formular_ulozi_koncertni_katalog(self):
-        cat = self._vytvor()[0]
-        self.assertEqual((cat["kind"], cat["tags"], cat["verify"], cat["show"], cat["menu"], cat["name"]),
-                         ("concert", ["czech", "rock"], True, "found", True, "Moje koncerty"))
-        self.assertTrue(default.STORE.reload("mycatlog", {})[cat["id"]]["on"])
+    def test_koncerty_v_hlavnim_menu(self):
+        default.main_menu({"ws": object()})
+        polozka = next(it for it in xbmcplugin.items if params_of(it[1]).get("action") == "concerts")
+        self.assertEqual(polozka[2].art["icon"], "DefaultMusicSongs.png")
 
-    def test_bez_klice_nic_neulozi(self):
+    def test_bez_nastaveni_jen_nastavit(self):
+        default.list_concerts()
+        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["concerts_setup"])
+
+    def test_nastaveni_ulozi_zanry_a_prvni_davku(self):
+        with mock.patch.object(xbmcgui.Dialog, "multiselect", return_value=[0, 6]), \
+                mock.patch.object(xbmcgui.Dialog, "yesno", return_value=True):
+            default.main("action=concerts_setup")
+        self.assertEqual(default.concertcat.config(default.STORE)["tags"], ["czech", "rock"])
+        self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_MANUAL_PROP),
+                         "concerts:%s" % default.mycat.FIRST_BATCH)
+
+    def test_prvni_nastaveni_se_zepta_na_klic(self):
         xbmcaddon.settings["lastfm_key"] = ""
-        with mock.patch.object(xbmcgui.Dialog, "yesno", return_value=False):
-            default.main("action=mycat_new&kind=concert")
-        self.assertEqual(default.mycats(), [])
+        with mock.patch.object(xbmcgui.Dialog, "input", return_value="novy"), \
+                mock.patch.object(default.concertcat, "check_key", return_value=True), \
+                mock.patch.object(xbmcgui.Dialog, "multiselect", return_value=[6]), \
+                mock.patch.object(xbmcgui.Dialog, "yesno", return_value=False):
+            default.main("action=concerts_setup")
+        self.assertEqual(xbmcaddon.settings["lastfm_key"], "novy")
+        self.assertEqual(default.concertcat.config(default.STORE)["tags"], ["rock"])
 
-    def test_prazdny_vyber_zanru_nic_neulozi(self):
-        self.assertEqual(self._vytvor(multiselect=()), [])
+    def test_neplatny_klic_nic_neulozi(self):
+        xbmcaddon.settings["lastfm_key"] = ""
+        with mock.patch.object(xbmcgui.Dialog, "input", return_value="spatny"), \
+                mock.patch.object(default.concertcat, "check_key", return_value=False):
+            default.main("action=concerts_setup")
+        self.assertEqual(xbmcaddon.settings["lastfm_key"], "")
+        self.assertFalse(default.concertcat.configured(default.STORE))
 
-    def test_prvni_davka_ano_a_ne(self):
-        cat = self._vytvor(yesno=(False, True))[0]
-        self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_MANUAL_PROP), "%s:30" % cat["id"])
-        xbmcgui.Window(10000).clearProperty(default.VERIFY_MANUAL_PROP)
-        default.STORE.save("mycatalogs", [])
-        self._vytvor(yesno=(False, False))
-        self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_MANUAL_PROP), "")
-
-    def test_vypis_interpretu_a_koncertu(self):
-        cat = self._vytvor()[0]
-        self._index(cat)
+    def test_pohledy(self):
+        self._index()
+        default.list_concerts()
+        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()],
+                         ["concerts_recent", "concerts_tags", "concerts_letters", "mycat_batch", "concerts_setup"])
         xbmcplugin.reset()
-        default.list_mycat({}, "movie", cat["id"], 1)
-        akce = [params_of(u) for u in xbmcplugin.urls()]
-        self.assertEqual([a["action"] for a in akce], ["mycat_batch", "mycat_artist"])
-        self.assertEqual(xbmcplugin.items[1][2].getLabel(), "Alfa (1)")
-        xbmcplugin.reset()
-        default.list_mycat_artist(cat["id"], "a:alfa")
+        default.list_concerts_recent()
         play = params_of(xbmcplugin.urls()[0])
         self.assertEqual((play["action"], play["ref"], play["alts"]), ("play_ref", "ws:x", "hs:1:h"))
+        self.assertEqual(xbmcplugin.items[0][2].getLabel(), "Alfa – Live (1990)")
+        xbmcplugin.reset()
+        default.list_concerts_tags()
+        self.assertEqual([params_of(u)["tag"] for u in xbmcplugin.urls()], ["rock"])
+        xbmcplugin.reset()
+        default.list_concerts_letters()
+        self.assertEqual(xbmcplugin.items[0][2].getLabel(), "A (1)")
+        xbmcplugin.reset()
+        default.main("action=mycat_artist&a=a:alfa")   # starý odkaz z bety 1
         self.assertEqual(xbmcplugin.items[0][2].getLabel(), "Live (1990)")
 
-    def test_bez_klice_vypis_nabidne_nastaveni(self):
-        cat = self._vytvor()[0]
-        xbmcaddon.settings["lastfm_key"] = ""
-        xbmcplugin.reset()
-        default.list_mycat({}, "movie", cat["id"], 1)
-        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["settings"])
+    def test_migrace_koncertniho_katalogu(self):
+        default.STORE.save("catalogs_v2", "")
+        default.mycat.save(default.STORE, {"id": "k1", "kind": "concert", "name": "K", "tags": ["metal"],
+                                           "verify": True})
+        default.migrate_catalogs_v2()
+        self.assertEqual(default.concertcat.config(default.STORE)["tags"], ["metal"])
+        self.assertEqual(default.mycats(), [])
 
-    def test_menu_pod_filmy_a_v_koreni(self):
-        self._vytvor(yesno=(True, False))
-        xbmcplugin.reset()
-        default.main_menu({"ws": object()})
-        self.assertIn("mycat", [params_of(u).get("action") for u in xbmcplugin.urls()])
-        default.mycat.save(default.STORE, dict(default.mycats("concert")[0], menu=False))
-        xbmcplugin.reset()
-        default.main_menu({"ws": object()})
-        self.assertNotIn("mycat", [params_of(u).get("action") for u in xbmcplugin.urls()])
-        xbmcplugin.reset()
-        default.list_mycats("movie")
-        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["mycat", "mycat_new", "mycat_new"])
+    def test_sluzba_bere_koncerty_jako_cil(self):
+        store = service.Store(service.PROFILE)
+        self.assertNotIn("concerts", service.verify_targets(store))
+        default.concertcat.configure(default.STORE, ["rock"])
+        self.assertIn("concerts", service.verify_targets(service.Store(service.PROFILE)))
+        with mock.patch.object(default.concertcat, "refresh") as ref:
+            default.verify_refresh({}, "concerts", 3)
+        self.assertEqual(ref.call_args.args[2], 3)
+
+    def test_prvni_kolo_sluzby_brzy_po_startu(self):
+        self.assertEqual(service.VERIFY_START_DELAY, 120)
+        self.assertEqual(service.mycat.AUTO_BATCH, 8)
 
     def test_play_ref_zkusi_zalozni_odkaz(self):
         with mock.patch.object(default, "resolve_url",
@@ -7095,11 +7139,6 @@ class TestKatalogKoncertu(unittest.TestCase):
             default.play_ref({}, "hs:1:h", "Live (1990)", "ws:x")
         self.assertEqual([c.args[1] for c in res.call_args_list], ["hs:1:h", "ws:x"])
         self.assertTrue(xbmcplugin.resolved[-1][1])
-
-    def test_sluzba_bere_koncert_jako_cil(self):
-        cat = self._vytvor()[0]
-        self.assertIn(cat["id"], service.verify_targets(service.Store(service.PROFILE)))
-        self.assertFalse(default.mycat.foreign_recent(default.mycat.load_index(default.STORE, cat)))
 
     def test_lastfm_check(self):
         del xbmcgui.notifications[:]

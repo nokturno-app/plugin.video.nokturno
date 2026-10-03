@@ -1,10 +1,13 @@
-"""Vlastní katalog koncertů podle hudebního žánru: seznam interpretů (pool) z Last.fm, hledání koncertů ve
+"""Modul Koncerty: seznam interpretů (pool) z Last.fm podle vybraných hudebních žánrů, hledání koncertů ve
 zdrojích zapnutých u uživatele a seskupení nálezů do koncertů.
 
-Všechno běží na zařízení uživatele s jeho vlastním klíčem Last.fm; server se nepoužívá a nálezy se
-nesynchronizují (synchronizuje se jen definice katalogu, viz `mycat.py`). Sdílí Kodi, Home Assistant
-(jen definici) a Stremio. Do jádra patří jen obecný filtr (`concertfilter.py`), žádné seznamy souborů.
+Koncerty nejsou druh vlastního katalogu, ale jedna pevná konfigurace (`CONFIG`, jen vybrané žánry)
+a jeden index (`INDEX`, struktura `catindex`). Všechno běží na zařízení uživatele s jeho vlastním klíčem
+Last.fm; server se nepoužívá a nálezy se nesynchronizují (synchronizuje se jen konfigurace, okruh
+`catalogs`, záznam `c:concerts`). Sdílí Kodi, Home Assistant (jen konfiguraci) a Stremio. Do jádra patří
+jen obecný filtr (`concertfilter.py`), žádné seznamy souborů.
 """
+import time
 import json
 import logging
 import urllib.error
@@ -13,12 +16,16 @@ import urllib.request
 
 # `from .x import y`, ne `from . import x` — plochá kopie v Kodi umí jen tenhle tvar
 from abort import Aborted
-from concertfilter import _key, concert_key, concert_title, is_concert
+from catindex import merge_pool, next_batch, record
+from concertfilter import _key, concert_key, concert_title, is_concert, normalize_title, rivals
 from fastshare_api import make_ref as fastshare_ref
 from hellspy_api import HellspyRateLimited
 
 _LOGGER = logging.getLogger(__name__)
 
+CONFIG = "concerts"            # {"tags": [...], "ts": int} – vybrané žánry (synchronizuje se)
+INDEX = "concerts_index"       # struktura `catindex`; u položky `files` = nálezy, u souboru `t` = první nález
+RETRY = 1800                   # po selhání načtení poolu z Last.fm další pokus nejdřív za 30 min
 LASTFM_URL = "https://ws.audioscrobbler.com/2.0/"
 TAGS = ("czech", "slovak", "czech rock", "classic rock", "hard rock", "metal", "rock", "pop", "punk",
         "hip-hop", "jazz", "electronic", "folk", "classical", "reggae", "world")
@@ -80,25 +87,27 @@ def pool(key, tags, opener=urllib.request.urlopen):
     lists, error = [], None
     for tag in [t for t in TAGS if t in set(tags or ())]:   # neznámé štítky se ignorují
         try:
-            lists.append(lastfm_top(key, tag, opener=opener))
+            lists.append((tag, lastfm_top(key, tag, opener=opener)))
         except ConcertError as err:
             error = err
             _LOGGER.debug("Last.fm „%s“: %s", tag, err)
     if error is not None and not lists:
         raise error
-    out, seen = [], set()
-    for i in range(max((len(x) for x in lists), default=0)):
-        for names in lists:
+    out, seen = [], {}
+    for i in range(max((len(x) for _t, x in lists), default=0)):
+        for tag, names in lists:
             if i >= len(names):
                 continue
             k = _key(names[i])
-            if len(k) < 3 or k.isdigit() or not any("a" <= c <= "z" for c in k) or k in seen:
+            if len(k) < 3 or k.isdigit() or not any("a" <= c <= "z" for c in k):
                 continue
-            seen.add(k)
-            out.append({"id": "a:" + k, "name": names[i]})
-            if len(out) >= POOL_MAX:
-                return out
-    return out
+            if k in seen:   # týž interpret z víc štítků: štítky se sčítají
+                if tag not in seen[k]["tags"]:
+                    seen[k]["tags"].append(tag)
+                continue
+            seen[k] = {"id": "a:" + k, "name": names[i], "tags": [tag]}
+            out.append(seen[k])
+    return out[:POOL_MAX]
 
 
 # --- hledání ---------------------------------------------------------------------------
@@ -134,7 +143,10 @@ def search(engine, artist, rivals=(), should_stop=None):
     """Koncerty `artist` ve zdrojích, které má `engine` zapnuté (WebShare, HellSpy, FastShare): soubory
     `{"ref", "name", "size", "duration", "source"}`, nejvýš `MAX_FILES`, největší první. Chyba jednoho zdroje
     ho jen vynechá; selhaly-li všechny zapnuté (nebo žádný není zapnutý), vrací `None` = zkusit později."""
-    on = engine.sources()
+    on = dict(engine.sources())
+    # FastShare bez kreditu a zdroje v pauze se na pozadí nevolají (viz `Engine.verify_sources`)
+    for name in getattr(engine, "verify_sources", lambda: ())():
+        on[name] = False
     tried = failed = 0
     found = []
     for source, attr, fn in SOURCES:
@@ -203,3 +215,201 @@ def visible(index, sort="pool"):
     else:
         rows.sort(key=lambda r: r[0].get("rank", 0))
     return [r[1] for r in rows]
+
+
+# --- konfigurace, index a pohledy --------------------------------------------------------
+
+def _now():
+    return int(time.time())
+
+
+def config(store):
+    """Uložená konfigurace `{"tags": [...], "ts": int}` – jen platné štítky; prázdné `tags` = nenastaveno."""
+    cfg = store.load(CONFIG, {})
+    cfg = cfg if isinstance(cfg, dict) else {}
+    return {"tags": [t for t in cfg.get("tags") or [] if t in TAGS], "ts": int(cfg.get("ts") or 0)}
+
+
+def configured(store):
+    return bool(config(store)["tags"])
+
+
+def configure(store, tags):
+    """Uloží vybrané žánry (jen známé štítky, v pořadí `TAGS`) a zapíše čas změny pro synchronizaci."""
+    chosen = [t for t in TAGS if t in set(tags or ())]
+    store.save(CONFIG, {"tags": chosen, "ts": _now()})
+    return chosen
+
+
+def sig(tags):
+    return ",".join(sorted(tags))
+
+
+def load_index(store):
+    """Index odpovídající dnešním žánrům, `{}` při jiných (neplatný)."""
+    index = store.load(INDEX, {})
+    return index if isinstance(index, dict) and index.get("sig") == sig(config(store)["tags"]) else {}
+
+
+def collect_config(store):
+    """Záznam pro synchronizaci (`c:concerts`) nebo None, dokud není nic nastaveno."""
+    cfg = config(store)
+    if not cfg["tags"]:
+        return None
+    rec = {"on": True, "ts": cfg["ts"], "cfg": {"tags": cfg["tags"]}}
+    raw = store.load(CONFIG, {})
+    if isinstance(raw, dict) and raw.get("rts"):
+        rec["rts"] = int(raw["rts"])
+    return rec
+
+
+def apply_config(store, rec, stamp=0):
+    """Přijme cizí konfiguraci, je-li novější; vrací 1 při přijetí. `stamp` = čas příjmu (jen střed, HA)."""
+    cfg = rec.get("cfg") if isinstance(rec, dict) else None
+    tags = [t for t in TAGS if t in set((cfg or {}).get("tags") or ())]
+    try:
+        ts = int(rec.get("ts") or 0)
+    except (TypeError, ValueError, AttributeError):
+        return 0
+    if not tags or ts <= config(store)["ts"]:
+        return 0
+    data = {"tags": tags, "ts": ts}
+    if stamp:
+        data["rts"] = stamp
+    store.save(CONFIG, data)
+    return 1
+
+
+def migrate_catalogs(store):
+    """Beta 1 měla koncerty jako druh vlastního katalogu: jejich žánry se sjednotí do `CONFIG` (jen když ještě
+    není) a katalogy se smažou (`mycat.delete` přes deník, ať se smazání synchronizuje). Vrací počet smazaných."""
+    from mycat import DEFS, delete   # líný import: mycat importuje tenhle modul
+
+    items = [c for c in store.load(DEFS, []) if isinstance(c, dict) and c.get("kind") == "concert"]
+    if not items:
+        return 0
+    if not configured(store):
+        tags = set()
+        for c in items:
+            tags |= set(c.get("tags") or ())
+        if tags & set(TAGS):
+            configure(store, tags)
+    for c in items:
+        delete(store, c.get("id"))
+    return len(items)
+
+
+def refresh(engine, store, size=1, should_stop=None):
+    """Jedna dávka: obnoví pool z Last.fm (po `POOL_EVERY`, vlastní klíč `lastfm_key`) a prohledá až `size`
+    interpretů ve zdrojích zařízení. Vrací počet prohledaných. Bez konfigurace nebo klíče 0."""
+    key = str(engine._opt("lastfm_key") or "").strip()
+    tags = config(store)["tags"]
+    if not key or not tags:
+        return 0
+    csig, now = sig(tags), _now()
+    index = store.reload(INDEX, {})
+    same = index.get("sig") == csig
+    stale = (not same or now - int(index.get("pool_ts") or 0) >= POOL_EVERY) \
+        and now - int(index.get("pool_try") or 0 if same else 0) >= RETRY
+    fresh = None
+    if stale:   # síť mimo zámek
+        try:
+            fresh = pool(key, tags)
+        except ConcertError:
+            fresh = None
+    with store.updating(INDEX, {}) as index:
+        if index.get("sig") != csig:
+            index.clear()
+            index["sig"] = csig
+        if stale:
+            index["pool_try"] = now
+        if fresh is not None:
+            merge_pool(index, fresh, now)
+            index["pool_ts"] = now
+        batch = [(m, index["items"][m]["meta"].get("name") or "") for m in next_batch(index, now, size)]
+        names = [(e.get("meta") or {}).get("name") or "" for e in (index.get("items") or {}).values()]
+    done = 0
+    for mid, artist in batch:
+        if should_stop and should_stop():
+            break
+        files = None
+        if artist:
+            try:
+                with engine.background():
+                    files = search(engine, artist, rivals(artist, names), should_stop)
+            except Aborted:
+                raise
+            except Exception:  # noqa: BLE001 – výpadek zdroje = zkusit později
+                files = None
+        with store.updating(INDEX, {}) as index:
+            entry = (index.get("items") or {}).get(mid)
+            if index.get("sig") == csig and entry is not None:
+                stamp = _now()
+                record(index, mid, None if files is None else bool(files), stamp)
+                if files:
+                    first = {f.get("ref"): f.get("t") for f in entry.get("files") or []}   # první nález zůstává
+                    for f in files:
+                        f["t"] = int(first.get(f["ref"]) or stamp)
+                    entry["files"] = files
+                else:
+                    entry.pop("files", None)
+        done += 1
+    return done
+
+
+def _artists(index):
+    """Interpreti s nálezem: `[(entry, {"id", "name", "files"})]`."""
+    rows = []
+    for mid, e in (index.get("items") or {}).items():
+        if e.get("ok") is True and e.get("files") and (e.get("meta") or {}).get("name"):
+            rows.append((e, {"id": mid, "name": e["meta"]["name"], "files": e["files"]}))
+    return rows
+
+
+def recent(index, limit=50):
+    """Nově přidané koncerty napříč interprety, nejnovější první (podle času prvního nálezu souboru):
+    `[{"artist_id", "artist", "title", "year", "files", "t"}]`."""
+    out = []
+    for _e, a in _artists(index):
+        for g in group(a["files"], a["name"]):
+            out.append(dict(g, artist_id=a["id"], artist=a["name"], t=max(int(f.get("t") or 0) for f in g["files"])))
+    out.sort(key=lambda c: (-c["t"], c["artist"].casefold(), c["title"].casefold()))
+    return out[:limit]
+
+
+def by_tag(index, tag):
+    """Interpreti s daným štítkem (abecedně)."""
+    rows = [a for e, a in _artists(index) if tag in ((e.get("meta") or {}).get("tags") or [])]
+    return sorted(rows, key=lambda a: a["name"].casefold())
+
+
+def tags_available(index):
+    """Štítky, pod kterými je aspoň jeden interpret s nálezem, v pořadí `TAGS`."""
+    have = {t for e, _a in _artists(index) for t in (e.get("meta") or {}).get("tags") or []}
+    return [t for t in TAGS if t in have]
+
+
+def letter_of(name):
+    first = normalize_title(name or "")[:1]
+    return first.upper() if first.isalpha() else "#"
+
+
+def letters(index):
+    """`{písmeno: počet interpretů}` (číslice a ostatní = `#`)."""
+    out = {}
+    for _e, a in _artists(index):
+        out[letter_of(a["name"])] = out.get(letter_of(a["name"]), 0) + 1
+    return dict(sorted(out.items(), key=lambda kv: (kv[0] == "#", kv[0])))
+
+
+def by_letter(index, letter):
+    rows = [a for _e, a in _artists(index) if letter_of(a["name"]) == letter]
+    return sorted(rows, key=lambda a: a["name"].casefold())
+
+
+def artist(index, mid):
+    """Koncerty interpreta `[{"title", "year", "files"}]` (prázdné, není-li nalezen)."""
+    for _e, a in _artists(index):
+        if a["id"] == mid:
+            return group(a["files"], a["name"])
+    return []

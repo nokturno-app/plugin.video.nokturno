@@ -14,9 +14,7 @@ import time
 
 # `from .x import y`, ne `from . import x` — plochá kopie v Kodi umí jen tenhle tvar
 from abort import Aborted
-from concertcat import ConcertError, POOL_EVERY as CONCERT_POOL_EVERY, TAGS as CONCERT_TAGS
-from concertcat import pool as concert_pool, search as concert_search
-from concertfilter import rivals as concert_rivals
+from concertcat import apply_config as concert_apply, collect_config as concert_collect, CONFIG as CONCERT_CONFIG
 from catindex import compact, counts, merge_pool, merge_results, next_batch, record, signature, visible  # noqa: F401
 
 DEFS = "mycatalogs"          # seznam definic katalogů
@@ -31,6 +29,21 @@ SHOWS = ("pool", "found", "released")
 POOL_PAGES = 10
 POOL_EVERY = 6 * 3600
 FOREIGN_FRESH = 2 * 3600     # cizí výsledky mladší než tohle = ověřuje jiné zařízení (HA)
+COUNTRIES = ("CZ", "SK", "US", "GB", "FR", "DE", "IT", "ES", "PL", "HU", "KR", "JP", "DK", "SE", "NO")
+MAX_COUNTRIES = 5
+# ikony ze standardní sady skinu (jen názvy, obrázky patří skinu; Kodi k nim doplní popisky)
+ICONS = ("DefaultMovies.png", "DefaultTVShows.png", "DefaultVideoPlaylists.png", "DefaultFavourites.png",
+         "DefaultMusicTop100.png", "DefaultGenre.png", "DefaultYear.png", "DefaultCountry.png", "DefaultSets.png",
+         "DefaultRecentlyAddedMovies.png", "DefaultActor.png", "DefaultStudios.png")
+DEFAULT_ICONS = {"movie": "DefaultMovies.png", "series": "DefaultTVShows.png"}
+# velikosti dávek ověřování: automatická na pozadí, ruční „Načíst teď“, první po založení nebo změně definice
+AUTO_BATCH = 8
+MANUAL_BATCH = 20
+FIRST_BATCH = 40
+# staré `lang` (původní jazyk) → země původu; formulář už jazyk neukládá
+LANG_COUNTRIES = {"cs": ["CZ"], "sk": ["SK"], "cs|sk": ["CZ", "SK"], "sk|cs": ["CZ", "SK"], "de": ["DE"],
+                  "fr": ["FR"], "es": ["ES"], "it": ["IT"], "pl": ["PL"], "hu": ["HU"], "ko": ["KR"],
+                  "ja": ["JP"], "en": ["US", "GB"]}
 MAX_VERIFIED = 20            # blob relaye má 128 kB: 20 katalogů × 200 titulů = ~51 kB po gzipu
 
 
@@ -68,9 +81,8 @@ def save(store, cat):
     _touch(store, cat["id"], True)
 
 
-# Předdefinované katalogy: běžné záznamy s pevným id (víc zařízení ve skupině synchronizace tak nezaloží
-# duplikáty), upravitelné i smazatelné. (id, kind, název cs, pole)
-PRESETS = (
+# Předvolby z bety 10.0.0~beta1 – už se nezakládají, jen se uklízí (`beta1_untouched`). (id, kind, název cs, pole)
+BETA1_PRESETS = (
     ("pre-movie-popular", "movie", "Populární", {"sort": "popularity.desc"}),
     ("pre-movie-top", "movie", "Nejlépe hodnocené", {"sort": "vote_average.desc"}),
     ("pre-movie-cz-dub", "movie", "Nové s CZ dabingem",
@@ -85,25 +97,121 @@ PRESETS = (
     ("pre-series-czech", "series", "České seriály", {"sort": "popularity.desc", "lang": "cs"}),
 )
 
-
-def preset_catalog(pid, kind, name, fields):
-    """Plný záznam předvolby (stejná pole, jaká ukládá formulář v Kodi)."""
-    return dict({"id": pid, "kind": kind, "name": name, "genres": [], "keywords": [], "join": "and", "lang": "",
-                 "year_from": None, "year_to": None, "years": None, "sort": "popularity.desc", "verify": False,
-                 "q": 0, "audio": "", "subs": "", "surround": False, "show": "found", "menu": True}, **fields)
+# pole záznamu a jejich výchozí hodnoty (stejná pole ukládá formulář v Kodi)
+FIELD_DEFAULTS = {"genres": [], "keywords": [], "join": "and", "lang": "", "countries": [], "year_from": None,
+                  "year_to": None, "years": None, "sort": "popularity.desc", "verify": False, "q": 0, "audio": "",
+                  "subs": "", "surround": False, "show": "found"}
 
 
-def seed(store, names=None, overrides=None):
-    """Založí předvolby, které v deníku ještě nejsou (smazaná předvolba má v `LOG` `on False`, takže se nevrátí).
-    `names` = {id: název}, `overrides` = {id: {pole}} přepíše pole předvolby. Vrací seznam založených id."""
-    names, overrides, made = names or {}, overrides or {}, []
-    with store.updating(LOG, {}) as log:
-        for pid, kind, name, fields in PRESETS:
-            if pid in log:
-                continue
-            save(store, preset_catalog(pid, kind, names.get(pid) or name, dict(fields, **overrides.get(pid, {}))))
-            made.append(pid)
-    return made
+def beta1_untouched(cat):
+    """Je to předvolba z bety 1, ve které uživatel nic kromě názvu (a umístění v menu) nezměnil?
+    Chybějící pole se bere jako výchozí hodnota."""
+    for pid, kind, _name, fields in BETA1_PRESETS:
+        if cat.get("id") != pid:
+            continue
+        want = dict(FIELD_DEFAULTS, **fields)
+        have = dict(FIELD_DEFAULTS, **{k: v for k, v in cat.items() if k in FIELD_DEFAULTS})
+        return cat.get("kind") == kind and all(have[k] == want[k] for k in ("genres", "keywords", "join", "lang",
+                                               "year_from", "year_to", "years", "sort", "verify", "q", "audio",
+                                               "subs", "surround", "show")) and not have["countries"]
+    return False
+
+
+# Šablony (jen data, nic se nezakládá): na stránce z mobilu „Načíst šablonu“ vyplní formulář, uživatel upraví a uloží.
+TEMPLATES = (
+    {"key": "movie-popular", "kind": "movie", "name": "Populární filmy", "fields": {"sort": "popularity.desc"}},
+    {"key": "series-popular", "kind": "series", "name": "Populární seriály", "fields": {"sort": "popularity.desc"}},
+    {"key": "movie-top", "kind": "movie", "name": "Nejlépe hodnocené filmy", "fields": {"sort": "vote_average.desc"}},
+    {"key": "series-top", "kind": "series", "name": "Nejlépe hodnocené seriály",
+     "fields": {"sort": "vote_average.desc"}},
+    {"key": "movie-new-cz-dub", "kind": "movie", "name": "Nové filmy s CZ dabingem",
+     "fields": {"sort": "popularity.desc", "years": 2, "verify": True, "audio": "CZ", "show": "found"}},
+    {"key": "series-new-cz-dub", "kind": "series", "name": "Nové seriály s CZ dabingem",
+     "fields": {"sort": "popularity.desc", "years": 2, "verify": True, "audio": "CZ", "show": "found"}},
+    {"key": "movie-4k-cz-dub", "kind": "movie", "name": "Filmy ve 4K s CZ dabingem",
+     "fields": {"sort": "popularity.desc", "verify": True, "q": 4, "audio": "CZ", "show": "found"}},
+    {"key": "movie-czech", "kind": "movie", "name": "České filmy",
+     "fields": {"sort": "popularity.desc", "countries": ["CZ"]}},
+    {"key": "series-czech", "kind": "series", "name": "České seriály",
+     "fields": {"sort": "popularity.desc", "countries": ["CZ"]}},
+    {"key": "movie-fairy-cz-dub", "kind": "movie", "name": "Pohádky s CZ dabingem",
+     "fields": {"sort": "popularity.desc", "keywords": ["fairy"], "verify": True, "audio": "CZ", "show": "found"}},
+)
+
+
+def templates(kind=None):
+    return [t for t in TEMPLATES if kind is None or t["kind"] == kind]
+
+
+def template_fields(key):
+    """Plná pole šablony (výchozí hodnoty + pole šablony) včetně `kind`, nebo None."""
+    t = next((t for t in TEMPLATES if t["key"] == key), None)
+    return None if t is None else dict(FIELD_DEFAULTS, kind=t["kind"], **t["fields"])
+
+
+def icon_for(cat):
+    """Ikona katalogu: platná z `ICONS`, jinak výchozí podle druhu."""
+    icon = cat.get("icon")
+    return icon if icon in ICONS else DEFAULT_ICONS.get(cat.get("kind"), "DefaultVideoPlaylists.png")
+
+
+def countries_of(cat):
+    """Platné kódy zemí katalogu (bez duplicit, nejvýš `MAX_COUNTRIES`)."""
+    out = []
+    for c in cat.get("countries") or []:
+        if c in COUNTRIES and c not in out:
+            out.append(c)
+    return out[:MAX_COUNTRIES]
+
+
+def migrate_lang(cat):
+    """Země ze starého `lang` (původní jazyk), je-li katalog bez `countries`; jinak jeho země. Nic neukládá."""
+    have = countries_of(cat)
+    if have:
+        return have
+    return list(LANG_COUNTRIES.get(str(cat.get("lang") or "").lower(), []))
+
+
+def auto_name(cat, labels, default="Vlastní katalog"):
+    """Název z parametrů katalogu. Jádro nemá překlady, popisky dodává volající v `labels`:
+    `genres` {id: název}, `keywords` {klíč: název}, `countries` {kód: název}, `qualities` {3: "Full HD", …},
+    `dub` „{} dabing“, `subs` „titulky {}“, `surround` „5.1“, `years` „posledních {} let“,
+    `year_from`/`year_to`/`year_range` „od {}“/„do {}“/„{}–{}“. Požadavky ověřování se berou jen s `verify`."""
+    def lab(key, fallback):
+        return labels.get(key) or fallback
+
+    parts = []
+    names = [(labels.get("genres") or {}).get(str(g)) for g in cat.get("genres") or []]
+    names += [(labels.get("keywords") or {}).get(k) for k in cat.get("keywords") or []]
+    names = [n for n in names if n][:3]
+    if names:
+        parts.append(", ".join(names))
+    zeme = [(labels.get("countries") or {}).get(c) or c for c in countries_of(cat)[:2]]
+    if zeme:
+        parts.append(", ".join(zeme))
+    if cat.get("verify"):
+        audio, subs = cat.get("audio") or "", cat.get("subs") or ""
+        if audio in TRACKS and audio:
+            parts.append(lab("dub", "{} dabing").format(audio.replace("|", "/")))
+        if subs in TRACKS and subs:
+            parts.append(lab("subs", "titulky {}").format(subs.replace("|", "/")))
+        q = norm_quality(cat.get("q"))
+        if q:
+            parts.append((labels.get("qualities") or {}).get(q) or {3: "Full HD", 3.5: "2K", 4: "4K"}[q])
+        if cat.get("surround"):
+            parts.append(lab("surround", "5.1"))
+    years = cat.get("years")
+    if isinstance(years, int) and not isinstance(years, bool) and 1 <= years <= 50:
+        parts.append(lab("years", "posledních {} let").format(years))
+    else:
+        yf, yt = cat.get("year_from"), cat.get("year_to")
+        if yf and yt:
+            parts.append(lab("year_range", "{}–{}").format(yf, yt))
+        elif yf:
+            parts.append(lab("year_from", "od {}").format(yf))
+        elif yt:
+            parts.append(lab("year_to", "do {}").format(yt))
+    return " · ".join(parts) or default
 
 
 def delete(store, cid):
@@ -124,6 +232,7 @@ def params(cat, today=None):
         year_from, year_to = cat.get("year_from") or "", cat.get("year_to") or ""
     out = {"with_genres": ("|" if cat.get("join") == "or" else ",").join(genres),
            "with_keywords": "|".join(keywords),
+           "with_origin_country": "|".join(countries_of(cat)),
            "with_original_language": cat.get("lang") or "", "sort_by": cat.get("sort") or "",
            "year_from": year_from, "year_to": year_to}
     return {k: v for k, v in out.items() if v}
@@ -144,20 +253,13 @@ def definition(cat):
             audio if audio in TRACKS else "", subs if subs in TRACKS else "")
 
 
-def concert_tags(cat):
-    """Žánry katalogu koncertů – jen známé štítky (`concertcat.TAGS`)."""
-    return [t for t in cat.get("tags") or [] if t in CONCERT_TAGS]
-
-
 def sig(cat):
-    if cat.get("kind") == "concert":   # změna žánrů = nový index
-        return signature("concert", False, ",".join(sorted(concert_tags(cat))))
     return signature(*definition(cat))
 
 
-def verified(store, concerts=True):
-    """Ověřované katalogy; `concerts=False` vynechá koncertní (HA je neověřuje)."""
-    return [c for c in catalogs(store) if c.get("verify") and (concerts or c.get("kind") != "concert")][:MAX_VERIFIED]
+def verified(store):
+    """Ověřované katalogy (režim „jen tituly se streamem“)."""
+    return [c for c in catalogs(store) if c.get("verify")][:MAX_VERIFIED]
 
 
 def pool(dash, cat):
@@ -198,8 +300,6 @@ def refresh(engine, store, dash, cid, size=1, verify=True, should_stop=None):
     cat = next((c for c in catalogs(store) if c.get("id") == cid), None)
     if not cat or not cat.get("verify"):
         return 0
-    if cat.get("kind") == "concert":
-        return refresh_concert(engine, store, cat, size, verify, should_stop)
     kind = "series" if cat.get("kind") == "series" else "movie"
     name, csig, now = INDEX + cid, sig(cat), _now()
     index = store.reload(name, {})
@@ -231,66 +331,11 @@ def refresh(engine, store, dash, cid, size=1, verify=True, should_stop=None):
     return done
 
 
-CONCERT_RETRY = 1800   # po selhání načtení poolu z Last.fm další pokus nejdřív za 30 min
-
-
-def refresh_concert(engine, store, cat, size=1, verify=True, should_stop=None):
-    """Totéž pro katalog koncertů: pool interpretů z Last.fm (vlastní klíč `lastfm_key`) a hledání koncertů
-    ve zdrojích zařízení. Soubory se ukládají k interpretovi v indexu a nikam se nesynchronizují."""
-    key = str(engine._opt("lastfm_key") or "").strip()
-    if not key:
-        return 0
-    name, csig, now = INDEX + cat["id"], sig(cat), _now()
-    index = store.reload(name, {})
-    stale = (index.get("sig") != csig or now - int(index.get("pool_ts") or 0) >= CONCERT_POOL_EVERY) \
-        and now - int(index.get("pool_try") or 0 if index.get("sig") == csig else 0) >= CONCERT_RETRY
-    fresh = None
-    if stale:   # síť mimo zámek
-        try:
-            fresh = concert_pool(key, concert_tags(cat))
-        except ConcertError:
-            fresh = None
-    with store.updating(name, {}) as index:
-        if index.get("sig") != csig:
-            index.clear()
-            index["sig"] = csig
-        if stale:
-            index["pool_try"] = now
-        if fresh is not None:
-            merge_pool(index, fresh, now)
-            index["pool_ts"] = now
-        batch = [(m, index["items"][m]["meta"].get("name") or "") for m in next_batch(index, now, size)] if verify else []
-        names = [(e.get("meta") or {}).get("name") or "" for e in (index.get("items") or {}).values()]
-    done = 0
-    for mid, artist in batch:
-        if should_stop and should_stop():
-            break
-        files = None
-        if artist:
-            try:
-                with engine.background():
-                    files = concert_search(engine, artist, concert_rivals(artist, names), should_stop)
-            except Aborted:
-                raise
-            except Exception:  # noqa: BLE001 – výpadek zdroje = zkusit později
-                files = None
-        with store.updating(name, {}) as index:
-            entry = (index.get("items") or {}).get(mid)
-            if index.get("sig") == csig and entry is not None:
-                record(index, mid, None if files is None else bool(files), _now())
-                if files:
-                    entry["files"] = files
-                else:
-                    entry.pop("files", None)
-        done += 1
-    return done
-
-
 def overview(store):
     """Stav pro HA (služba `nokturno.catalogs`, senzor): {"paused", "catalogs": [{id, name, kind, verified, matched,
     total, last_check}]} – jen ověřované katalogy; `last_check` = ISO čas posledního ověření nebo None."""
     rows = []
-    for cat in verified(store, concerts=False):
+    for cat in verified(store):
         index = load_index(store, cat)
         checked, matched, total = counts(index)
         last = max((int(e.get("ts") or 0) for e in (index.get("items") or {}).values()), default=0)
@@ -326,7 +371,10 @@ def collect(store, since, seen):
             out["c:" + cid] = {"on": False, "ts": _ts(rec)}
         elif cid in cats:
             out["c:" + cid] = {"on": True, "ts": _ts(rec), "cat": cats[cid]}
-    for cat in verified(store, concerts=False):   # nálezy koncertů se nesynchronizují, jen definice
+    cfg = concert_collect(store)   # koncerty: jen žánry, nálezy se nesynchronizují
+    if cfg and seen(cfg) >= since:
+        out["c:" + CONCERT_CONFIG] = cfg
+    for cat in verified(store):
         index = load_index(store, cat)
         res = compact(index)
         if not res:
@@ -338,9 +386,7 @@ def collect(store, since, seen):
 
 
 def _valid(cat, cid):
-    if not (isinstance(cat, dict) and cat.get("id") == cid and cat.get("kind") in ("movie", "series", "concert")):
-        return False
-    return cat.get("kind") != "concert" or bool(concert_tags(cat))
+    return isinstance(cat, dict) and cat.get("id") == cid and cat.get("kind") in ("movie", "series")
 
 
 def apply(store, changes, stamp=0):
@@ -352,6 +398,9 @@ def apply(store, changes, stamp=0):
         rec = changes[key]
         kind, _, cid = str(key).partition(":")
         if kind not in ("c", "r") or not cid or not isinstance(rec, dict):
+            continue
+        if kind == "c" and cid == CONCERT_CONFIG:
+            applied += concert_apply(store, rec, stamp)
             continue
         if kind == "c":
             on, cat = bool(rec.get("on")), rec.get("cat")
@@ -373,7 +422,7 @@ def apply(store, changes, stamp=0):
             applied += 1
         else:
             cat = next((c for c in catalogs(store) if c["id"] == cid), None)
-            if not cat or cat.get("kind") == "concert" or rec.get("sig") != sig(cat):
+            if not cat or rec.get("sig") != sig(cat):
                 continue
             with store.updating(INDEX + cid, {}) as index:
                 if index.get("sig") != rec["sig"]:

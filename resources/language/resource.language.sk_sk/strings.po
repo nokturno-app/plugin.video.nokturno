@@ -2563,14 +2563,6 @@ msgctxt "#30948"
 msgid "Genres (none = all)"
 msgstr "Žánre (nič = všetky)"
 
-msgctxt "#30949"
-msgid "Original language"
-msgstr "Pôvodný jazyk"
-
-msgctxt "#30950"
-msgid "Any"
-msgstr "Akýkoľvek"
-
 msgctxt "#30951"
 msgid "From year (empty = no limit)"
 msgstr "Od roku (prázdne = bez obmedzenia)"
@@ -2606,54 +2598,6 @@ msgstr "Zmazať katalóg %s?"
 msgctxt "#30959"
 msgid "The catalog could not be loaded. Try again later."
 msgstr "Katalóg sa nepodarilo načítať. Skús to neskôr."
-
-msgctxt "#30960"
-msgid "Czech"
-msgstr "Čeština"
-
-msgctxt "#30961"
-msgid "Slovak"
-msgstr "Slovenčina"
-
-msgctxt "#30962"
-msgid "Czech or Slovak"
-msgstr "Čeština alebo slovenčina"
-
-msgctxt "#30963"
-msgid "English"
-msgstr "Angličtina"
-
-msgctxt "#30964"
-msgid "German"
-msgstr "Nemčina"
-
-msgctxt "#30965"
-msgid "French"
-msgstr "Francúzština"
-
-msgctxt "#30966"
-msgid "Spanish"
-msgstr "Španielčina"
-
-msgctxt "#30967"
-msgid "Italian"
-msgstr "Taliančina"
-
-msgctxt "#30968"
-msgid "Polish"
-msgstr "Poľština"
-
-msgctxt "#30969"
-msgid "Hungarian"
-msgstr "Maďarčina"
-
-msgctxt "#30970"
-msgid "Korean"
-msgstr "Kórejčina"
-
-msgctxt "#30971"
-msgid "Japanese"
-msgstr "Japončina"
 
 msgctxt "#30972"
 msgid "Custom catalog"
@@ -2807,10 +2751,6 @@ msgctxt "#30992"
 msgid "Streams marked CAM, HDCAM, TS, telesync or KINO are hidden. If only a cinema recording exists so far, it is shown so the list is not empty."
 msgstr "Streamy označené CAM, HDCAM, TS, telesync alebo KINO sa skryjú. Ak zatiaľ existuje len nahrávka z kina, zobrazí sa, aby výber nezostal prázdny."
 
-msgctxt "#30993"
-msgid "Movies in high quality"
-msgstr "Filmy vo vysokej kvalite"
-
 msgctxt "#30994"
 msgid "Minimum quality"
 msgstr "Minimálna kvalita"
@@ -2895,25 +2835,9 @@ msgctxt "#30771"
 msgid "How many last years"
 msgstr "Koľko posledných rokov"
 
-msgctxt "#30772"
-msgid "Verify stream availability?"
-msgstr "Overovať dostupnosť streamov?"
-
-msgctxt "#30773"
-msgid "The catalog will then show only titles with a stream matching your requirements. It is verified in the background – on Home Assistant in the sync group, otherwise on this device."
-msgstr "Katalóg potom ukáže len tituly, ku ktorým sa našiel stream podľa tvojich požiadaviek. Overuje sa na pozadí – na Home Assistantovi v skupine synchronizácie, inak na tomto zariadení."
-
 msgctxt "#30774"
 msgid "Show sorted by"
 msgstr "Zobraziť zoradené podľa"
-
-msgctxt "#30775"
-msgid "Placement"
-msgstr "Umiestnenie"
-
-msgctxt "#30776"
-msgid "Show the catalog directly in the Movies/TV Shows menu?"
-msgstr "Zobraziť katalóg priamo v ponuke Filmy/Seriály?"
 
 msgctxt "#30777"
 msgid "Verified %s of %s – run a batch now"
@@ -2935,10 +2859,6 @@ msgctxt "#30782"
 msgid "Definitions of own catalogs and verification results. When Home Assistant is in the sync group, it verifies and the other devices only display."
 msgstr "Definície vlastných katalógov a výsledky overovania. Keď je v skupine Home Assistant, overuje on a ostatné zariadenia len zobrazujú."
 
-msgctxt "#30783"
-msgid "Audio language"
-msgstr "Jazyk zvuku"
-
 msgctxt "#30784"
 msgid "Last.fm"
 msgstr "Last.fm"
@@ -2958,18 +2878,6 @@ msgstr "Overiť kľúč"
 msgctxt "#30788"
 msgid "Checks that Last.fm accepts the key."
 msgstr "Overí, že Last.fm kľúč prijíma."
-
-msgctxt "#30789"
-msgid "New concert catalog"
-msgstr "Nový katalóg koncertov"
-
-msgctxt "#30790"
-msgid "A concert catalog needs your own Last.fm API key. Enter it in Settings → Sources and accounts → Last.fm."
-msgstr "Katalóg koncertov potrebuje vlastný API kľúč Last.fm. Zadaj ho v Nastaveniach → Zdroje a účty → Last.fm."
-
-msgctxt "#30791"
-msgid "Open settings"
-msgstr "Otvoriť nastavenia"
 
 msgctxt "#30792"
 msgid "Music genres of the catalog"
@@ -3039,18 +2947,6 @@ msgctxt "#30858"
 msgid "World"
 msgstr "World"
 
-msgctxt "#30859"
-msgid "Popularity"
-msgstr "Popularity"
-
-msgctxt "#30912"
-msgid "Alphabet"
-msgstr "Abecedy"
-
-msgctxt "#30921"
-msgid "Show the catalog directly in the main menu?"
-msgstr "Zobraziť katalóg priamo v hlavnom menu?"
-
 msgctxt "#30922"
 msgid "Concerts"
 msgstr "Koncerty"
@@ -3071,10 +2967,6 @@ msgctxt "#30779"
 msgid "The catalog is being prepared – artists are searched in the background."
 msgstr "Katalóg sa pripravuje – interpreti sa prehľadávajú na pozadí."
 
-msgctxt "#30731"
-msgid "Last.fm API key missing – open settings"
-msgstr "Chýba API kľúč Last.fm – otvoriť nastavenia"
-
 msgctxt "#30737"
 msgid "Run stream verification now?"
 msgstr "Spustiť overenie streamov teraz?"
@@ -3091,22 +2983,274 @@ msgctxt "#30018"
 msgid "The first batch searches more artists at once so the catalog has something to show right away. It runs in the background."
 msgstr "Prvá dávka prehľadá viac interpretov naraz, nech je v katalógu hneď čo ukázať. Beží na pozadí."
 
-msgctxt "#30007"
-msgid "Popular"
-msgstr "Populárne"
+msgctxt "#30241"
+msgid "Catalog mode"
+msgstr "Režim katalógu"
 
-msgctxt "#30008"
-msgid "Top rated"
-msgstr "Najlepšie hodnotené"
+msgctxt "#30242"
+msgid "Catalog from TMDB"
+msgstr "Katalóg z TMDB"
 
-msgctxt "#30015"
-msgid "New with Czech dubbing"
-msgstr "Nové s CZ dabingom"
+msgctxt "#30243"
+msgid "Only titles with a stream"
+msgstr "Len tituly so streamom"
 
-msgctxt "#30016"
+msgctxt "#30244"
+msgid "Countries of origin (up to 5)"
+msgstr "Krajiny pôvodu (najviac 5)"
+
+msgctxt "#30245"
+msgid "Catalog icon"
+msgstr "Ikona katalógu"
+
+msgctxt "#30246"
+msgid "Template"
+msgstr "Šablóna"
+
+msgctxt "#30247"
+msgid "Load template"
+msgstr "Načítať šablónu"
+
+msgctxt "#30248"
+msgid "No template"
+msgstr "Bez šablóny"
+
+msgctxt "#30249"
+msgid "List"
+msgstr "Zoznam"
+
+msgctxt "#30250"
+msgid "Chart"
+msgstr "Rebríček"
+
+msgctxt "#30251"
+msgid "Genre"
+msgstr "Žáner"
+
+msgctxt "#30252"
+msgid "Year"
+msgstr "Rok"
+
+msgctxt "#30253"
+msgid "Country"
+msgstr "Krajina"
+
+msgctxt "#30254"
+msgid "Collection"
+msgstr "Zbierka"
+
+msgctxt "#30255"
+msgid "Studios"
+msgstr "Štúdiá"
+
+msgctxt "#30256"
+msgid "Set up concerts"
+msgstr "Nastaviť koncerty"
+
+msgctxt "#30257"
+msgid "By genre"
+msgstr "Podľa žánru"
+
+msgctxt "#30258"
+msgid "By letter"
+msgstr "Podľa abecedy"
+
+msgctxt "#30259"
+msgid "Choose at least one music genre."
+msgstr "Vyber aspoň jeden hudobný žáner."
+
+msgctxt "#30260"
+msgid "Template loaded – edit it and save."
+msgstr "Šablóna načítaná – uprav a ulož."
+
+msgctxt "#30262"
+msgid "Czechia"
+msgstr "Česko"
+
+msgctxt "#30263"
+msgid "Slovakia"
+msgstr "Slovensko"
+
+msgctxt "#30264"
+msgid "USA"
+msgstr "USA"
+
+msgctxt "#30265"
+msgid "United Kingdom"
+msgstr "Veľká Británia"
+
+msgctxt "#30266"
+msgid "France"
+msgstr "Francúzsko"
+
+msgctxt "#30267"
+msgid "Germany"
+msgstr "Nemecko"
+
+msgctxt "#30268"
+msgid "Italy"
+msgstr "Taliansko"
+
+msgctxt "#30269"
+msgid "Spain"
+msgstr "Španielsko"
+
+msgctxt "#30270"
+msgid "Poland"
+msgstr "Poľsko"
+
+msgctxt "#30271"
+msgid "Hungary"
+msgstr "Maďarsko"
+
+msgctxt "#30272"
+msgid "South Korea"
+msgstr "Južná Kórea"
+
+msgctxt "#30273"
+msgid "Japan"
+msgstr "Japonsko"
+
+msgctxt "#30274"
+msgid "Denmark"
+msgstr "Dánsko"
+
+msgctxt "#30275"
+msgid "Sweden"
+msgstr "Švédsko"
+
+msgctxt "#30276"
+msgid "Norway"
+msgstr "Nórsko"
+
+msgctxt "#30277"
+msgid "Popular movies"
+msgstr "Populárne filmy"
+
+msgctxt "#30278"
+msgid "Popular series"
+msgstr "Populárne seriály"
+
+msgctxt "#30279"
+msgid "Top rated movies"
+msgstr "Najlepšie hodnotené filmy"
+
+msgctxt "#30280"
+msgid "Top rated series"
+msgstr "Najlepšie hodnotené seriály"
+
+msgctxt "#30281"
+msgid "New movies with Czech dubbing"
+msgstr "Nové filmy s CZ dabingom"
+
+msgctxt "#30282"
+msgid "New series with Czech dubbing"
+msgstr "Nové seriály s CZ dabingom"
+
+msgctxt "#30283"
+msgid "4K movies with Czech dubbing"
+msgstr "Filmy v 4K s CZ dabingom"
+
+msgctxt "#30284"
 msgid "Czech movies"
 msgstr "České filmy"
 
-msgctxt "#30017"
+msgctxt "#30285"
 msgid "Czech series"
 msgstr "České seriály"
+
+msgctxt "#30286"
+msgid "Fairy tales with Czech dubbing"
+msgstr "Rozprávky s CZ dabingom"
+
+msgctxt "#30287"
+msgid "Dubbing language"
+msgstr "Jazyk dabingu"
+
+msgctxt "#30289"
+msgid "Pick music genres and enter your Last.fm key. Concerts are searched in the background."
+msgstr "Vyber hudobné žánre a zadaj kľúč Last.fm. Koncerty sa hľadajú na pozadí."
+
+msgctxt "#30290"
+msgid "Pick a template or fill in the catalog by hand, then save."
+msgstr "Vyber šablónu, alebo vyplň katalóg ručne, a ulož ho."
+
+msgctxt "#30291"
+msgid "{} dubbing"
+msgstr "{} dabing"
+
+msgctxt "#30292"
+msgid "subtitles {}"
+msgstr "titulky {}"
+
+msgctxt "#30293"
+msgid "5.1"
+msgstr "5.1"
+
+msgctxt "#30294"
+msgid "last {} years"
+msgstr "posledných {} rokov"
+
+msgctxt "#30295"
+msgid "from {}"
+msgstr "od {}"
+
+msgctxt "#30296"
+msgid "to {}"
+msgstr "do {}"
+
+msgctxt "#30297"
+msgid "{}–{}"
+msgstr "{}–{}"
+
+msgctxt "#30200"
+msgid "Shows all titles matching the filters right away. For a title without a stream you can turn on watching – Watched will tell you when a stream appears."
+msgstr "Ukáže hneď všetky tituly podľa filtrov. Pri titule bez streamu si môžeš zapnúť stráženie – Strážené dajú vedieť, keď stream bude."
+
+msgctxt "#30202"
+msgid "A stream matching your requirements (dubbing, subtitles, quality, 5.1) is searched for each title in the background. The catalog fills up gradually and shows only what can be played."
+msgstr "Na pozadí sa pri každom titule hľadá stream podľa tvojich požiadaviek (dabing, titulky, kvalita, 5.1). Katalóg sa plní postupne a ukáže len to, čo sa dá prehrať."
+
+msgctxt "#30203"
+msgid "On the TV"
+msgstr "Na televízii"
+
+msgctxt "#30204"
+msgid "On the phone (QR)"
+msgstr "Na mobile (QR)"
+
+msgctxt "#30205"
+msgid "Edit on the phone"
+msgstr "Upraviť na mobile"
+
+msgctxt "#30206"
+msgid "Star"
+msgstr "Hviezda"
+
+msgctxt "#30217"
+msgid "New releases"
+msgstr "Novinky"
+
+msgctxt "#30218"
+msgid "Actors"
+msgstr "Herci"
+
+msgctxt "#30219"
+msgid "Searched %s of %s – load now"
+msgstr "Prehľadané %s z %s – načítať teraz"
+
+msgctxt "#30226"
+msgid "Concerts need your own Last.fm API key. It is free at last.fm/api – create one and copy it here."
+msgstr "Koncerty potrebujú vlastný API kľúč Last.fm. Je zadarmo na last.fm/api – vytvor si ho a opíš sem."
+
+msgctxt "#30227"
+msgid "Start the first batch right away"
+msgstr "Hneď spustiť prvú dávku"
+
+msgctxt "#30228"
+msgid "Catalog type"
+msgstr "Druh katalógu"
+
+msgctxt "#30235"
+msgid "Catalog saved."
+msgstr "Katalóg uložený."

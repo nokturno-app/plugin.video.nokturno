@@ -13,8 +13,8 @@ jen informace, že jsou vyplněná; prázdné pole heslo nemění. Spojení je H
 na domácí Wi-Fi přijatelné, stejně jako webové rozhraní Kodi.
 
 Schéma: `[{"id", "label", "fields": [{"id", "label", "help", "type", "options",
-"enable"}]}]`, `type` je `bool`/`text`/`password`/`choice`/`order`/`heading`, `options` u
-`choice` seznam `(hodnota, popisek)`, `enable` volitelně `(id jiného pole, hodnota)`
+"enable"}]}]`, `type` je `bool`/`text`/`password`/`choice`/`multi`/`order`/`heading`, `options` u
+`choice` a `multi` seznam `(hodnota, popisek)`, `enable` volitelně `(id jiného pole, hodnota)`
 nebo seznam takových dvojic (platit musí všechny) — pole je jen zašedlé, když závislost
 neplatí, odešle se stejně. `heading` je jen
 podnadpis uvnitř sekce (např. rozlišení více úložišť) — nemá `id`, do formuláře
@@ -27,6 +27,16 @@ tak, jak jsou právě ve formuláři (i nepotvrzené), a vrátí `{"level": ok|w
 "set": {id: hodnota}, "link": {"url", "label"}}` — `set` stránka dopíše do polí formuláře, uloží se
 až tlačítkem Uložit; `link` (jen http/https) přidá pod odpověď odkaz otevíraný v nové záložce.
 Funkce běží ve vlákně serveru, nesmí sahat na UI hostitele.
+
+`multi` je výběr zaškrtávátky: hodnota = vybrané hodnoty z `options` oddělené `|` (v pořadí `options`, bez
+duplicit), server přijme jen známé hodnoty a nejvýš `max` (je-li dáno). Stránka je skládá do skrytého pole
+a zaškrtávátka v mřížce dvou sloupců.
+
+`auto` u textového pole (`{"action", "inputs": [id…], "off": bool}`): po každé změně kteréhokoli pole z `inputs`
+(s odstupem ~400 ms) stránka zavolá akci `actions[action]` (stejná cesta jako tlačítko `action`) a hodnotu z
+`set` vepíše do pole. Jakmile uživatel do pole sám napíše, automatika se pro tuto stránku vypne (`off` ji
+vypne od začátku – např. u názvu, který uživatel dřív přepsal). `set` stránka umí zapsat do polí
+`text`/`choice`/`multi`/`bool`.
 
 `order` je pořadí položek ve více řádcích (např. co ukazovat u streamu): `items` je seznam
 `(klíč, popisek)`, `rows` počet řádků (výchozí 2). Hodnota `a,b|c,d` — řádky oddělené `|`,
@@ -65,6 +75,14 @@ TEXTS = {
     "action_failed": "Spojení s televizí se přerušilo – na TV spusť Nastavit z mobilu znovu.",
     "action_running": "Pracuji…",
 }
+
+
+def parse_multi(value, allowed, limit=None):
+    """`a|b` → seznam hodnot v pořadí `allowed` bez duplicit, nebo None (neznámá hodnota, víc než `limit`)."""
+    got = [p.strip() for p in str(value or "").split("|") if p.strip()]
+    if any(p not in allowed for p in got) or (limit and len(set(got)) > limit):
+        return None
+    return [a for a in allowed if a in got]
 
 
 def parse_order(value, keys, rows=2):
@@ -184,6 +202,13 @@ class SetupServer:
                     errors.append(field.get("label") or fid)
                     continue
                 value = raw
+            elif kind == "multi":
+                allowed = [str(v) for v, _label in field.get("options") or []]
+                picked = parse_multi(raw[:MAX_TEXT], allowed, field.get("max"))
+                if picked is None:
+                    errors.append(field.get("label") or fid)
+                    continue
+                value = "|".join(picked)
             elif kind == "order":
                 rows = parse_order(raw[:MAX_TEXT], {k for k, _label in field.get("items") or []},
                                    field.get("rows") or 2)
@@ -204,6 +229,7 @@ class SetupServer:
             return {"level": "fail", "text": self.texts["action_failed"], "set": {}}
         form = urllib.parse.parse_qs(body, keep_blank_values=True, max_num_fields=500)
         wanted = {fid for f in self._fields_of(name) for fid in (f.get("inputs") or [])}
+        wanted |= {fid for f in self._auto_of(name) for fid in ((f.get("auto") or {}).get("inputs") or [])}
         values = {fid: (form.get(fid) or [""])[-1].strip()[:MAX_TEXT] for fid in wanted if fid in self.fields}
         try:
             out = func(values) or {}
@@ -212,7 +238,7 @@ class SetupServer:
         # dopsat lze jen pole, která existují a nejsou heslo — token není heslo, ale ať se nikdy
         # nevrací obsah, který stránka nedostala
         setv = {k: str(v)[:MAX_TEXT] for k, v in (out.get("set") or {}).items()
-                if k in self.fields and self.fields[k].get("type") in ("text", "choice")}
+                if k in self.fields and self.fields[k].get("type") in ("text", "choice", "multi", "bool")}
         link = out.get("link") or {}
         url = str(link.get("url") or "")
         link = {"url": url, "label": str(link.get("label") or url)[:200]} if url.startswith(("http://", "https://")) else {}
@@ -221,6 +247,10 @@ class SetupServer:
     def _fields_of(self, name):
         return [f for section in self.schema for f in section["fields"]
                 if f.get("type") == "action" and f.get("action") == name]
+
+    def _auto_of(self, name):
+        return [f for section in self.schema for f in section["fields"]
+                if (f.get("auto") or {}).get("action") == name]
 
     @staticmethod
     def _dep_attrs(enable, esc):
@@ -271,6 +301,8 @@ class SetupServer:
                                    f'{esc(str(lab))}</option>' for v, lab in f.get("options") or [])
                     rows.append(f'<label class="{row_class}"{attrs}><span>{label}{help_text}</span>'
                                 f'<select name="{esc(fid)}" id="{esc(fid)}">{opts}</select></label>')
+                elif kind == "multi":
+                    rows.append(self._render_multi(f, current, row_class, attrs, label, help_text))
                 elif kind == "order":
                     rows.append(self._render_order(f, current, row_class, attrs, label, help_text))
                 elif kind == "password":
@@ -279,15 +311,30 @@ class SetupServer:
                                 f'<input type="password" name="{esc(fid)}" id="{esc(fid)}" autocomplete="off" '
                                 f'placeholder="{hint}"></label>')
                 else:
+                    auto = f.get("auto") or {}
+                    auto_attrs = (f' data-auto="{esc(auto["action"])}" data-auto-in="{esc(",".join(auto.get("inputs") or []))}"'
+                                  f'{" data-manual=1" if auto.get("off") else ""}') if auto.get("action") else ""
                     rows.append(f'<label class="{row_class}"{attrs}><span>{label}{help_text}</span>'
                                 f'<input type="text" name="{esc(fid)}" id="{esc(fid)}" value="{esc(current)}" '
-                                f'autocapitalize="off" autocorrect="off" spellcheck="false"></label>')
+                                f'autocapitalize="off" autocorrect="off" spellcheck="false"{auto_attrs}></label>')
             parts.append(f'<details{" open" if section.get("open") else ""}><summary>{esc(section["label"])}'
                          f'</summary>{"".join(rows)}</details>')
         note = f'<p class="note{" err" if error else ""}">{esc(message)}</p>' if message else ""
         return PAGE.format(title=esc(t["title"]), intro=esc(t["intro"]), note=note, sections="".join(parts),
                            save=esc(t["save"]), action=f"/s/{esc(self.token)}",
                            failed=json.dumps(t["action_failed"]), running=json.dumps(t["action_running"]))
+
+    def _render_multi(self, f, current, row_class, attrs, label, help_text):
+        esc = html.escape
+        picked = set(parse_multi(current, [str(v) for v, _l in f.get("options") or []]) or [])
+        boxes = "".join(f'<label class="chk"><input type="checkbox" data-val="{esc(str(v))}"'
+                        f'{" checked" if str(v) in picked else ""}><span>{esc(str(lab))}</span></label>'
+                        for v, lab in f.get("options") or [])
+        fid = esc(f["id"])
+        limit = f' data-max="{int(f["max"])}"' if f.get("max") else ""
+        return (f'<div class="{row_class} multi" data-multi="{fid}"{limit}{attrs}><span>{label}{help_text}</span>'
+                f'<input type="hidden" name="{fid}" id="{fid}" value="{esc("|".join(v for v in current.split("|") if v))}">'
+                f'<div class="chks">{boxes}</div></div>')
 
     def _render_order(self, f, current, row_class, attrs, label, help_text):
         esc, t = html.escape, self.texts
@@ -425,6 +472,9 @@ button.ghost{{background:var(--line);font-size:.95rem;padding:11px}}button.ghost
 .result{{padding:10px 12px;border-radius:10px;font-size:.9rem;white-space:pre-line;background:#1f3326;color:#bff0cc}}
 .result a.lnk{{display:inline-block;margin-top:8px;color:inherit;font-weight:600}}
 .result.warn{{background:#3a3220;color:#f5dfa0}}.result.fail{{background:#3a1f24;color:#ffc9d0}}
+.chks{{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}}
+.chk{{display:flex;align-items:center;gap:8px;font-size:.9rem}}.chk input{{width:22px;height:22px;flex:none;
+accent-color:var(--accent)}}
 .zone h5{{margin:10px 0 6px;font-size:.78rem;color:var(--dim);text-transform:uppercase;letter-spacing:.02em}}
 .zone ul{{list-style:none;margin:0;padding:6px;min-height:46px;border:1px dashed var(--line);border-radius:10px}}
 .zone li{{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);
@@ -442,6 +492,30 @@ background:var(--accent);border:0;border-radius:12px;padding:15px}}
 <form method="post" action="{action}" autocomplete="off">{sections}
 <div class="bar"><button type="submit">{save}</button></div></form></main>
 <script>
+function setVal(id,v){{var el=document.getElementById(id);if(!el)return;
+if(el.type==="checkbox")el.checked=v==="true";else el.value=v;
+var m=el.closest("[data-multi]");if(m&&m.dataset.multi===id){{var on=v.split("|");
+m.querySelectorAll("input[data-val]").forEach(function(c){{c.checked=on.indexOf(c.dataset.val)>=0;}});}}}}
+function applySet(set){{Object.keys(set||{{}}).forEach(function(id){{setVal(id,set[id]);}});}}
+document.addEventListener("change",function(e){{var c=e.target.closest("[data-multi] input[data-val]");if(!c)return;
+var box=c.closest("[data-multi]"),all=[].slice.call(box.querySelectorAll("input[data-val]")),
+max=parseInt(box.dataset.max||"0",10);
+if(max&&all.filter(function(x){{return x.checked;}}).length>max)c.checked=false;
+document.getElementById(box.dataset.multi).value=all.filter(function(x){{return x.checked;}}).map(function(x){{
+return x.dataset.val;}}).join("|");}});
+var autoTimer=null;
+function autoAll(){{clearTimeout(autoTimer);autoTimer=setTimeout(function(){{
+document.querySelectorAll("[data-auto]").forEach(function(el){{if(el.dataset.manual)return;
+var data=new URLSearchParams();(el.dataset.autoIn||"").split(",").forEach(function(id){{
+var x=document.getElementById(id);if(x)data.append(id,x.value);}});
+fetch("{action}/act/"+el.dataset.auto,{{method:"POST",body:data}}).then(function(r){{return r.json();}}).then(function(r){{
+if(!el.dataset.manual&&r.set&&r.set[el.id]!==undefined)el.value=r.set[el.id];}}).catch(function(){{}});}});}},400);}}
+function maybeAuto(t){{var ids=[];document.querySelectorAll("[data-auto]").forEach(function(el){{
+ids=ids.concat((el.dataset.autoIn||"").split(","));}});var m=t.closest&&t.closest("[data-multi]");
+if(ids.indexOf(t.id)>=0||(m&&ids.indexOf(m.dataset.multi)>=0))autoAll();}}
+document.addEventListener("input",function(e){{var t=e.target;
+if(t.dataset&&t.dataset.auto)t.dataset.manual="1";else maybeAuto(t);}});
+document.addEventListener("change",function(e){{maybeAuto(e.target);}});
 function sync(){{document.querySelectorAll("[data-dep]").forEach(function(row){{
 var ids=row.dataset.dep.split(","),vals=row.dataset.val.split(","),ok=true;
 ids.forEach(function(id,i){{var dep=document.getElementById(id);if(!dep)return;
@@ -456,8 +530,7 @@ fetch("{action}/act/"+b.dataset.act,{{method:"POST",body:data}}).then(function(r
 box.className="result "+(r.level||"fail");box.textContent=r.text;
 if(r.link&&r.link.url){{var a=document.createElement("a");a.href=r.link.url;a.target="_blank";a.rel="noopener";
 a.textContent=r.link.label;a.className="lnk";box.appendChild(document.createElement("br"));box.appendChild(a);}}
-Object.keys(r.set||{{}}).forEach(function(id){{var el=document.getElementById(id);if(!el)return;
-if(el.type==="checkbox")el.checked=r.set[id]==="true";else el.value=r.set[id];}});sync();
+applySet(r.set);sync();autoAll();
 }}).catch(function(){{box.className="result fail";box.textContent={failed};}}).then(function(){{b.disabled=false;}});}});
 document.addEventListener("click",function(e){{var b=e.target.closest("button[data-mv]");if(!b)return;
 var li=b.closest("li"),box=b.closest("[data-order]"),uls=[].slice.call(box.querySelectorAll("ul")),

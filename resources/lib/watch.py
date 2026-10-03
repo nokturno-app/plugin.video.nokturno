@@ -59,7 +59,7 @@ LOG_MAX = 1000
 # Cinemeta 12 h) a seznam streamů (72 h). Hlavičky souborů (`media:`) ne — nemění se
 # a jejich čtení je nejdražší část hledání.
 META_KEYS = ("tmdb:meta", "tmdb:season", "tmdb:detail", "https://v3-cinemeta")
-STREAM_KEYS = ("streams",)
+STREAM_KEYS = ("src1:",)
 
 SERIES_FIELDS = ("title", "alt", "poster")
 WANTED_FIELDS = ("type", "title", "year", "alt", "poster", "series", "query")

@@ -587,10 +587,13 @@ class Store:
             self._key_unlock(path, entry)
 
     def capped(self, key):
-        """Platí ve vlákně `fresher()` omezení stáří i pro tenhle klíč? Kdo čte cache
-        sám (`peek_cached`), musí to vědět — ten omezení nezná, jen `cached_if`."""
+        """Platí ve vlákně `fresher()` omezení stáří i pro tenhle klíč? (`cached_if`, `peek_cached`)"""
         cap = getattr(self._local, "cap", None)
         return cap is not None and (not cap[1] or key.startswith(cap[1]))
+
+    def cap_ttl(self, key, ttl):
+        """`ttl` zkrácené omezením `fresher()` tohohle vlákna (bez něj beze změny)."""
+        return min(ttl, self._local.cap[0]) if self.capped(key) else ttl
 
     @staticmethod
     def _read_cached(path, ttl):
@@ -624,7 +627,12 @@ class Store:
         """Vrátí, co pro `key` uložil `cached()`/`cached_if()`, jen když je to ještě
         v `ttl` — beze spuštění loaderu. Pro rozhodnutí předem (bez placení ceny
         výpočtu), jestli je něco vůbec připravené, např. než se nabídne drahý
-        přepočet uživateli ke schválení místo automatického spuštění."""
+        přepočet uživateli ke schválení místo automatického spuštění.
+
+        Ve vlákně `fresher()` platí i tady jeho omezení stáří (jako u `cached_if`)."""
+        ttl = self.cap_ttl(key, ttl)
+        if ttl <= 0:
+            return None
         path = os.path.join(self.cache_dir, "cache", hashlib.md5(key.encode("utf-8")).hexdigest() + ".json")
         try:
             if time.time() - os.path.getmtime(path) < ttl:
