@@ -10,6 +10,8 @@ import time
 RECHECK_AFTER = 3 * 86400   # titul, který nevyhověl: za kolik se zkusí znovu
 RECHECK_FOUND = 7 * 86400   # titul, který vyhověl: jak často se ověřuje, jestli nález platí
 RETRY_AFTER = 1800          # po selhání zkusit znovu za 30 min (`record`)
+SLOW_MISSES = 3             # koncerty: interpret bez nálezu tolikrát za sebou jde do pomalé koleje
+SLOW_RECHECK = 30 * 86400   # … a zkusí se znovu až za 30 dní (pole `misses` plní jen `concertcat`)
 NO_RANK = 10 ** 6           # položka, která přišla jen synchronizací a v místním poolu ještě není
 
 
@@ -39,6 +41,8 @@ def merge_pool(index, pool_metas, now):
 
 
 def _period(entry, recheck_after, recheck_found):
+    if int(entry.get("misses") or 0) >= SLOW_MISSES:
+        return SLOW_RECHECK
     return recheck_found if entry.get("ok") is True else recheck_after
 
 

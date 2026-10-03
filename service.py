@@ -1264,7 +1264,7 @@ def _verify_run(monitor, target, count, progress):
 
 def verify_worker(monitor):
     """Vlákno: průběžně ověřuje vlastní katalogy po dávkách (po jednom titulu, viz
-    `_verify_run`), vždy jeden cíl na kolo, dokud se nehraje a je síť. Ruční dávku zadá vlastnost okna
+    `_verify_run`), vždy jeden cíl na kolo, dokud je síť; při přehrávání automaticky jen 1 titul za kolo. Ruční dávku zadá vlastnost okna
     `VERIFY_MANUAL_PROP` („cíl:počet“), první dávku po otevření prázdného seznamu `VERIFY_TRIGGER_PROP` (cíl)."""
     win = xbmcgui.Window(10000)
     waited = VERIFY_EVERY - VERIFY_START_DELAY
@@ -1278,8 +1278,9 @@ def verify_worker(monitor):
         if waited < VERIFY_EVERY and not trigger and not manual:
             continue
         try:
-            if QUITTING.is_set() or xbmc.Player().isPlaying() or not terms_ok():
+            if QUITTING.is_set() or not terms_ok():
                 continue
+            playing = xbmc.Player().isPlaying()   # při přehrávání ruční dávka jede, automatická po 1 titulu
             store = Store(PROFILE)
             offline = (store.reload(accounts_lib.OFFLINE, {}) or {}).get("ts", 0)
             if offline and time.time() - float(offline) < accounts_lib.OFFLINE_TTL:
@@ -1304,7 +1305,7 @@ def verify_worker(monitor):
                 target, turn = targets[turn % len(targets)], turn + 1
             if target in targets:
                 waited = 0
-                _verify_run(monitor, target, mycat.AUTO_BATCH, False)
+                _verify_run(monitor, target, 1 if playing and not trigger else mycat.AUTO_BATCH, False)
         except Exception as e:  # noqa: BLE001 – vlákno nesmí spadnout
             log(f"verify_worker: {e}", xbmc.LOGDEBUG)   # výpadek zdroje = šum v logu
 

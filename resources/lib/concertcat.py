@@ -16,10 +16,11 @@ import urllib.request
 
 # `from .x import y`, ne `from . import x` — plochá kopie v Kodi umí jen tenhle tvar
 from abort import Aborted
-from catindex import merge_pool, next_batch, record
+from catindex import next_batch, record
 from concertfilter import _key, concert_key, concert_title, is_concert, normalize_title, rivals
 from fastshare_api import make_ref as fastshare_ref
-from hellspy_api import HellspyRateLimited
+from hellspy_api import HellspyError, HellspyRateLimited
+from webshare_api import WebshareApiError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,9 +30,12 @@ RETRY = 1800                   # po selhání načtení poolu z Last.fm další 
 LASTFM_URL = "https://ws.audioscrobbler.com/2.0/"
 TAGS = ("czech", "slovak", "czech rock", "classic rock", "hard rock", "metal", "rock", "pop", "punk",
         "hip-hop", "jazz", "electronic", "folk", "classical", "reggae", "world")
-PER_TAG = 100          # jmen z jednoho štítku
-POOL_MAX = 200         # interpretů v katalogu
-POOL_EVERY = 7 * 86400  # obnova poolu z Last.fm
+PER_TAG = 100          # jmen z jednoho štítku na stránku Last.fm
+POOL_EVERY = 7 * 86400  # obnova první stránky z Last.fm (nová jména v žebříčku)
+GROW_EVERY = 6 * 3600   # další stránka z Last.fm, až jsou všichni dosavadní interpreti prověření
+ARTISTS_MAX = 3000      # ponytail: strop velikosti indexu (JSON se přepisuje po každé dávce); víc = SQLite
+STALE_DAYS = 45         # soubor, který se tak dlouho neukázal v hledání, se zahodí (jako na dashboardu)
+LINK_CHECKS = 10        # neviděných souborů na interpreta a kontrolu, které se ověří odkazem
 MAX_FILES = 30         # souborů na interpreta (nejlepší podle velikosti)
 SHOWS = ("pool", "found", "name")
 WS_LIMIT, HS_LIMIT, HS_PAGES, FS_LIMIT = 100, 40, 2, 100
@@ -46,10 +50,10 @@ class ConcertError(Exception):
 
 # --- Last.fm ---------------------------------------------------------------------------
 
-def lastfm_top(key, tag, limit=PER_TAG, opener=urllib.request.urlopen):
+def lastfm_top(key, tag, limit=PER_TAG, opener=urllib.request.urlopen, page=1):
     """Jména interpretů štítku (`tag.gettopartists`). Klíč se nikdy nedostane do výjimky ani do logu."""
     query = urllib.parse.urlencode({"method": "tag.gettopartists", "tag": tag, "limit": limit,
-                                    "api_key": key, "format": "json"})
+                                    "page": page, "api_key": key, "format": "json"})
     req = urllib.request.Request(f"{LASTFM_URL}?{query}", headers={"User-Agent": "Nokturno"})
     try:
         with opener(req, timeout=20) as resp:
@@ -80,14 +84,14 @@ def check_key(key, opener=urllib.request.urlopen):
     return True
 
 
-def pool(key, tags, opener=urllib.request.urlopen):
-    """Interpreti ze štítků, prokládaně (1. z každého štítku, pak 2. …), `[{"id": "a:<klíč>", "name"}]`, nejvýš
-    `POOL_MAX`. Vyřadí jména bez latinky, čistě číselná a kratší než 3 znaky – takové fulltext zdrojů nenajde nebo
+def pool(key, tags, opener=urllib.request.urlopen, page=1):
+    """Interpreti ze štítků (stránka `page` žebříčku Last.fm), prokládaně (1. z každého štítku, pak 2. …),
+    `[{"id": "a:<klíč>", "name"}]`. Vyřadí jména bez latinky, čistě číselná a kratší než 3 znaky – takové fulltext zdrojů nenajde nebo
     vrátí samé smetí. Selhaly-li všechny štítky, `ConcertError`; některé stačí."""
     lists, error = [], None
     for tag in [t for t in TAGS if t in set(tags or ())]:   # neznámé štítky se ignorují
         try:
-            lists.append((tag, lastfm_top(key, tag, opener=opener)))
+            lists.append((tag, lastfm_top(key, tag, opener=opener, page=page)))
         except ConcertError as err:
             error = err
             _LOGGER.debug("Last.fm „%s“: %s", tag, err)
@@ -107,7 +111,7 @@ def pool(key, tags, opener=urllib.request.urlopen):
                 continue
             seen[k] = {"id": "a:" + k, "name": names[i], "tags": [tag]}
             out.append(seen[k])
-    return out[:POOL_MAX]
+    return out
 
 
 # --- hledání ---------------------------------------------------------------------------
@@ -299,37 +303,126 @@ def migrate_catalogs(store):
     return len(items)
 
 
+def _add(index, metas):
+    """Přidá nové interprety na konec poolu (`ok=None`, prověří se přednostně); u známých jen doplní štítky.
+    Nikoho neodebírá – interpret, který vypadl z žebříčku Last.fm, má koncerty dál. Vrací počet nových."""
+    items = index.setdefault("items", {})
+    rank = max((int(e.get("rank") or 0) for e in items.values()), default=-1) + 1
+    added = 0
+    for meta in metas:
+        mid = meta.get("id")
+        if not mid:
+            continue
+        entry = items.get(mid)
+        if entry is not None:
+            old = entry.setdefault("meta", dict(meta))
+            old["tags"] = list(old.get("tags") or []) + [t for t in meta.get("tags") or [] if t not in (old.get("tags") or [])]
+            entry["genres"] = list(old["tags"])
+            continue
+        if len(items) >= ARTISTS_MAX:
+            break
+        items[mid] = {"ok": None, "ts": 0, "rank": rank, "genres": list(meta.get("tags") or []), "meta": meta}
+        rank += 1
+        added += 1
+    return added
+
+
+def link_ok(engine, ref):
+    """Žije soubor? Zkusí vydat odkaz (jako `verify_missed` na dashboardu). True/False = ověřeno, None = nejde
+    to poznat (FastShare vydá odkaz jen za kredit, zdroj vypnutý, výpadek sítě) – soubor pak zůstává."""
+    try:
+        if ref.startswith("ws:"):
+            api = engine.ws
+            return None if api is None else bool(api.file_link(ref[3:]))
+        if ref.startswith("hs:"):
+            api = engine.hs
+            _hs, file_id, file_hash = ref.split(":", 2)
+            return None if api is None else bool(api.file_link(file_id, file_hash))
+    except HellspyRateLimited:
+        return None
+    except WebshareApiError:   # server soubor odmítl (FILE_NOT_FOUND); síťová chyba níž = neví se
+        return False
+    except HellspyError as err:
+        return False if "HTTP 404" in str(err) or "HTTP 410" in str(err) else None
+    except Exception:  # noqa: BLE001 – cokoli jiného = neví se
+        return None
+    return None
+
+
+def _merge_files(engine, old, found, now, should_stop=None):
+    """Nové hledání + dřívější soubory, které v něm chybí: ty se ověří odkazem (nejvýš `LINK_CHECKS`); mrtvý
+    zmizí, neověřitelný zůstane, dokud se neukáže `STALE_DAYS`. `t` = první nález, `s` = naposledy viděn."""
+    first = {f.get("ref"): f for f in old}
+    out = []
+    for f in found:
+        f["t"] = int((first.get(f["ref"]) or {}).get("t") or now)
+        f["s"] = now
+        out.append(f)
+    seen = {f["ref"] for f in out}
+    checks = 0
+    for f in sorted((f for f in old if f.get("ref") not in seen), key=lambda f: int(f.get("s") or f.get("t") or 0)):
+        last = int(f.get("s") or f.get("t") or now)
+        if now - last > STALE_DAYS * 86400:
+            continue
+        alive = None
+        if checks < LINK_CHECKS and not (should_stop and should_stop()):
+            checks += 1
+            alive = link_ok(engine, f.get("ref") or "")
+        if alive is False:
+            continue
+        if alive:
+            f["s"] = now
+        out.append(f)
+    out.sort(key=lambda f: -int(f.get("size") or 0))
+    return out[:MAX_FILES]
+
+
 def refresh(engine, store, size=1, should_stop=None):
-    """Jedna dávka: obnoví pool z Last.fm (po `POOL_EVERY`, vlastní klíč `lastfm_key`) a prohledá až `size`
-    interpretů ve zdrojích zařízení. Vrací počet prohledaných. Bez konfigurace nebo klíče 0."""
+    """Jedna dávka: doplní pool z Last.fm a prohledá až `size` interpretů ve zdrojích zařízení. Pool roste:
+    první stránka žebříčku se obnoví po `POOL_EVERY`, další stránka přibude po `GROW_EVERY`, jakmile jsou
+    všichni dosavadní interpreti prověření. Vrací počet prohledaných. Bez konfigurace nebo klíče 0."""
     key = str(engine._opt("lastfm_key") or "").strip()
     tags = config(store)["tags"]
     if not key or not tags:
         return 0
     csig, now = sig(tags), _now()
     index = store.reload(INDEX, {})
-    same = index.get("sig") == csig
-    stale = (not same or now - int(index.get("pool_ts") or 0) >= POOL_EVERY) \
-        and now - int(index.get("pool_try") or 0 if same else 0) >= RETRY
+    if index.get("sig") != csig:
+        index = {}
+    retry_ok = now - int(index.get("pool_try") or 0) >= RETRY
+    page = None
+    if now - int(index.get("pool_ts") or 0) >= POOL_EVERY:
+        page = 1
+    elif not index.get("pool_end") and now - int(index.get("grow_ts") or 0) >= GROW_EVERY \
+            and all(e.get("ok") is not None for e in (index.get("items") or {}).values()) \
+            and len(index.get("items") or {}) < ARTISTS_MAX:
+        page = int(index.get("page") or 1) + 1
     fresh = None
-    if stale:   # síť mimo zámek
+    if page and retry_ok:   # síť mimo zámek
         try:
-            fresh = pool(key, tags)
+            fresh = pool(key, tags, page=page)
         except ConcertError:
             fresh = None
     with store.updating(INDEX, {}) as index:
         if index.get("sig") != csig:
             index.clear()
             index["sig"] = csig
-        if stale:
+        if page and retry_ok:
             index["pool_try"] = now
         if fresh is not None:
-            merge_pool(index, fresh, now)
-            index["pool_ts"] = now
-        batch = [(m, index["items"][m]["meta"].get("name") or "") for m in next_batch(index, now, size)]
+            _add(index, fresh)
+            if page == 1:
+                index["pool_ts"] = now
+                index.setdefault("page", 1)
+            else:
+                index["page"], index["grow_ts"] = page, now
+                if not fresh:
+                    index["pool_end"] = True   # žebříček došel
+        batch = [(m, index["items"][m]["meta"].get("name") or "", list(index["items"][m].get("files") or []))
+                 for m in next_batch(index, now, size)]
         names = [(e.get("meta") or {}).get("name") or "" for e in (index.get("items") or {}).values()]
     done = 0
-    for mid, artist in batch:
+    for mid, artist, old in batch:
         if should_stop and should_stop():
             break
         files = None
@@ -337,6 +430,8 @@ def refresh(engine, store, size=1, should_stop=None):
             try:
                 with engine.background():
                     files = search(engine, artist, rivals(artist, names), should_stop)
+                    if files is not None:
+                        files = _merge_files(engine, old, files, _now(), should_stop)
             except Aborted:
                 raise
             except Exception:  # noqa: BLE001 – výpadek zdroje = zkusit později
@@ -344,15 +439,13 @@ def refresh(engine, store, size=1, should_stop=None):
         with store.updating(INDEX, {}) as index:
             entry = (index.get("items") or {}).get(mid)
             if index.get("sig") == csig and entry is not None:
-                stamp = _now()
-                record(index, mid, None if files is None else bool(files), stamp)
-                if files:
-                    first = {f.get("ref"): f.get("t") for f in entry.get("files") or []}   # první nález zůstává
-                    for f in files:
-                        f["t"] = int(first.get(f["ref"]) or stamp)
-                    entry["files"] = files
-                else:
-                    entry.pop("files", None)
+                record(index, mid, None if files is None else bool(files), _now())
+                if files is not None:
+                    entry["misses"] = 0 if files else int(entry.get("misses") or 0) + 1
+                    if files:
+                        entry["files"] = files
+                    else:
+                        entry.pop("files", None)
         done += 1
     return done
 
