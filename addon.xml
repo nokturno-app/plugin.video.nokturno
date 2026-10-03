@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.0.0~beta1" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.0.0~beta2" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.0.0~beta1 – Vlastní katalogy: posledních X let, zobrazení přímo v menu a ověřování streamů – katalog ukáže jen tituly se streamem v požadované kvalitě, jazyce zvuku či titulků a s 5.1. Nový druh katalogu podle hudebního žánru (vlastní API klíč Last.fm). Populární, Nejlépe hodnocené, Nové s CZ dabingem, České filmy a seriály a Filmy ve vysoké kvalitě jsou teď předpřipravené vlastní katalogy, které jde upravit i smazat.
+    <news>10.0.0~beta2 – Trakt: Watchlist je teď Můj seznam. Co si přidáš na Traktu, se objeví v Mém seznamu, a co přidáš nebo odebereš v Mém seznamu, se propíše na Trakt. Tituly z Watchlistu už nejsou v Hlídaných.
+10.0.0~beta1 – Vlastní katalogy: posledních X let, zobrazení přímo v menu a ověřování streamů – katalog ukáže jen tituly se streamem v požadované kvalitě, jazyce zvuku či titulků a s 5.1. Nový druh katalogu podle hudebního žánru (vlastní API klíč Last.fm). Populární, Nejlépe hodnocené, Nové s CZ dabingem, České filmy a seriály a Filmy ve vysoké kvalitě jsou teď předpřipravené vlastní katalogy, které jde upravit i smazat.
 9.11.0 – Trakt: co dokoukáš nebo rozkoukáš jinde (Stremio, Nuvio, jiný doplněk Kodi), se objeví v Naposledy zhlédnutých a v Pokračovat ve sledování.
 9.11.0~beta1 – Trakt: co dokoukáš nebo rozkoukáš jinde (Stremio, Nuvio, jiný doplněk Kodi), se objeví v Naposledy zhlédnutých a v Pokračovat ve sledování. Volba „Stahovat zhlédnuté a rozkoukané z Traktu“ ve skupině Trakt.tv.
 9.10.0 – Výběr streamu: údaje o souborech, které se nestihly přečíst, se dočítají dál a ukazatel v rohu počítá průběh. Volba „Obnovit modal streamů“ je do seznamu doplní (jazyk, kanály, rozlišení). Soubor, který minule nešel stáhnout, už otevření výběru nezdržuje.
