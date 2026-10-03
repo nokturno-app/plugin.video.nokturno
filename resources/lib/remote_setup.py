@@ -39,6 +39,7 @@ import hmac
 import html
 import json
 import os
+import sys
 import threading
 import time
 import urllib.parse
@@ -91,6 +92,13 @@ def _server_class():
     class _Server(ThreadingMixIn, HTTPServer):
         daemon_threads = True
         allow_reuse_address = True
+
+        def handle_error(self, request, client_address):
+            # mobil po uložení zavře spojení dřív, než ho server dočte – výchozí
+            # handle_error by to vypsal jako traceback do kodi.log
+            if isinstance(sys.exc_info()[1], OSError):
+                return
+            super().handle_error(request, client_address)
     return _Server
 
 
