@@ -7,6 +7,7 @@ Last.fm; server se nepoužívá a nálezy se nesynchronizují (synchronizuje se 
 `catalogs`, záznam `c:concerts`). Sdílí Kodi, Home Assistant (jen konfiguraci) a Stremio. Do jádra patří
 jen obecný filtr (`concertfilter.py`), žádné seznamy souborů.
 """
+import copy
 import time
 import json
 import logging
@@ -255,10 +256,26 @@ def sig(tags):
     return ",".join(sorted(tags))
 
 
+def retag(index, tags):
+    """Změna žánrů nemaže nalezené koncerty: zůstanou interpreti, kteří mají aspoň jeden z vybraných žánrů,
+    seznam z Last.fm se stáhne znovu od první stránky (nové žánry). Mění `index` na místě a vrací ho."""
+    keep = set(tags)
+    items = index.get("items") or {}
+    for mid in [m for m, e in items.items() if not keep & set((e.get("meta") or {}).get("tags") or [])]:
+        del items[mid]
+    for k in ("pool_ts", "pool_try", "page", "grow_ts", "pool_end"):
+        index.pop(k, None)
+    index["sig"] = sig(tags)
+    return index
+
+
 def load_index(store):
-    """Index odpovídající dnešním žánrům, `{}` při jiných (neplatný)."""
+    """Index koncertů; po změně žánrů jen interpreti s některým z dnešních žánrů (`retag`)."""
     index = store.load(INDEX, {})
-    return index if isinstance(index, dict) and index.get("sig") == sig(config(store)["tags"]) else {}
+    if not isinstance(index, dict):
+        return {}
+    tags = config(store)["tags"]
+    return index if index.get("sig") == sig(tags) else retag(copy.deepcopy(index), tags)
 
 
 def collect_config(store):
@@ -394,7 +411,7 @@ def refresh(engine, store, size=1, should_stop=None):
     csig, now = sig(tags), _now()
     index = store.reload(INDEX, {})
     if index.get("sig") != csig:
-        index = {}
+        index = retag(copy.deepcopy(index), tags)
     retry_ok = now - int(index.get("pool_try") or 0) >= RETRY
     page = None
     if now - int(index.get("pool_ts") or 0) >= POOL_EVERY:
@@ -411,8 +428,7 @@ def refresh(engine, store, size=1, should_stop=None):
             fresh = None
     with store.updating(INDEX, {}) as index:
         if index.get("sig") != csig:
-            index.clear()
-            index["sig"] = csig
+            retag(index, tags)
         if page and retry_ok:
             index["pool_try"] = now
         if fresh is not None:
