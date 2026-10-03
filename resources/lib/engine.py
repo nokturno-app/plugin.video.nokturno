@@ -104,6 +104,28 @@ PROBE_WORKERS = 8
 # soubory (typicky pár z HellSpy, 2–3,7 s) se dočtou na pozadí do cache (`media:`,
 # 30 dní), takže při dalším otevření titulu už mají ověřený zvuk i rozlišení.
 PROBE_DEADLINE = 3.0
+# Hlavičky na pozadí mají jeden fond na proces. Dřív vznikal nový fond o 8 vláknech na každý
+# titul, a `hq_refresh` jich projde 8 za sebou – vlákna se sčítala rychleji, než doběhla
+# (Android 2026-10-03: „can't start new thread“). Teď je jich nanejvýš PROBE_WORKERS.
+_BG_PROBE_POOL = [None]
+_BG_PROBE_LOCK = threading.Lock()
+
+
+def _bg_probe_pool():
+    with _BG_PROBE_LOCK:
+        if _BG_PROBE_POOL[0] is None:
+            _BG_PROBE_POOL[0] = BackgroundPool(max_workers=PROBE_WORKERS, thread_name_prefix="nokturno-probe")
+        return _BG_PROBE_POOL[0]
+
+
+def release_probe_pool():
+    """Zavře fond hlaviček na pozadí. Fronta doběhne, nečinná vlákna pak skončí – jinak by na ně
+    Kodi po doběhnutí pluginu čekalo navždy (stejně jako u `enrich.shutdown_pool`). Další
+    čtení si založí nový fond."""
+    with _BG_PROBE_LOCK:
+        pool, _BG_PROBE_POOL[0] = _BG_PROBE_POOL[0], None
+    if pool is not None:
+        pool.shutdown(wait=False)
 SUBS_TASK = "Titulky"   # úloha v souběžném hledání streamů, ne zdroj (nehlásí se do průběhu ani výpadků)
 OSUB_TASK = "Titulky OpenSubtitles"   # totéž, jen druhý zdroj titulků (`lib/opensubtitles_api.py`)
 # obě úlohy se chovají stejně: nejdou do průběhu ani do výpadků a bez nich se streamy smí cachovat
@@ -1855,10 +1877,9 @@ class Engine:
             return
         if not force:
             self.last_timings["hlavičky na pozadí"] = len(urls)
-        pool = BackgroundPool(max_workers=PROBE_WORKERS)
+        pool = _bg_probe_pool()
         for url in urls:
             self._reading.setdefault(url, pool.submit(self._media_from_file, url))
-        pool.shutdown(wait=False)
 
     @staticmethod
     def _probe_url(stream):

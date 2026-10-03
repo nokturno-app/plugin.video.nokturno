@@ -83,7 +83,7 @@ from webshare_api import SORTS, WebshareApi, WebshareError, human_size  # noqa: 
 import kodi_marks  # noqa: E402 – vedle default.py, ne kopie jádra (čte videodatabázi Kodi)
 import mylist  # noqa: E402 – vedle default.py, vlastní seznam z JSON
 import kodi_sources  # noqa: E402 – vedle default.py, sdílený výčet zdrojů do statistik
-from engine import AUDIO_PROBE_MAX, DEFAULT_RUNTIME_S, Engine, NokturnoError, runtime_minutes  # noqa: E402
+from engine import AUDIO_PROBE_MAX, DEFAULT_RUNTIME_S, Engine, NokturnoError, release_probe_pool, runtime_minutes  # noqa: E402
 from abort import Aborted, cancel_background, set_host_stop  # noqa: E402
 from hedge import first_success  # noqa: E402
 import keepalive  # noqa: E402
@@ -7975,6 +7975,7 @@ def main(query):
         # „Nově přidané" zablokoval Application.Quit natrvalo). Rozběhnuté dotazy doběhnou
         # do cache; když Kodi končí, nezačaté se zruší.
         release_enrich(cancel=should_stop())
+        release_probe_pool()
         if should_stop():
             cancel_background()   # fronta hlaviček a opozdilých zdrojů — Kodi by na ni čekalo
 
