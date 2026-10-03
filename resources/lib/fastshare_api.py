@@ -8,7 +8,7 @@ Rozhraní je totéž, které používá oficiální doplněk pro Kodi (repozitá
     GET api_kodi.php?process=search&term=&pagination=&adult=false
                                                       → {"search": {"total", "file": [...]}}
 
-Hledání účet nechce. Soubor (`download_url`, `https://data<N>.fastshare.cloud/download.php?id=`)
+Hledání účet nechce. Soubor (`download_url`, `https://data<N>.fastshare.cloud/download.php?id=`; od 2026-10 i servery `s<N>`)
 se stahuje s cookie `FASTSHARE=<hash>` z přihlášení a **odečítá se z kreditu** účtu,
 pokud nemá neomezený tarif — a to za přenesená data (změřeno: hlavičky ~24 souborů 22 MB).
 Rozlišení a stopáž posílá hledání, zvuk ne. Ten se čte z hlavičky souboru (`Engine._fill_audio`)
@@ -47,8 +47,8 @@ HASH_STORE = "fastshare_hash"
 UA = "Mozilla/5.0 (compatible; Nokturno/4.0)"
 # datový server z `download_url` — do odkazu jde jen číslo, adresa se skládá tady,
 # ať `fs:` odkaz z cizí adresy (Stremio) nevede kamkoli jinam
-SERVER_RE = re.compile(r"^https://(data\d{0,3})\.fastshare\.cloud/download\.php\?id=(\d+)$")
-REF_RE = re.compile(r"^fs:(\d+):(data\d{0,3})(?::(\d+))?$")
+SERVER_RE = re.compile(r"^https://(data\d{0,3}|s\d{1,3})\.fastshare\.cloud/download\.php\?id=(\d+)$")
+REF_RE = re.compile(r"^fs:(\d+):(data\d{0,3}|s\d{1,3})(?::(\d+))?$")
 
 
 class FastshareError(Exception):
