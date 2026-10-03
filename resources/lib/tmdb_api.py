@@ -213,6 +213,37 @@ class TmdbApi:
             items = list(pool.map(lambda r: self._item(ctype, r, genre_map, own_ids=bool(search)), raw))
         return [i for i in items if i]
 
+    def discover(self, ctype, params, page=1):
+        """Stránka vlastního katalogu přímo z TMDB s vlastním klíčem: `{"items", "pages"}` ve tvaru
+        jako `/discover` na dashboardu (`DashApi.discover`). Parametry už prošly `DISCOVER_PARAMS`,
+        dotaz skládá stejně jako server (`Dashboard/backend/catalogs.discover_query`). Chyba = `TmdbError`."""
+        kind = self._kind(ctype)
+        query = {"sort_by": params.get("sort_by") or "popularity.desc", "page": page}
+        for name in ("with_genres", "with_keywords", "with_origin_country", "with_original_language"):
+            if params.get(name):
+                query[name] = params[name]
+        date_field = "primary_release_date" if kind == "movie" else "first_air_date"
+        if params.get("year_from"):
+            query[f"{date_field}.gte"] = f"{params['year_from']}-01-01"
+        if params.get("year_to"):
+            query[f"{date_field}.lte"] = f"{params['year_to']}-12-31"
+        if params.get("vote_count_gte"):
+            query["vote_count.gte"] = params["vote_count_gte"]
+        if params.get("vote_average_gte"):
+            query["vote_average.gte"] = params["vote_average_gte"]
+        if query["sort_by"].startswith("vote_average") and "vote_count.gte" not in query:
+            lang = params.get("with_original_language") or ""
+            # český seriál se stovkou hlasů na TMDB skoro není – stejně jako server
+            query["vote_count.gte"] = 10 if lang and "en" not in lang.split("|") else 100
+        if kind == "tv":
+            query["sort_by"] = query["sort_by"].replace("primary_release_date", "first_air_date")
+        data = self._get(f"/discover/{kind}", **query)
+        genre_map = self._genres(ctype)
+        raw = [r for r in data.get("results") or [] if r.get("id")]
+        with ThreadPoolExecutor(max_workers=WORKERS) as pool:
+            items = [i for i in pool.map(lambda r: self._item(ctype, r, genre_map), raw) if i]
+        return {"items": items, "pages": int(data.get("total_pages") or 1)}
+
     def similar(self, ctype, imdb_id, limit=40):
         """Podobné tituly: TMDB doporučení (podle toho, co sledují lidé se stejným
         titulem), doplněná o `/similar` (žánry a klíčová slova), když doporučení je

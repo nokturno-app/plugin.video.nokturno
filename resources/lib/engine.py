@@ -850,7 +850,7 @@ class Engine:
         """Klient dashboardu Nokturna (společná cache hlaviček, katalogy) — nad společným
         úložištěm, výpadek serveru si pamatuje pět minut (`dash_api.DOWN_KEY`)."""
         if self._dash is None:
-            self._dash = DashApi(cache=self.shared)
+            self._dash = DashApi(cache=self.shared, tmdb=self.tmdb)
         return self._dash
 
     def sources(self):

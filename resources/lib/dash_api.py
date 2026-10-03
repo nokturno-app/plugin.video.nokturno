@@ -135,10 +135,11 @@ def _clean_items(items, ctype):
 
 
 class DashApi:
-    def __init__(self, cache=None, base=BASE, headers=None):
+    def __init__(self, cache=None, base=BASE, headers=None, tmdb=None):
         self.cache = cache
         self.base = base
         self.headers = headers or {}   # Stremio: token pro dotazy z localhostu (`/discover`, katalogy)
+        self.tmdb = tmdb   # TmdbApi s vlastním klíčem: vlastní katalogy přímo z TMDB, server jen jako záloha
 
     # --- síť a cache -----------------------------------------------------------------
 
@@ -254,13 +255,28 @@ class DashApi:
             data = self._get("/discover", kind=kind, page=page, **clean)
             return data if isinstance(data, dict) and isinstance(data.get("items"), list) else None
 
+        data = self._tmdb_discover(kind, clean, page)
         key = "nokturno:dash:discover:" + json.dumps([kind, page, sorted(clean.items())])
-        data = self._load(key, DISCOVER_TTL, fetch)
+        data = data or self._load(key, DISCOVER_TTL, fetch)
         if data is None:
             return None, 1
         pages = data.get("pages")
         pages = min(pages, DISCOVER_MAX_PAGE) if isinstance(pages, int) and pages > 0 else 1
         return _clean_items(data.get("items"), ctype), pages
+
+    def _tmdb_discover(self, kind, clean, page):
+        """S vlastním klíčem TMDB se server neptá (soukromí, nezávislost na výpadku). Chyba
+        (neplatný klíč, výpadek TMDB) = None a zeptá se server."""
+        if self.tmdb is None or not getattr(self.tmdb, "key", ""):
+            return None
+        key = "nokturno:tmdb:discover:" + json.dumps([kind, page, sorted(clean.items())])
+        try:
+            if self.cache is None:
+                return self.tmdb.discover(kind, clean, page)
+            return self.cache.cached_if(key, DISCOVER_TTL, lambda: self.tmdb.discover(kind, clean, page),
+                                        ok=lambda d: bool(d and d.get("items")))
+        except Exception:   # noqa: BLE001 – záloha je server
+            return None
 
     # --- TV program ------------------------------------------------------------------
 

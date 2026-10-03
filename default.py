@@ -811,8 +811,9 @@ def get_trend():
 
 def get_dash():
     """Obsah řízený dashboardem (katalogy, podobné tituly, TV program) — bez účtu,
-    s krátkým timeoutem a zálohou z cache, výpadek dashboardu menu nezdrží."""
-    return DashApi(cache=STORE)
+    s krátkým timeoutem a zálohou z cache, výpadek dashboardu menu nezdrží. S vlastním klíčem
+    TMDB se vlastní katalogy berou přímo z TMDB a server je jen záloha."""
+    return DashApi(cache=STORE, tmdb=get_tmdb())
 
 
 # Vykoupení z věznice Shawshank: titulek k němu na OpenSubtitles je vždycky,
