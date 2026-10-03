@@ -3267,6 +3267,10 @@ msgctxt "#31001"
 msgid "A disabled list stays filled in, it is just not shown in the menu."
 msgstr ""
 
+msgctxt "#31025"
+msgid "Searched %s artists, more keep coming – load now"
+msgstr ""
+
 msgctxt "#31002"
 msgid "Christmas"
 msgstr ""
@@ -3357,4 +3361,24 @@ msgstr ""
 
 msgctxt "#31024"
 msgid "Themes (any one of them, at most 3)"
+msgstr ""
+
+msgctxt "#31026"
+msgid "Checks that TMDB accepts the key."
+msgstr ""
+
+msgctxt "#31027"
+msgid "The TMDB key is fine."
+msgstr ""
+
+msgctxt "#31028"
+msgid "The TMDB key is not valid."
+msgstr ""
+
+msgctxt "#31029"
+msgid "Could not reach TMDB. Try again later."
+msgstr ""
+
+msgctxt "#31030"
+msgid "Without your own key, TMDB is queried through the Nokturno server."
 msgstr ""

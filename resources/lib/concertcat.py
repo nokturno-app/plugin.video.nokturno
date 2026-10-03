@@ -32,7 +32,8 @@ TAGS = ("czech", "slovak", "czech rock", "classic rock", "hard rock", "metal", "
         "hip-hop", "jazz", "electronic", "folk", "classical", "reggae", "world")
 PER_TAG = 100          # jmen z jednoho štítku na stránku Last.fm
 POOL_EVERY = 7 * 86400  # obnova první stránky z Last.fm (nová jména v žebříčku)
-GROW_EVERY = 6 * 3600   # další stránka z Last.fm, až jsou všichni dosavadní interpreti prověření
+GROW_EVERY = 3600       # nejčastěji tak často přibude další stránka z Last.fm
+GROW_LEFT = 20          # … a to, když zbývá míň neprověřených interpretů (fronta tak nikdy nevyschne)
 ARTISTS_MAX = 3000      # ponytail: strop velikosti indexu (JSON se přepisuje po každé dávce); víc = SQLite
 STALE_DAYS = 45         # soubor, který se tak dlouho neukázal v hledání, se zahodí (jako na dashboardu)
 LINK_CHECKS = 10        # neviděných souborů na interpreta a kontrolu, které se ověří odkazem
@@ -379,8 +380,8 @@ def _merge_files(engine, old, found, now, should_stop=None):
 
 def refresh(engine, store, size=1, should_stop=None):
     """Jedna dávka: doplní pool z Last.fm a prohledá až `size` interpretů ve zdrojích zařízení. Pool roste:
-    první stránka žebříčku se obnoví po `POOL_EVERY`, další stránka přibude po `GROW_EVERY`, jakmile jsou
-    všichni dosavadní interpreti prověření. Vrací počet prohledaných. Bez konfigurace nebo klíče 0."""
+    první stránka žebříčku se obnoví po `POOL_EVERY`, další stránka přibude po `GROW_EVERY`, jakmile zbývá
+    méně než `GROW_LEFT` neprověřených. Vrací počet prohledaných. Bez konfigurace nebo klíče 0."""
     key = str(engine._opt("lastfm_key") or "").strip()
     tags = config(store)["tags"]
     if not key or not tags:
@@ -394,7 +395,7 @@ def refresh(engine, store, size=1, should_stop=None):
     if now - int(index.get("pool_ts") or 0) >= POOL_EVERY:
         page = 1
     elif not index.get("pool_end") and now - int(index.get("grow_ts") or 0) >= GROW_EVERY \
-            and all(e.get("ok") is not None for e in (index.get("items") or {}).values()) \
+            and sum(e.get("ok") is None for e in (index.get("items") or {}).values()) < GROW_LEFT \
             and len(index.get("items") or {}) < ARTISTS_MAX:
         page = int(index.get("page") or 1) + 1
     fresh = None

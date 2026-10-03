@@ -3267,6 +3267,10 @@ msgctxt "#31001"
 msgid "A disabled list stays filled in, it is just not shown in the menu."
 msgstr "Vypnutý seznam zůstane vyplněný, jen se v menu neukáže."
 
+msgctxt "#31025"
+msgid "Searched %s artists, more keep coming – load now"
+msgstr "Prohledáno %s interpretů, další přibývají – načíst teď"
+
 msgctxt "#31002"
 msgid "Christmas"
 msgstr "Vánoce"
@@ -3358,3 +3362,23 @@ msgstr "Dinosauři"
 msgctxt "#31024"
 msgid "Themes (any one of them, at most 3)"
 msgstr "Témata (stačí jedno, nejvýš 3)"
+
+msgctxt "#31026"
+msgid "Checks that TMDB accepts the key."
+msgstr "Ověří, že TMDB klíč přijímá."
+
+msgctxt "#31027"
+msgid "The TMDB key is fine."
+msgstr "Klíč TMDB je v pořádku."
+
+msgctxt "#31028"
+msgid "The TMDB key is not valid."
+msgstr "Klíč TMDB neplatí."
+
+msgctxt "#31029"
+msgid "Could not reach TMDB. Try again later."
+msgstr "TMDB se nepodařilo zeptat. Zkus to později."
+
+msgctxt "#31030"
+msgid "Without your own key, TMDB is queried through the Nokturno server."
+msgstr "Bez vlastního klíče se TMDB ptá přes server Nokturna."

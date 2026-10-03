@@ -5645,7 +5645,9 @@ def list_concerts():
     folder_item(L(30877, "Nově přidané"), build_url(action="concerts_recent"), icon="DefaultRecentlyAddedMusicVideos.png")
     folder_item(L(30257, "Podle žánru"), build_url(action="concerts_tags"), icon="DefaultMusicGenres.png")
     folder_item(L(30258, "Podle abecedy"), build_url(action="concerts_letters"), icon="DefaultMusicArtists.png")
-    action_item(_swf(30219, "Prohledáno %s z %s – načíst teď", checked, total),
+    progress = (_swf(30219, "Prohledáno %s z %s – načíst teď", checked, total) if index.get("pool_end") else
+                _swf(31025, "Prohledáno %s interpretů, další přibývají – načíst teď", checked))
+    action_item(progress,
                 build_url(action="mycat_batch", id=CONCERTS), icon="DefaultAddonsUpdates.png", thumb=True)
     action_item(L(30256, "Nastavit koncerty"), setup, icon="DefaultAddonProgram.png")
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
@@ -5758,6 +5760,23 @@ def lastfm_check():
         notify(L(30978, "Klíč Last.fm je v pořádku."), xbmcgui.NOTIFICATION_INFO)
     else:
         notify(L(30923, "Klíč Last.fm neplatí."), xbmcgui.NOTIFICATION_ERROR)
+
+
+def tmdb_check():
+    """Tlačítko „Ověřit klíč“ v nastavení TMDB (vlastní klíč; bez něj jdou dotazy přes server Nokturna)."""
+    key = setting("tmdb_api_key").strip()
+    if not key:
+        notify(L(31030, "Bez vlastního klíče se TMDB ptá přes server Nokturna."), xbmcgui.NOTIFICATION_INFO)
+        return
+    try:
+        TmdbApi(key)._get("/configuration")
+    except TmdbError as err:
+        if "neplatný" in str(err):
+            notify(L(31028, "Klíč TMDB neplatí."), xbmcgui.NOTIFICATION_ERROR)
+        else:
+            notify(L(31029, "TMDB se nepodařilo zeptat. Zkus to později."), xbmcgui.NOTIFICATION_WARNING)
+        return
+    notify(L(31027, "Klíč TMDB je v pořádku."), xbmcgui.NOTIFICATION_INFO)
 
 
 # --- hledání + historie -----------------------------------------------------------
@@ -7703,6 +7722,7 @@ def router(query):
         "mycat_remote": lambda: _tlacitko(lambda: mycat_remote(p.get("id") or None, p.get("type", "movie"))),
         "concerts_setup": lambda: _tlacitko(concerts_setup),
         "lastfm_check": lambda: _tlacitko(lastfm_check),
+        "tmdb_check": lambda: _tlacitko(tmdb_check),
         "mycat_edit": lambda: _tlacitko(lambda: mycat_edit(p.get("id", ""))),
         "mycat_delete": lambda: _tlacitko(lambda: mycat_delete(p.get("id", ""))),
         "mycat_batch": lambda: _tlacitko(lambda: mycat_batch(p.get("id", ""))),
@@ -7974,7 +7994,7 @@ MARKS_SKIP = frozenset((
     "cztor_status", "cztor_logout", "clear_cache", "stats_send", "log_send", "website_info",
     "test_sources", "source_pause", "remote_setup", "stream_layout_reset", "setup_wizard", "sub_status",
     "luna_check", "luna_find", "os_check", "speedtest", "update_repos", "tmdbhelper_player", "sync_now",
-    "sync_create", "sync_join", "sync_leave", "mycats", "mycat_artist", "lastfm_check", "mycat_new", "mycat_edit", "mycat_delete",
+    "sync_create", "sync_join", "sync_leave", "mycats", "mycat_artist", "lastfm_check", "tmdb_check", "mycat_new", "mycat_edit", "mycat_delete",
     "mycat_remote", "concerts", "concerts_recent", "concerts_tags", "concerts_tag", "concerts_letters",
     "concerts_letter", "concerts_artist", "concerts_setup",
     "watch_series", "want", "watch_episode", "watch_flag", "watch_seen", "watch_check", "watch_check_now",

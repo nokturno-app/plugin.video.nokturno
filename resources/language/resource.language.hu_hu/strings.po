@@ -3265,6 +3265,10 @@ msgctxt "#31001"
 msgid "A disabled list stays filled in, it is just not shown in the menu."
 msgstr "A kikapcsolt lista kitöltve marad, csak nem jelenik meg a menüben."
 
+msgctxt "#31025"
+msgid "Searched %s artists, more keep coming – load now"
+msgstr "Átnézve %s előadó, továbbiak jönnek – betöltés most"
+
 msgctxt "#31002"
 msgid "Christmas"
 msgstr "Karácsony"
@@ -3356,3 +3360,23 @@ msgstr "Dinoszauruszok"
 msgctxt "#31024"
 msgid "Themes (any one of them, at most 3)"
 msgstr "Témák (elég egy, legfeljebb 3)"
+
+msgctxt "#31026"
+msgid "Checks that TMDB accepts the key."
+msgstr "Ellenőrzi, hogy a TMDB elfogadja-e a kulcsot."
+
+msgctxt "#31027"
+msgid "The TMDB key is fine."
+msgstr "A TMDB kulcs rendben van."
+
+msgctxt "#31028"
+msgid "The TMDB key is not valid."
+msgstr "A TMDB kulcs érvénytelen."
+
+msgctxt "#31029"
+msgid "Could not reach TMDB. Try again later."
+msgstr "A TMDB nem érhető el. Próbáld később."
+
+msgctxt "#31030"
+msgid "Without your own key, TMDB is queried through the Nokturno server."
+msgstr "Saját kulcs nélkül a TMDB a Nokturno szerverén keresztül megy."
