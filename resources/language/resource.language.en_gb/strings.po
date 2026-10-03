@@ -2576,15 +2576,15 @@ msgid "Sort by"
 msgstr ""
 
 msgctxt "#30954"
-msgid "Popularity"
+msgid "Popularity – what is trending on TMDB now"
 msgstr ""
 
 msgctxt "#30955"
-msgid "Rating"
+msgid "TMDB rating – only titles with enough votes (usually at least 100)"
 msgstr ""
 
 msgctxt "#30956"
-msgid "Release date"
+msgid "Release date – newest first"
 msgstr ""
 
 msgctxt "#30957"
@@ -3168,7 +3168,7 @@ msgid "Audio language"
 msgstr ""
 
 msgctxt "#30288"
-msgid "Alphabet"
+msgid "Alphabet – popular titles by name"
 msgstr ""
 
 msgctxt "#30289"
@@ -3265,4 +3265,96 @@ msgstr ""
 
 msgctxt "#31001"
 msgid "A disabled list stays filled in, it is just not shown in the menu."
+msgstr ""
+
+msgctxt "#31002"
+msgid "Christmas"
+msgstr ""
+
+msgctxt "#31003"
+msgid "Halloween"
+msgstr ""
+
+msgctxt "#31004"
+msgid "New Year's Eve"
+msgstr ""
+
+msgctxt "#31005"
+msgid "Based on a true story"
+msgstr ""
+
+msgctxt "#31006"
+msgid "Based on a book"
+msgstr ""
+
+msgctxt "#31007"
+msgid "Biography"
+msgstr ""
+
+msgctxt "#31008"
+msgid "Superheroes"
+msgstr ""
+
+msgctxt "#31009"
+msgid "Serial killer"
+msgstr ""
+
+msgctxt "#31010"
+msgid "World War II"
+msgstr ""
+
+msgctxt "#31011"
+msgid "Martial arts"
+msgstr ""
+
+msgctxt "#31012"
+msgid "Sport"
+msgstr ""
+
+msgctxt "#31013"
+msgid "Aliens"
+msgstr ""
+
+msgctxt "#31014"
+msgid "Time travel"
+msgstr ""
+
+msgctxt "#31015"
+msgid "Zombies"
+msgstr ""
+
+msgctxt "#31016"
+msgid "Ghosts"
+msgstr ""
+
+msgctxt "#31017"
+msgid "Vampires"
+msgstr ""
+
+msgctxt "#31018"
+msgid "Post-apocalypse"
+msgstr ""
+
+msgctxt "#31019"
+msgid "Heist"
+msgstr ""
+
+msgctxt "#31020"
+msgid "Spies"
+msgstr ""
+
+msgctxt "#31021"
+msgid "Survival"
+msgstr ""
+
+msgctxt "#31022"
+msgid "Dogs"
+msgstr ""
+
+msgctxt "#31023"
+msgid "Dinosaurs"
+msgstr ""
+
+msgctxt "#31024"
+msgid "Themes (any one of them, at most 3)"
 msgstr ""

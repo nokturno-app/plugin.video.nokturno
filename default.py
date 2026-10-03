@@ -5060,9 +5060,37 @@ MYCAT_GENRES = {   # id žánrů TMDB → anglický název (česky přes `genre_
 }
 # Klíčová slova TMDB, která TMDB jako žánr nemá (pohádka je u něj jen klíčové slovo).
 # Ve formuláři jsou pod žánry; ukládá se klíč, ne id, ať jde seznam id později doplnit.
-MYCAT_KEYWORDS = tuple((key, ids, 30976, "Pohádky") for key, ids in mycat.KEYWORDS.items())
-MYCAT_SORTS = (("popularity.desc", 30954, "Oblíbenosti"), ("vote_average.desc", 30955, "Hodnocení"),
-               ("primary_release_date.desc", 30956, "Data vydání"), (mycat.ALPHA, 30288, "Abecedy"))
+# témata (klíčová slova TMDB, `mycat.KEYWORDS`) – samostatné pole pod žánry; stačí jedno z vybraných
+MYCAT_KEYWORD_LABELS = {
+    "fairy": (30976, "Pohádky"),
+    "christmas": (31002, "Vánoce"),
+    "halloween": (31003, "Halloween"),
+    "newyear": (31004, "Silvestr"),
+    "truestory": (31005, "Podle skutečné události"),
+    "book": (31006, "Podle knihy"),
+    "biography": (31007, "Životopisný"),
+    "superhero": (31008, "Superhrdinové"),
+    "serialkiller": (31009, "Sériový vrah"),
+    "ww2": (31010, "2. světová válka"),
+    "martialarts": (31011, "Bojová umění"),
+    "sport": (31012, "Sport"),
+    "alien": (31013, "Mimozemšťané"),
+    "timetravel": (31014, "Cestování časem"),
+    "zombie": (31015, "Zombie"),
+    "ghost": (31016, "Duchové"),
+    "vampire": (31017, "Upíři"),
+    "postapo": (31018, "Postapokalypsa"),
+    "heist": (31019, "Loupež"),
+    "spy": (31020, "Špionáž"),
+    "survival": (31021, "Přežití"),
+    "dog": (31022, "Psi"),
+    "dinosaur": (31023, "Dinosauři"),
+}
+MYCAT_KEYWORDS = tuple((key, ids) + MYCAT_KEYWORD_LABELS[key] for key, ids in mycat.KEYWORDS.items())
+MYCAT_SORTS = (("popularity.desc", 30954, "Oblíbenosti – co se teď na TMDB nejvíc sleduje"),
+               ("vote_average.desc", 30955, "Hodnocení na TMDB – jen tituly s dost hlasy (obvykle aspoň 100)"),
+               ("primary_release_date.desc", 30956, "Data vydání – nejnovější první"),
+               (mycat.ALPHA, 30288, "Abecedy – oblíbené tituly podle názvu"))
 MYCAT_QUALITY_LABELS = ((0, 30885, "Libovolná"), (3, 0, "Full HD"), (3.5, 0, "2K"), (4, 0, "4K"))   # 0 = bez překladu
 MYCAT_TRACK_LABELS = (("", 30762, "Libovolné"), ("CZ", 30112, "Čeština"), ("SK", 30113, "Slovenština"),
                       ("CZ|SK", 30763, "Čeština nebo slovenština"), ("EN", 30114, "Angličtina"),
@@ -5180,15 +5208,19 @@ def mycat_form(ctype, cat=None):
         notify(L(30780, "Ověřovat jde nejvýš 20 katalogů."), xbmcgui.NOTIFICATION_WARNING)
         verify = False
     genres = MYCAT_GENRES[kind]
-    kw_keys = [key for key, _, _, _ in MYCAT_KEYWORDS]
-    labels = [genre_label(n) for _, n in genres] + [L(sid, fb) for _, _, sid, fb in MYCAT_KEYWORDS]
-    preselect = ([i for i, (g, _) in enumerate(genres) if g in (cat.get("genres") or [])]
-                 + [len(genres) + i for i, k in enumerate(kw_keys) if k in (cat.get("keywords") or [])])
-    chosen = dlg.multiselect(L(30948, "Žánry (nic = všechny)"), labels, preselect=preselect)
+    chosen = dlg.multiselect(L(30948, "Žánry (nic = všechny)"), [genre_label(n) for _, n in genres],
+                             preselect=[i for i, (g, _) in enumerate(genres) if g in (cat.get("genres") or [])])
     if chosen is None:
         return None
-    picked = [genres[i][0] for i in chosen if i < len(genres)]
-    keywords = [kw_keys[i - len(genres)] for i in chosen if i >= len(genres)]
+    picked = [genres[i][0] for i in chosen]
+    kw_keys = [key for key, _, _, _ in MYCAT_KEYWORDS]
+    chosen = dlg.multiselect(L(31024, "Témata (stačí jedno, nejvýš 3)"), [L(sid, fb) for _, _, sid, fb in MYCAT_KEYWORDS],
+                             preselect=[i for i, k in enumerate(kw_keys) if k in (cat.get("keywords") or [])])
+    if chosen is None:
+        return None
+    if len(chosen) > mycat.MAX_KEYWORDS:
+        notify(L(31024, "Témata (stačí jedno, nejvýš 3)"), xbmcgui.NOTIFICATION_WARNING)
+    keywords = [kw_keys[i] for i in chosen][:mycat.MAX_KEYWORDS]
     join = cat.get("join") or "and"
     if len(picked) > 1:
         idx = dlg.select(L(30973, "Tituly musí mít"),
@@ -5311,7 +5343,7 @@ def mycat_batch(cat_id):
 
 # --- editor katalogu z mobilu -------------------------------------------------------
 
-MYCAT_FORM_INPUTS = ("kind", "verify", "genres_movie", "genres_series", "join", "countries",
+MYCAT_FORM_INPUTS = ("kind", "verify", "genres_movie", "genres_series", "keywords", "join", "countries",
                      "years_mode", "year_from", "year_to", "years", "audio", "subs", "q", "surround")
 
 
@@ -5319,12 +5351,11 @@ def _mycat_form_values(cat, kind):
     """Záznam katalogu → hodnoty formuláře z mobilu (řetězce)."""
     def num(v):
         return str(v) if v else ""
-    # klíčová slova (Pohádky) jsou na mobilu mezi žánry, ne ve zvláštní sekci
-    genres = "|".join([str(g) for g in cat.get("genres") or []] + [k for k in cat.get("keywords") or []])
+    genres = "|".join(str(g) for g in cat.get("genres") or [])
     years_mode = "last" if cat.get("years") else "range" if cat.get("year_from") or cat.get("year_to") else "none"
     return {"kind": kind, "verify": "1" if cat.get("verify") else "0",
             "genres_movie": genres if kind == "movie" else "", "genres_series": genres if kind == "series" else "",
-            "join": cat.get("join") or "and",
+            "join": cat.get("join") or "and", "keywords": "|".join(cat.get("keywords") or []),
             "countries": "|".join(mycat.migrate_lang(cat)), "years_mode": years_mode,
             "year_from": num(cat.get("year_from")), "year_to": num(cat.get("year_to")), "years": num(cat.get("years")),
             "sort": cat.get("sort") or "popularity.desc", "audio": cat.get("audio") or "", "subs": cat.get("subs") or "",
@@ -5344,7 +5375,8 @@ def _mycat_fields_from_form(values):
         return [v for v in str(values.get(key) or "").split("|") if v]
     mode = values.get("years_mode")
     genres = [int(g) for g in multi("genres_" + kind) if g.isdigit()]
-    keywords = [k for k in multi("genres_" + kind) + multi("keywords") if k in mycat.KEYWORDS]
+    # starší stránka z mobilu posílala témata mezi žánry
+    keywords = [k for k in multi("genres_" + kind) + multi("keywords") if k in mycat.KEYWORDS][:mycat.MAX_KEYWORDS]
     q = values.get("q")
     return kind, {"genres": genres, "keywords": list(dict.fromkeys(keywords)), "join": values.get("join"),
                   "countries": multi("countries"), "verify": values.get("verify") == "1",
@@ -5379,11 +5411,12 @@ def mycat_remote_schema(kind, new, name_auto=True):
     for k in ("movie", "series"):
         if new or k == kind:
             field = {"id": "genres_" + k, "type": "multi", "label": L(30948, "Žánry (nic = všechny)"),
-                     "options": [(str(g), genre_label(n)) for g, n in MYCAT_GENRES[k]]
-                     + [(key, L(sid, fb)) for key, _, sid, fb in MYCAT_KEYWORDS]}
+                     "options": [(str(g), genre_label(n)) for g, n in MYCAT_GENRES[k]]}
             if new:
                 field["enable"] = ("kind", k)
             fields.append(field)
+    fields.append({"id": "keywords", "type": "multi", "label": L(31024, "Témata (stačí jedno, nejvýš 3)"),
+                   "options": [(key, L(sid, fb)) for key, _, sid, fb in MYCAT_KEYWORDS]})
     fields += [
         {"id": "join", "type": "choice", "label": L(30973, "Tituly musí mít"),
          "options": [("and", L(30974, "všechny vybrané žánry")), ("or", L(30975, "aspoň jeden vybraný žánr"))]},

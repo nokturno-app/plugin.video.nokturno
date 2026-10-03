@@ -23,7 +23,13 @@ LOG = "mycatlog"             # {"<id>": {"on": bool, "ts": int}} – deník pro 
 INDEX = "mycat_index_"       # + id katalogu
 SECTION = "catalogs"         # jméno sekce ve změnách synchronizace
 PAUSED = "catalogs_paused"   # {"on": bool} – pozastavené ověřování na tomhle zařízení (zatím jen HA)
-KEYWORDS = {"fairy": "3205|329731|358931|351899"}
+# témata = klíčová slova TMDB (žánr to není); id ověřená 2026-10-03, pořadí = pořadí ve formulářích
+KEYWORDS = {"fairy": "3205|329731|358931|351899", "christmas": "207317", "halloween": "3335", "newyear": "613",
+            "truestory": "9672", "book": "818", "biography": "5565", "superhero": "9715", "serialkiller": "10714",
+            "ww2": "1956", "martialarts": "779", "sport": "6075", "alien": "9951", "timetravel": "4379",
+            "zombie": "12377", "ghost": "162846", "vampire": "3133", "postapo": "4458", "heist": "10051", "spy": "470",
+            "survival": "10349", "dog": "15162", "dinosaur": "12616"}
+MAX_KEYWORDS = 3   # víc témat = víc id v `with_keywords` (whitelist pustí nejvýš 10)
 TRACKS = ("", "CZ", "SK", "CZ|SK", "EN", "HU")
 QUALITIES = (0, 3, 3.5, 4)
 SHOWS = ("pool", "found", "released")
@@ -226,7 +232,7 @@ def delete(store, cid):
 def params(cat, today=None):
     """Uložené volby → parametry `DashApi.discover`. `years` (posledních X let) se počítá při každém dotazu."""
     genres = [str(g) for g in cat.get("genres") or []]
-    keywords = [KEYWORDS[k] for k in cat.get("keywords") or [] if k in KEYWORDS]
+    keywords = [KEYWORDS[k] for k in cat.get("keywords") or [] if k in KEYWORDS][:MAX_KEYWORDS]
     years = cat.get("years")
     if isinstance(years, int) and not isinstance(years, bool) and 1 <= years <= 50:
         year_from, year_to = str((today or datetime.date.today()).year - years + 1), ""

@@ -2576,16 +2576,16 @@ msgid "Sort by"
 msgstr "Radiť podľa"
 
 msgctxt "#30954"
-msgid "Popularity"
-msgstr "Obľúbenosti"
+msgid "Popularity – what is trending on TMDB now"
+msgstr "Obľúbenosti – čo sa teraz na TMDB najviac sleduje"
 
 msgctxt "#30955"
-msgid "Rating"
-msgstr "Hodnotenia"
+msgid "TMDB rating – only titles with enough votes (usually at least 100)"
+msgstr "Hodnotenia na TMDB – len tituly s dosť hlasmi (zvyčajne aspoň 100)"
 
 msgctxt "#30956"
-msgid "Release date"
-msgstr "Dátumu vydania"
+msgid "Release date – newest first"
+msgstr "Dátumu vydania – najnovšie prvé"
 
 msgctxt "#30957"
 msgid "Catalog name"
@@ -3168,8 +3168,8 @@ msgid "Audio language"
 msgstr "Jazyk zvuku"
 
 msgctxt "#30288"
-msgid "Alphabet"
-msgstr "Abecedy"
+msgid "Alphabet – popular titles by name"
+msgstr "Abecedy – obľúbené tituly podľa názvu"
 
 msgctxt "#30289"
 msgid "Pick music genres and enter your Last.fm key. Concerts are searched in the background."
@@ -3266,3 +3266,95 @@ msgstr "Používať tento zoznam"
 msgctxt "#31001"
 msgid "A disabled list stays filled in, it is just not shown in the menu."
 msgstr "Vypnutý zoznam zostane vyplnený, len sa v menu neukáže."
+
+msgctxt "#31002"
+msgid "Christmas"
+msgstr "Vianoce"
+
+msgctxt "#31003"
+msgid "Halloween"
+msgstr "Halloween"
+
+msgctxt "#31004"
+msgid "New Year's Eve"
+msgstr "Silvester"
+
+msgctxt "#31005"
+msgid "Based on a true story"
+msgstr "Podľa skutočnej udalosti"
+
+msgctxt "#31006"
+msgid "Based on a book"
+msgstr "Podľa knihy"
+
+msgctxt "#31007"
+msgid "Biography"
+msgstr "Životopisný"
+
+msgctxt "#31008"
+msgid "Superheroes"
+msgstr "Superhrdinovia"
+
+msgctxt "#31009"
+msgid "Serial killer"
+msgstr "Sériový vrah"
+
+msgctxt "#31010"
+msgid "World War II"
+msgstr "2. svetová vojna"
+
+msgctxt "#31011"
+msgid "Martial arts"
+msgstr "Bojové umenia"
+
+msgctxt "#31012"
+msgid "Sport"
+msgstr "Šport"
+
+msgctxt "#31013"
+msgid "Aliens"
+msgstr "Mimozemšťania"
+
+msgctxt "#31014"
+msgid "Time travel"
+msgstr "Cestovanie v čase"
+
+msgctxt "#31015"
+msgid "Zombies"
+msgstr "Zombie"
+
+msgctxt "#31016"
+msgid "Ghosts"
+msgstr "Duchovia"
+
+msgctxt "#31017"
+msgid "Vampires"
+msgstr "Upíri"
+
+msgctxt "#31018"
+msgid "Post-apocalypse"
+msgstr "Postapokalypsa"
+
+msgctxt "#31019"
+msgid "Heist"
+msgstr "Lúpež"
+
+msgctxt "#31020"
+msgid "Spies"
+msgstr "Špionáž"
+
+msgctxt "#31021"
+msgid "Survival"
+msgstr "Prežitie"
+
+msgctxt "#31022"
+msgid "Dogs"
+msgstr "Psy"
+
+msgctxt "#31023"
+msgid "Dinosaurs"
+msgstr "Dinosaury"
+
+msgctxt "#31024"
+msgid "Themes (any one of them, at most 3)"
+msgstr "Témy (stačí jedna, najviac 3)"

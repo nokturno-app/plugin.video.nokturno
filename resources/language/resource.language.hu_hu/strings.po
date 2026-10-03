@@ -2574,16 +2574,16 @@ msgid "Sort by"
 msgstr "Rendezés"
 
 msgctxt "#30954"
-msgid "Popularity"
-msgstr "Népszerűség"
+msgid "Popularity – what is trending on TMDB now"
+msgstr "Népszerűség – ami most a TMDB-n felkapott"
 
 msgctxt "#30955"
-msgid "Rating"
-msgstr "Értékelés"
+msgid "TMDB rating – only titles with enough votes (usually at least 100)"
+msgstr "TMDB értékelés – csak elég szavazattal (általában legalább 100)"
 
 msgctxt "#30956"
-msgid "Release date"
-msgstr "Megjelenés dátuma"
+msgid "Release date – newest first"
+msgstr "Megjelenés dátuma – legújabb elöl"
 
 msgctxt "#30957"
 msgid "Catalog name"
@@ -3166,8 +3166,8 @@ msgid "Audio language"
 msgstr "Hang nyelve"
 
 msgctxt "#30288"
-msgid "Alphabet"
-msgstr "Ábécé"
+msgid "Alphabet – popular titles by name"
+msgstr "Ábécé – népszerű címek név szerint"
 
 msgctxt "#30289"
 msgid "Pick music genres and enter your Last.fm key. Concerts are searched in the background."
@@ -3264,3 +3264,95 @@ msgstr "A lista használata"
 msgctxt "#31001"
 msgid "A disabled list stays filled in, it is just not shown in the menu."
 msgstr "A kikapcsolt lista kitöltve marad, csak nem jelenik meg a menüben."
+
+msgctxt "#31002"
+msgid "Christmas"
+msgstr "Karácsony"
+
+msgctxt "#31003"
+msgid "Halloween"
+msgstr "Halloween"
+
+msgctxt "#31004"
+msgid "New Year's Eve"
+msgstr "Szilveszter"
+
+msgctxt "#31005"
+msgid "Based on a true story"
+msgstr "Megtörtént eseményen alapul"
+
+msgctxt "#31006"
+msgid "Based on a book"
+msgstr "Könyv alapján"
+
+msgctxt "#31007"
+msgid "Biography"
+msgstr "Életrajzi"
+
+msgctxt "#31008"
+msgid "Superheroes"
+msgstr "Szuperhősök"
+
+msgctxt "#31009"
+msgid "Serial killer"
+msgstr "Sorozatgyilkos"
+
+msgctxt "#31010"
+msgid "World War II"
+msgstr "2. világháború"
+
+msgctxt "#31011"
+msgid "Martial arts"
+msgstr "Harcművészet"
+
+msgctxt "#31012"
+msgid "Sport"
+msgstr "Sport"
+
+msgctxt "#31013"
+msgid "Aliens"
+msgstr "Földönkívüliek"
+
+msgctxt "#31014"
+msgid "Time travel"
+msgstr "Időutazás"
+
+msgctxt "#31015"
+msgid "Zombies"
+msgstr "Zombik"
+
+msgctxt "#31016"
+msgid "Ghosts"
+msgstr "Szellemek"
+
+msgctxt "#31017"
+msgid "Vampires"
+msgstr "Vámpírok"
+
+msgctxt "#31018"
+msgid "Post-apocalypse"
+msgstr "Posztapokaliptikus"
+
+msgctxt "#31019"
+msgid "Heist"
+msgstr "Rablás"
+
+msgctxt "#31020"
+msgid "Spies"
+msgstr "Kémek"
+
+msgctxt "#31021"
+msgid "Survival"
+msgstr "Túlélés"
+
+msgctxt "#31022"
+msgid "Dogs"
+msgstr "Kutyák"
+
+msgctxt "#31023"
+msgid "Dinosaurs"
+msgstr "Dinoszauruszok"
+
+msgctxt "#31024"
+msgid "Themes (any one of them, at most 3)"
+msgstr "Témák (elég egy, legfeljebb 3)"
