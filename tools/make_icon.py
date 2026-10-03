@@ -292,6 +292,39 @@ def make_release_660(path):
     sky.save(path)
 
 
+def make_release_1000(path):
+    """Obrázek k vydání 10.0: šest největších novinek pod sebou, stejný styl jako 6.6."""
+    W, H = RELEASE
+    sky = render(f'<rect width="{W}" height="{H}" fill="url(#sky)"/>', W, H, scale=1).convert("RGB")
+    q = 4
+    glow = Image.new("RGB", (W // q, H // q), (0, 0, 0))
+    ImageDraw.Draw(glow).ellipse([c / q for c in (700, -80, 1360, 640)], fill=(32, 42, 96))
+    sky = ImageChops.add(sky, glow.filter(ImageFilter.GaussianBlur(24)).resize((W, H), Image.BICUBIC))
+    dr = ImageDraw.Draw(sky, "RGBA")
+    for x, y, r, o in [(1130, 60, 3, 90), (1010, 40, 2, 60), (1150, 560, 3, 70), (60, 600, 2, 55),
+                       (960, 590, 2, 45), (1170, 300, 2, 60), (40, 40, 2, 50)]:
+        dr.ellipse((x - r, y - r, x + r, y + r), fill=(255, 255, 255, o))
+    logo = mark("", "url(#gold)", scale=1).resize((250, 250), Image.LANCZOS)
+    sky.paste(logo, (945, 190), logo)
+    gold, dim = (243, 196, 118), (163, 176, 218)
+    dr.text((70, 36), "Nokturno 10.0", font=font("InterDisplay-Bold.otf", 88), fill=gold)
+    dr.text((74, 144), "Kodi · Stremio · Home Assistant", font=font("InterDisplay-Medium.otf", 34), fill=dim)
+    radky = [("Vlastní katalogy", "jen co jde přehrát"),
+             ("Šablony a témata", "Pohádky, Vánoce, 4K s dabingem"),
+             ("Koncerty", "tvoje hudební žánry"),
+             ("Nastavení z mobilu", "přes QR kód"),
+             ("Trakt Watchlist", "= Můj seznam"),
+             ("Zvuk a titulky", "jako minule")]
+    big, small = font("InterDisplay-Bold.otf", 40), font("InterDisplay-Medium.otf", 28)
+    y = 206
+    for hlavni, doplnek in radky:
+        dr.ellipse((74, y + 13, 94, y + 33), fill=gold)
+        dr.text((112, y), hlavni, font=big, fill=(255, 255, 255))
+        dr.text((112 + dr.textlength(hlavni, font=big) + 18, y + 8), doplnek, font=small, fill=dim)
+        y += 66
+    sky.save(path)
+
+
 def make_release_700(path):
     """Obrázek k vydání 7.0: nový zdroj Přehraj.to nahoře jako hlavní zpráva a pod ním
     novinky řady 6.6 drobněji — jde do týchž příspěvků na Facebooku, kde už visí obrázek
@@ -507,6 +540,9 @@ if __name__ == "__main__":
     elif sys.argv[1:] == ["6.6.0"]:
         make_release_660(os.path.join(ROOT, ".github", "nokturno-6.6.0-novinky.png"))
         print(".github/nokturno-6.6.0-novinky.png hotovo")
+    elif sys.argv[1:] == ["10.0.0"]:
+        make_release_1000(os.path.join(ROOT, ".github", "nokturno-10.0.0-novinky.png"))
+        print(".github/nokturno-10.0.0-novinky.png hotovo")
     elif sys.argv[1:] == ["cover"]:
         make_cover(os.path.join(ROOT, ".github", "nokturno-cover.png"))
         print(".github/nokturno-cover.png hotovo")
