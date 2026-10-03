@@ -47,6 +47,9 @@ ACCOUNT_KEYS = frozenset({
     "dav1_url", "dav1_username", "dav1_password", "dav1_name",
     "dav2_url", "dav2_username", "dav2_password", "dav2_name",
     "dav3_url", "dav3_username", "dav3_password", "dav3_name",
+    # vlastní seznamy: hlavičky HTTP často nesou přihlášení (Authorization, API klíč)
+    "mylist_header1", "mylist_header2", "mylist2_header1", "mylist2_header2",
+    "mylist3_header1", "mylist3_header2",
 })
 
 # co se nesdílí ani jedním okruhem

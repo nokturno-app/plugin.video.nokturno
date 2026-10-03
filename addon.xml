@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.0.0~beta7" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.0.0~beta8" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.0.0~beta7 – Vlastní katalogy: nové pole Témata pod žánry (Pohádky, Vánoce, Halloween, Silvestr, Podle skutečné události, Podle knihy, Superhrdinové, Zombie a další), stačí jedno z vybraných, nejvýš 3. Upřesněné popisy řazení.
+    <news>10.0.0~beta8 – Výsledky ověření vlastních katalogů si mezi sebou předávají jen zařízení se stejnými zdroji (mobil bez Luny si katalog ověří sám) a zařízení ve skupině neověřují stejné tituly naráz. Hlavičky vlastních seznamů se synchronizují s účty, ne s nastavením.
+10.0.0~beta7 – Vlastní katalogy: nové pole Témata pod žánry (Pohádky, Vánoce, Halloween, Silvestr, Podle skutečné události, Podle knihy, Superhrdinové, Zombie a další), stačí jedno z vybraných, nejvýš 3. Upřesněné popisy řazení.
 10.0.0~beta6 – Ověřování vlastních katalogů pokračuje i při přehrávání (pomaleji, ruční dávka hned). Koncerty: seznam interpretů už není omezený na 200, pořád přibývají noví a staré odkazy se kontrolují – nefunkční zmizí.
 10.0.0~beta5 – Vlastní katalogy: nový katalog nabídne jako první nastavení přes mobil, řazení podle abecedy, „Jazyk dabingu“ je „Jazyk zvuku“ a Pohádky jsou na mobilu mezi žánry. Vlastní seznamy (JSON) jdou v nastavení vypnout, zůstanou vyplněné. Stránka z mobilu s jedinou sekcí je rovnou rozbalená.
 10.0.0~beta4 – Vlastní katalogy: místo předpřipravených katalogů šablony (nezměněné katalogy z bety 1 zmizí), režim Katalog z TMDB nebo Jen tituly se streamem, země původu zvlášť od jazyka dabingu, název se doplní sám a katalog jde nastavit i z mobilu přes QR kód. Koncerty mají vlastní položku v hlavní nabídce (Nově přidané, Podle žánru, Podle abecedy). Ověřování na pozadí vynechá FastShare bez kreditu a Přehraj.to bez Premium. Drobné opravy.
