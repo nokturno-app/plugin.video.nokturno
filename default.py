@@ -5558,7 +5558,7 @@ def list_mycat_verified(cat, ctype, page):
     if page == 1:
         action_item(_swf(30777, "Ověřeno %s z %s – spustit dávku nyní", checked, total),
                     build_url(action="mycat_batch", id=cat["id"]), icon="DefaultAddonsUpdates.png", thumb=True)
-    metas = mycat.visible(index, sort=cat.get("show") or "found")
+    metas = mycat.shown(index, sort=cat.get("show") or "found")
     if not metas or mycat_trigger_due(index):
         xbmcgui.Window(10000).setProperty(VERIFY_TRIGGER_PROP, cat["id"])
     if not metas:

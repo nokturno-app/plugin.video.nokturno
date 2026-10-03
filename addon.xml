@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.1.0" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.1.2" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.1.0 – Vlastní katalog jde dlouhým stiskem (místní nabídka) zobrazit přímo v menu Filmy nebo Seriály a zase odebrat.
+    <news>10.1.2 – Vlastní katalog synchronizovaný z jiného zařízení s jinými zdroji už není prázdný: hned ukáže, co tam bylo nalezené, a tituly, které tady nejdou, po ověření zmizí.
+10.1.0 – Vlastní katalog jde dlouhým stiskem (místní nabídka) zobrazit přímo v menu Filmy nebo Seriály a zase odebrat.
 10.0.1 – S vlastním klíčem TMDB se vlastní katalogy berou přímo z TMDB, server Nokturna je jen záloha.
 10.0.0 – Vlastní katalogy umí ukázat jen tituly se streamem v požadované kvalitě, jazyce zvuku či titulků a s 5.1 (ověřuje se na pozadí, i v Home Assistantu), zakládají se ze šablon nebo z mobilu přes QR kód a mají témata (Pohádky, Vánoce, Superhrdinové…), zemi původu a posledních X let. Nové Koncerty v hlavní nabídce: záznamy koncertů interpretů z tvých hudebních žánrů (vlastní klíč Last.fm). Trakt: Watchlist je Můj seznam. Znovu puštěný stream si pamatuje zvukovou stopu a titulky. Ověření klíče TMDB v nastavení. Položka Filmy ve vysoké kvalitě skončila – podobný katalog si založíš ze šablony Filmy ve 4K s CZ dabingem.
 10.0.0~beta12 – Koncerty: změna žánrů už nesmaže nalezené koncerty, zůstanou interpreti s některým z vybraných žánrů.

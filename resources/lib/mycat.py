@@ -311,6 +311,31 @@ def load_index(store, cat):
     return index if isinstance(index, dict) and index.get("sig") == sig(cat) else {}
 
 
+def _foreign_ok(index):
+    """Nálezy z jiného zařízení s jinými zdroji (`index["foreign"]`): {id: kdy vyhověl}."""
+    res = (index.get("foreign") or {}).get("res") or {}
+    out = {}
+    for mid, rec in res.items():
+        if isinstance(rec, (list, tuple)) and len(rec) >= 2 and rec[0]:
+            try:
+                out[mid] = int(rec[2] if len(rec) > 2 else rec[1])
+            except (TypeError, ValueError):
+                continue
+    return out
+
+
+def shown(index, sort="found"):
+    """Tituly k zobrazení: vlastní nálezy a navíc nálezy jiného zařízení u titulů, které tohle zařízení ještě
+    samo neověřilo (mobil po synchronizaci nečeká prázdný, než projde stovky titulů). Vlastní výsledek má přednost."""
+    tentative = _foreign_ok(index)
+    if tentative:
+        items = {mid: dict(e, ok=True, found=e.get("found") or tentative[mid])
+                 if e.get("ok") is None and mid in tentative else e
+                 for mid, e in (index.get("items") or {}).items()}
+        index = dict(index, items=items)
+    return visible(index, sort=sort)
+
+
 def foreign_recent(index, now=None):
     return (now or _now()) - int(index.get("foreign_ts") or 0) < FOREIGN_FRESH
 
@@ -334,14 +359,17 @@ def refresh(engine, store, dash, cid, size=1, verify=True, should_stop=None):
         # ponytail: při změně zdrojů se staré výsledky nemažou, přeověří je běžná perioda (3/7 dní)
         index["src"] = src
         index.setdefault("salt", uuid.uuid4().hex[:8])
-        pending = index.pop("pending", None)
-        if isinstance(pending, dict) and pending.get("src") == src:
-            if merge_results(index, pending.get("res")) and pending.get("rstamp"):
+        if "pending" in index:   # tvar do 10.1.1
+            index.setdefault("foreign", index.pop("pending"))
+        held = index.get("foreign")
+        if isinstance(held, dict) and held.get("src") == src:
+            del index["foreign"]
+            if merge_results(index, held.get("res")) and held.get("rstamp"):
                 index["rts"] = now
         if fresh is not None:
             merge_pool(index, fresh, now)
             index["pool_ts"] = now
-        batch = next_batch(index, now, size) if verify else []
+        batch = next_batch(index, now, size, first=_foreign_ok(index)) if verify else []
     done = 0
     for mid in batch:
         if should_stop and should_stop():
@@ -457,12 +485,11 @@ def apply(store, changes, stamp=0):
                 if index.get("sig") != rec["sig"]:
                     index.clear()
                     index["sig"] = rec["sig"]
-                if not index.get("src"):   # vlastní zdroje ještě neznáme: počkat na první `refresh`
-                    if _ts(rec) >= _ts(index.get("pending")):
-                        index["pending"] = dict(rec, rstamp=stamp)
-                    continue
-                # výsledky ze zařízení s jinými zdroji (Luna doma, mobil bez ní) nepasují – zařízení ověřuje samo
-                if index["src"] != rec.get("src"):
+                # zdroje neznámé (do prvního `refresh`) nebo jiné (Luna doma, mobil bez ní): výsledky se nepřevezmou,
+                # zařízení ověřuje samo a do té doby ukazuje cizí nálezy jako prozatímní (`shown`)
+                if index.get("src") != rec.get("src") or not index.get("src"):
+                    if _ts(rec) >= _ts(index.get("foreign")):
+                        index["foreign"] = dict(rec, rstamp=stamp)
                     continue
                 taken = merge_results(index, rec.get("res"))
                 if taken and stamp:

@@ -48,11 +48,11 @@ def _period(entry, recheck_after, recheck_found):
     return recheck_found if entry.get("ok") is True else recheck_after
 
 
-def next_batch(index, now, size=8, recheck_after=RECHECK_AFTER, recheck_found=RECHECK_FOUND):
+def next_batch(index, now, size=8, recheck_after=RECHECK_AFTER, recheck_found=RECHECK_FOUND, first=()):
     """Splatné tituly (nový má ts 0 a je splatný vždy; vyhovující se kontroluje po `recheck_found`, ostatní po
     `recheck_after`): nejdřív neověřené podle pořadí, pak nejstarší. Neověřené jdou po skupinách `RANK_BUCKET`
     a uvnitř skupiny v pořadí podle `index["salt"]` – zařízení ve skupině synchronizace tak neověřují stejné tituly
-    ve stejnou chvíli."""
+    ve stejnou chvíli. Neověřené z `first` (prozatímní nálezy jiného zařízení) jdou úplně první."""
     salt = str(index.get("salt") or "")
 
     def spread(mid, rank):
@@ -60,7 +60,7 @@ def next_batch(index, now, size=8, recheck_after=RECHECK_AFTER, recheck_found=RE
 
     due = [(m, e) for m, e in (index.get("items") or {}).items()
            if not e.get("ts") or now - e["ts"] >= _period(e, recheck_after, recheck_found)]
-    due.sort(key=lambda me: (me[1].get("ok") is not None, spread(me[0], me[1].get("rank", 0))
+    due.sort(key=lambda me: (me[1].get("ok") is not None, me[0] not in first, spread(me[0], me[1].get("rank", 0))
                              if me[1].get("ok") is None else (me[1].get("ts") or 0,)))
     return [m for m, _e in due][:size]
 
