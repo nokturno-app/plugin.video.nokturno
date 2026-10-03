@@ -87,6 +87,7 @@ ACCOUNTS_EVERY = 6 * 3600     # pod `accounts.TTL` (12 h), ať v menu nestojí z
 ACCOUNTS_RETRY = 20 * 60      # zdroj, na který se nešlo dostat, zkusit dřív — viz AccountsChecker.tick
 ACCOUNTS_TRIGGER_PROP = "nokturno.accounts_trigger"   # stejný literál jako v default.py
 WATCH_TRIGGER_PROP = "nokturno.watch_check"           # stejný literál jako v default.py
+TRAKT_PULL_PROP = "nokturno.trakt_pull"                # stejný literál jako v default.py
 TRAKT_PULL_DELAY = 5 * 60   # po startu napřed skin a widgety
 TRAKT_PULL_EVERY = 15 * 60  # kolo bez změny na Traktu stojí jeden dotaz (last_activities)
 WATCH_DELAY = 6 * 60        # po startu napřed skin, widgety a stav zdrojů
@@ -903,8 +904,8 @@ class TraktPuller:
     Jen dotazy na Trakt, žádné zdroje — běží tedy přímo ve službě, ne přes plugin.
     Ne při přehrávání (vlastní scrobble by se vracel jako ozvěna dřív, než se
     pozice zapíše) a ne bez sítě. Po přijetí se hned synchronizuje a značky
-    v databázi Kodi srovná `KodiMarks`. Změněný Watchlist spustí kontrolu
-    Hlídaných hned (`WatchChecker`), ne až v denním kole.
+    v databázi Kodi srovná `KodiMarks`. Totéž kolo srovná Trakt Watchlist
+    s Mým seznamem (`trakt_pull.mirror_watchlist`).
     """
 
     def __init__(self, store):
@@ -913,7 +914,11 @@ class TraktPuller:
         self.lock = threading.Lock()
 
     def tick(self):
-        if time.time() < self.next:
+        win = xbmcgui.Window(10000)
+        asked = win.getProperty(TRAKT_PULL_PROP)   # změna Mého seznamu — poslat na Trakt hned
+        if asked:
+            win.clearProperty(TRAKT_PULL_PROP)
+        if not asked and time.time() < self.next:
             return
         self.next = time.time() + TRAKT_PULL_EVERY
         addon = fresh_addon()
@@ -930,10 +935,9 @@ class TraktPuller:
                 trakt = get_trakt(self.store)
                 if not trakt:
                     return
-                n = trakt_pull.pull(self.store, trakt, on_watchlist=lambda: xbmcgui.Window(10000)
-                                    .setProperty(WATCH_TRIGGER_PROP, "1"))
+                n = trakt_pull.pull(self.store, trakt)
                 if n:
-                    log(f"Trakt: přijato {n} zhlédnutých/rozkoukaných")
+                    log(f"Trakt: přijato {n} zhlédnutých/rozkoukaných/do Mého seznamu")
                     xbmcgui.Window(10000).setProperty(SYNC_PROP, "1")
             except Exception as e:  # noqa: BLE001 – Trakt nesmí shodit službu
                 log(f"stahování z Traktu: {e}", xbmc.LOGWARNING)

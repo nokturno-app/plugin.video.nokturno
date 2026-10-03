@@ -2158,12 +2158,12 @@ msgid "Do you agree to the terms of use above?"
 msgstr "Elfogadod a fenti felhasználási feltételeket?"
 
 msgctxt "#30750"
-msgid "Download watched and in progress from Trakt"
-msgstr "Megnézett és félbehagyott tételek letöltése a Traktról"
+msgid "Sync with Trakt: watched, in progress and watchlist"
+msgstr "Szinkronizálás a Trakttal: megnézett, félbehagyott és watchlist"
 
 msgctxt "#30751"
-msgid "Titles you finished or paused elsewhere (Stremio, Nuvio, another Kodi add-on) appear in Recently watched and Continue watching. Checked every 15 minutes."
-msgstr "Amit máshol nézel végig vagy hagysz félbe (Stremio, Nuvio, másik Kodi-kiegészítő), megjelenik a Nemrég nézett és a Folytatás listában. 15 percenként ellenőrzi."
+msgid "Titles you finished or paused elsewhere (Stremio, Nuvio, another Kodi add-on) appear in Recently watched and Continue watching. Your Trakt watchlist and My list are synced both ways. Checked every 15 minutes."
+msgstr "Amit máshol nézel végig vagy hagysz félbe (Stremio, Nuvio, másik Kodi-kiegészítő), megjelenik a Nemrég nézett és a Folytatás listában. A Trakt watchlist és a Saját lista mindkét irányban szinkronizálódik. 15 percenként ellenőrzi."
 
 msgctxt "#30800"
 msgid "SyncWatch"

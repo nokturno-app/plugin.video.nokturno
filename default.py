@@ -5899,6 +5899,8 @@ def toggle_fav(apis, key, ctype, series_id=None, alt=None):
     added = STORE.toggle_favourite(key, info)
     notify(L(30065) if added else L(30066))
     request_sync()
+    # Trakt Watchlist = Můj seznam; služba změnu pošle hned, ne až v dalším kole
+    xbmcgui.Window(10000).setProperty("nokturno.trakt_pull", "1")
     xbmc.executebuiltin("Container.Refresh")
 
 
@@ -6170,18 +6172,10 @@ def watch_check(apis, force=False):
     """Kontrola Hlídaných — volá ji služba přes JSON-RPC (`WatchChecker`). Jen seriály
     a tituly, které nikdo ve skupině synchronizace nekontroloval v posledních 6 h / 24 h."""
     engine = engine_of(apis)
-    extra = []
-    trakt = get_trakt()
-    if trakt is not None and trakt.logged_in():
-        for kind in ("movies", "shows"):
-            try:
-                extra += trakt.watchlist(kind)
-            except Exception as e:  # noqa: BLE001 – výpadek Traktu nesmí shodit kontrolu
-                xbmc.log(f"[{ADDON_ID}] trakt watchlist {kind}: {e}", xbmc.LOGDEBUG)
     try:
         with engine.background():   # na pozadí: počká na hledání, na které uživatel čeká (`Engine.gate`)
             done = watch_lib.check_series(engine, STORE, force=force, should_stop=should_stop)
-            done += watch_lib.check_wanted(engine, STORE, extra, force=force, should_stop=should_stop)
+            done += watch_lib.check_wanted(engine, STORE, force=force, should_stop=should_stop)
     except Aborted:
         raise
     except Exception as e:  # noqa: BLE001 – kontrola na pozadí nesmí nic shodit

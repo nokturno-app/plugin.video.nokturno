@@ -15,10 +15,12 @@ se objeví v Pokračovat ve sledování a Naposledy zhlédnuté.
 - Přijatý záznam dostane `rts` (čas příjmu), aby ho synchronizace poslala dál,
   i když jeho `ts` (čas na Traktu) je starší než poslední výměna.
 - Odebrání zhlédnutí na Traktu se nepřenáší — jen přibývá.
-- Týž dotaz `last_activities` řekne i o změně Watchlistu (`watchlisted_at`):
-  `on_watchlist` pak spustí kontrolu Hlídaných hned, ne až v denním kole.
+- **Watchlist = Můj seznam** (`mirror_watchlist`). Týž dotaz `last_activities` řekne
+  o změně Watchlistu (`watchlisted_at`); deník Mého seznamu (`favlog`) o změně u nás.
+  Jen když se něco z toho pohnulo, stáhne se Watchlist a obě strany se srovnají.
 """
 import calendar
+import re
 import time
 
 from store import WATCHED_MAX
@@ -106,23 +108,80 @@ def _watchlist(act):
     return {k: (act.get(k) or {}).get("watchlisted_at") for k in ("movies", "shows")}
 
 
-def pull(store, trakt, now=None, on_watchlist=None):
-    """Jedno kolo. Vrací počet přijatých záznamů; výjimky Traktu (`TraktError`) letí ven.
+_TRAKT_ID = re.compile(r"^(tt\d+|tmdb:\d+)$")   # dílu ani souboru (`ws:`) Watchlist nerozumí
 
-    `on_watchlist()` se zavolá, když se od minulého kola změnil Watchlist (první
-    kolo jen zapamatuje stav — denní kontrola Hlídaných ho stejně projde)."""
+
+def _local_changes(store, since):
+    """{klíč: zapnuto?} z deníku Mého seznamu po `since` (i co přišlo synchronizací)."""
+    out = {}
+    for key, rec in (store.reload("favlog", {}) or {}).items():
+        if isinstance(rec, dict) and _TRAKT_ID.match(key) and \
+                max(int(rec.get("ts") or 0), int(rec.get("rts") or 0)) > since:
+            out[key] = bool(rec.get("on"))
+    return out
+
+
+def _kind(store, key):
+    return "series" if (store.item(key) or {}).get("type") == "series" else "movie"
+
+
+def mirror_watchlist(store, trakt):
+    """Srovná Trakt Watchlist s Mým seznamem. Vrací počet změn v Mém seznamu.
+
+    Co přibylo/ubylo na Traktu od minula (`wl`), se propíše do Mého seznamu; co
+    přibylo/ubylo u nás od minula (`favlog` po `wl_ts`), se pošle na Trakt. Napoprvé
+    jen sjednocení obou stran, nic se nemaže.
+    ponytail: změna z jiného Kodi, která dorazí synchronizací se starším `ts` a bez
+    `rts` (razí ho jen HA), se na Trakt nepošle — dožene ji HA, nebo ruční přidání.
+    """
+    state = store.reload(STATE, {}) or {}
+    first = "wl" not in state
+    prev = state.get("wl") or {}
+    remote = {i["id"]: i for i in trakt.watchlist("movies") + trakt.watchlist("shows")}
+    favs = set(store.favourites())
+    local = {k: True for k in favs if _TRAKT_ID.match(k)} if first else _local_changes(store, state.get("wl_ts", 0))
+    add = [k for k, on in local.items() if on and k not in remote]
+    drop = [k for k, on in local.items() if not on and k in remote and not first]
+    if add:
+        trakt.watchlist_change(True, [(k, _kind(store, k)) for k in add])
+    if drop:
+        trakt.watchlist_change(False, [(k, remote[k]["type"]) for k in drop])
+    n = 0
+    # od nejstaršího, ať nejnovější přidání skončí v Mém seznamu nahoře
+    for it in sorted(remote.values(), key=lambda i: i.get("listed_at") or ""):
+        key = it["id"]
+        if key not in prev and key not in favs and key not in local:
+            store.toggle_favourite(key, {"type": it["type"], "id": key, "title": it.get("title") or key,
+                                         "year": it.get("year"), "art": {}})
+            n += 1
+    if not first:
+        for key in prev:
+            if key not in remote and key in favs and key not in local:
+                store.toggle_favourite(key)
+                n += 1
+    wl = {k: v["type"] for k, v in remote.items() if k not in drop}
+    wl.update({k: _kind(store, k) for k in add})
+    store.save(STATE, dict(store.reload(STATE, {}) or {}, wl=wl, wl_ts=int(time.time())))
+    return n
+
+
+def pull(store, trakt, now=None):
+    """Jedno kolo. Vrací počet přijatých záznamů (zhlédnuté, rozkoukané, Můj seznam);
+    výjimky Traktu (`TraktError`) letí ven."""
     now = int(now or time.time())
     state = store.reload(STATE, {}) or {}
     raw = trakt.last_activities()
     act, wl = _activities(raw), _watchlist(raw)
-    if wl != state.get("watchlist"):
-        known = "watchlist" in state
-        state = dict(state, watchlist=wl)
+    mirrored = 0
+    if "wl" not in state or wl != state.get("watchlist") or _local_changes(store, state.get("wl_ts", 0)):
+        mirrored = mirror_watchlist(store, trakt)
+        # po vlastním zápisu na Trakt se `watchlisted_at` posune — přečíst znovu,
+        # jinak by příští kolo zrcadlilo zbytečně
+        wl = _watchlist(trakt.last_activities())
+        state = dict(store.reload(STATE, {}) or {}, watchlist=wl)
         store.save(STATE, state)
-        if known and on_watchlist:
-            on_watchlist()
     if act == state.get("activities"):
-        return 0
+        return mirrored
     start = state.get("history_at") or _iso(now - FIRST_DAYS * 86400)
     events = []
     for page in range(1, MAX_PAGES + 1):
@@ -138,6 +197,5 @@ def pull(store, trakt, now=None, on_watchlist=None):
         if n:
             store._trim(data, WATCHED_MAX)
     newest = max([_epoch(e.get("watched_at")) for e in events] or [0])
-    store.save(STATE, {"activities": act, "watchlist": wl,
-                       "history_at": _iso(newest + 1) if newest else start})
-    return n
+    store.save(STATE, dict(state, activities=act, history_at=_iso(newest + 1) if newest else start))
+    return n + mirrored

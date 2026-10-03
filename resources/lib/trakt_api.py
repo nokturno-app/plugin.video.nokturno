@@ -142,6 +142,17 @@ class TraktApi:
             })
         return out
 
+    def watchlist_change(self, add, items):
+        """Přidá (`add`) nebo odebere tituly `[(id, "movie"|"series")]` jedním dotazem."""
+        body = {"movies": [], "shows": []}
+        for item_id, kind in items:
+            ids = ids_for(item_id)
+            if ids:
+                body["shows" if kind == "series" else "movies"].append({"ids": ids})
+        if body["movies"] or body["shows"]:
+            return self._request("/sync/watchlist" + ("" if add else "/remove"), body)
+        return None
+
     # --- stahování historie (trakt_pull.py) ------------------------------------------
     def last_activities(self):
         return self._request("/sync/last_activities") or {}
