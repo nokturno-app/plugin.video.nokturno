@@ -2381,6 +2381,41 @@ class TestTitulkyAZvuk(unittest.TestCase):
         xbmcaddon.settings["auto_subs"] = "1"
         self.assertEqual(self.run_tracks(props), [], "bez preferovaného jazyka se nic nemění")
 
+    def test_znovu_tentyz_stream_vrati_stopy_z_minula(self):
+        """Discord (GremliNN) 2026-10-03: při znovupuštění téhož streamu zůstat u zvuku a titulků z minula."""
+        default.STORE.save(service.LAST_TRACKS, {})
+        props = {"audiostreams": [{"index": 0, "language": "eng"}, {"index": 1, "language": "cze"}],
+                 "currentaudiostream": {"index": 0, "language": "eng"},
+                 "subtitles": [{"index": 0, "language": "cze"}, {"index": 1, "language": "eng"}],
+                 "currentsubtitle": {"index": 1, "language": "eng"}, "subtitleenabled": True}
+        player = service.Player(store=default.STORE, stats=None)
+        player.item = {"id": "tt1", "stream_url": "ws:abc"}
+        with mock.patch.object(service, "rpc", side_effect=lambda m, **p: [{"playerid": 1, "type": "video"}]
+                               if m == "Player.GetActivePlayers" else props):
+            player.remember_tracks()
+        item = {"id": "tt1", "stream_url": "ws:abc"}
+        self.assertEqual(self.run_tracks(props, item), [
+            ("Player.SetAudioStream", {"playerid": 1, "stream": 0}),
+            ("Player.SetSubtitle", {"playerid": 1, "subtitle": 1, "enable": True}),
+        ])
+        # jiný stream = předvolba z nastavení (čeština)
+        self.assertEqual(self.run_tracks(props, {"id": "tt1", "stream_url": "ws:jiny"})[0],
+                         ("Player.SetAudioStream", {"playerid": 1, "stream": 1}))
+        # stopa s jiným jazykem pod týmž číslem (jiný soubor) = předvolba
+        jine = dict(props, audiostreams=[{"index": 0, "language": "cze"}, {"index": 1, "language": "eng"}])
+        self.assertNotIn(("Player.SetSubtitle", {"playerid": 1, "subtitle": 1, "enable": True}),
+                         self.run_tracks(jine, item))
+
+    def test_vypnute_titulky_se_pamatuji(self):
+        default.STORE.save(service.LAST_TRACKS, {"tt1": {"url": "ws:abc", "a": 0, "al": "eng", "s": -1, "sl": ""}})
+        props = {"audiostreams": [{"index": 0, "language": "eng"}],
+                 "currentaudiostream": {"index": 0, "language": "eng"},
+                 "subtitles": [{"index": 0, "language": "cze"}], "currentsubtitle": {}, "subtitleenabled": False}
+        self.assertEqual(self.run_tracks(props, {"id": "tt1", "stream_url": "ws:abc"}), [
+            ("Player.SetAudioStream", {"playerid": 1, "stream": 0}),
+            ("Player.SetSubtitle", {"playerid": 1, "subtitle": "off"}),
+        ])
+
     def test_jiny_titul_mezitim_nic_neprepina(self):
         player = service.Player(store=default.STORE, stats=None)
         player.item = {"id": "jiny"}

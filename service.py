@@ -116,6 +116,8 @@ QUIT_PROP = "nokturno.quitting"   # stejný literál jako v default.py — Kodi 
 CHUNK = 1024 * 1024
 PREF_LANGS = ("", "CZ", "SK", "EN", "HU")   # pořadí voleb `pref_lang` v settings.xml, stejné jako v default.py
 TRACKS_DELAY = 1.0   # s po onAVStarted — externí titulky Kodi přidává až po otevření videa
+LAST_TRACKS = "lasttracks"   # lasttracks.json: zvuk a titulky naposledy zvolené u titulu (jen pro týž stream)
+LAST_TRACKS_MAX = 300
 PROFILE = xbmcvfs.translatePath(ADDON.getAddonInfo("profile"))
 TMDBH_PLAYER = "special://profile/addon_data/plugin.video.themoviedb.helper/players/nokturno.json"
 _STARTED_AT = time.time()   # MESSAGE_DELAY se počítá odsud, ne od okamžiku, kdy dorazí FORCE_STATS_PROP
@@ -268,6 +270,8 @@ class Player(xbmc.Player):
         time.sleep(TRACKS_DELAY)
         if self.item is not item or not self.isPlayingVideo():
             return
+        if self.restore_tracks(item):
+            return
         addon = fresh_addon()
         if addon is None:
             return
@@ -302,6 +306,55 @@ class Player(xbmc.Player):
         elif action == "off" and enabled:
             rpc("Player.SetSubtitle", playerid=player_id, subtitle="off")
             log(f"titulky vypnuty (zvuk v {pref})")
+
+    @staticmethod
+    def _video_player():
+        return next((p.get("playerid") for p in rpc("Player.GetActivePlayers") or [] if p.get("type") == "video"),
+                    None)
+
+    def remember_tracks(self):
+        """Zapamatuje zvuk a titulky, které právě hrají – při dalším puštění téhož streamu se vrátí
+        (`restore_tracks`) místo předvolby z nastavení. Volá se se zápisem pozice, tedy za běhu."""
+        url = (self.item or {}).get("stream_url")
+        player_id = self._video_player() if url else None
+        if player_id is None:
+            return
+        props = rpc("Player.GetProperties", playerid=player_id, properties=[
+            "currentaudiostream", "currentsubtitle", "subtitleenabled"]) or {}
+        audio = props.get("currentaudiostream") or {}
+        sub = props.get("currentsubtitle") or {} if props.get("subtitleenabled") else {}
+        if "index" not in audio:
+            return
+        rec = {"url": url, "a": audio.get("index"), "al": audio.get("language") or "",
+               "s": sub.get("index", -1), "sl": sub.get("language") or "", "ts": int(time.time())}
+        with self.store.updating(LAST_TRACKS, {}) as data:
+            data[str(self.item.get("id"))] = rec
+            for old in sorted(data, key=lambda k: (data[k] or {}).get("ts") or 0)[:max(len(data) - LAST_TRACKS_MAX, 0)]:
+                del data[old]
+
+    def restore_tracks(self, item):
+        """Stopy z minulého sledování téhož streamu (týž soubor = tatáž čísla stop). True = obnoveno,
+        předvolba z nastavení se pak nepoužije. Nesedí-li jazyk stopy (jiný soubor), rozhodne předvolba."""
+        rec = (self.store.load(LAST_TRACKS, {}) or {}).get(str(item.get("id")))
+        if not rec or not item.get("stream_url") or rec.get("url") != item["stream_url"]:
+            return False
+        player_id = self._video_player()
+        if player_id is None:
+            return False
+        props = rpc("Player.GetProperties", playerid=player_id, properties=["audiostreams", "subtitles"]) or {}
+
+        def find(streams, index, lang):
+            return next((x for x in streams if x.get("index") == index and (x.get("language") or "") == lang), None)
+
+        if find(props.get("audiostreams") or [], rec.get("a"), rec.get("al") or "") is None:
+            return False
+        rpc("Player.SetAudioStream", playerid=player_id, stream=rec["a"])
+        if rec.get("s", -1) == -1:
+            rpc("Player.SetSubtitle", playerid=player_id, subtitle="off")
+        elif find(props.get("subtitles") or [], rec["s"], rec.get("sl") or "") is not None:
+            rpc("Player.SetSubtitle", playerid=player_id, subtitle=rec["s"], enable=True)
+        log(f"stopy jako minule: zvuk {rec['a']}, titulky {rec.get('s')}")
+        return True
 
     def tick(self):
         if not self.item or not self.isPlayingVideo():
@@ -364,6 +417,7 @@ class Player(xbmc.Player):
             # záznamu, a ten pak přebil odebrání z Pokračovat (Spasitel 2026-09-13:
             # pauza v Kodi, odebrání se každých 30 s vrátilo a sync ho poslal do HA)
             self.save_resume()
+            self.remember_tracks()   # jen za běhu: `finish` při startu dalšího souboru by četl jeho stopy
 
     def trakt_scrobble(self, action, progress):
         trakt = get_trakt(self.store)
