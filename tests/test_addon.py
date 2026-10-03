@@ -7062,6 +7062,26 @@ class TestOverovaneKatalogy(unittest.TestCase):
         self.assertEqual(xbmcgui.Window(10000).getProperty(default.VERIFY_TRIGGER_PROP), "k1")
         self.assertEqual(len(xbmcgui.notifications), 1)
 
+    def test_prazdny_index_stahne_kandidaty_a_ukaze_cizi_nalezy(self):
+        """Mobil po synchronizaci: definice i cizí výsledky (jiné zdroje) má, kandidáty ne – služba bývá
+        na Androidu bez sítě, takže je stáhne výpis sám a cizí nálezy hned ukáže."""
+        cat = self._cat()
+        default.STORE.save(default.mycat.INDEX + cat["id"], {
+            "sig": default.mycat.sig(cat),
+            "foreign": {"src": "jine", "ts": 50, "res": {"tt2": [1, 50, 50], "tt1": [0, 50]}}})
+
+        class Dash:
+            def discover(self, kind, params, page=1):
+                return [meta_item("tt1"), meta_item("tt2")], 1
+
+        class Engine:
+            def verify_fingerprint(self):
+                return "moje"
+
+        default.list_mycat({"dash": Dash(), "engine": Engine()}, "movie", "k1", 1)
+        akce = [params_of(u) for u in xbmcplugin.urls()]
+        self.assertEqual([a.get("id") for a in akce[1:]], ["tt2"])
+
     def test_davka_overi_titul_a_zapise_found(self):
         self._cat()
 

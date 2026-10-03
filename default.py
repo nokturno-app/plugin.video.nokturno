@@ -5550,10 +5550,18 @@ def list_mycats(ctype):
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
 
 
-def list_mycat_verified(cat, ctype, page):
+def list_mycat_verified(apis, cat, ctype, page):
     """Ověřovaný katalog: jen tituly, které index (`mycat_index_<id>`) označil za vyhovující; první řádek
     je akce „načíst teď“, prázdný index nebo tituly po termínu popoženou službu."""
     index = mycat.load_index(STORE, cat)
+    if not index.get("items") and apis.get("dash") is not None:
+        # Kandidáty stahuje služba, jenže na Androidu bývá na pozadí bez sítě (a pak hodinu čeká, viz
+        # `accounts_offline`). V popředí síť je – bez kandidátů by se neukázaly ani nálezy z jiných zařízení.
+        try:
+            mycat.refresh(engine_of(apis), STORE, apis.get("dash"), cat["id"], 0, verify=False)
+        except Errors as e:
+            log_error(f"mycat pool {cat['id']}: {e}")
+        index = mycat.load_index(STORE, cat)
     checked, matched, total = mycat.counts(index)
     if page == 1:
         action_item(_swf(30777, "Ověřeno %s z %s – spustit dávku nyní", checked, total),
@@ -5577,7 +5585,7 @@ def list_mycat(apis, ctype, cat_id, page=1):
         return
     set_content("tvshows" if ctype == "series" else "movies")
     if cat.get("verify"):
-        list_mycat_verified(cat, ctype, page)
+        list_mycat_verified(apis, cat, ctype, page)
         return
     if cat.get("sort") == mycat.ALPHA:   # nejoblíbenější tituly podle filtrů, seřazené podle abecedy (pool má cache)
         pool = mycat.pool(dash, dict(cat, kind=ctype))

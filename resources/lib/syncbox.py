@@ -192,7 +192,9 @@ def sync_once(store, code, circles=DEFAULT_CIRCLES, base_url=SYNC_URL, name="", 
     relay = Relay(keys, device, base_url)
     # Zapnutý okruh musí dostat i to, co přišlo, když byl vypnutý: cizí bloby
     # se stahují jen od `since`, takže bez resetu by se dorovnal až cizí změnou.
-    znamka = ",".join(sorted(circles or ()))
+    # Přípona `|r1`: jednorázové stažení všeho po 10.1.3 – starší verze zahodily výsledky katalogů ze zařízení
+    # s jinými zdroji a bez resetu by je dostaly znovu až po další změně na tom zařízení.
+    znamka = ",".join(sorted(circles or ())) + "|r1"
     if state.get("circles") != znamka:
         state = dict(state, since=0, sent="")
     payload = filter_circles(collect_changes(store, 0), circles)
