@@ -11,6 +11,7 @@ zařízení, která vidí čerstvé cizí výsledky (`foreign_recent`), samo neo
 """
 import datetime
 import time
+import unicodedata
 
 # `from .x import y`, ne `from . import x` — plochá kopie v Kodi umí jen tenhle tvar
 from abort import Aborted
@@ -28,6 +29,7 @@ QUALITIES = (0, 3, 3.5, 4)
 SHOWS = ("pool", "found", "released")
 POOL_PAGES = 10
 POOL_EVERY = 6 * 3600
+ALPHA = "title.asc"          # řazení podle abecedy: kandidáti podle oblíbenosti, seřazení až u klienta
 FOREIGN_FRESH = 2 * 3600     # cizí výsledky mladší než tohle = ověřuje jiné zařízení (HA)
 COUNTRIES = ("CZ", "SK", "US", "GB", "FR", "DE", "IT", "ES", "PL", "HU", "KR", "JP", "DK", "SE", "NO")
 MAX_COUNTRIES = 5
@@ -233,7 +235,8 @@ def params(cat, today=None):
     out = {"with_genres": ("|" if cat.get("join") == "or" else ",").join(genres),
            "with_keywords": "|".join(keywords),
            "with_origin_country": "|".join(countries_of(cat)),
-           "with_original_language": cat.get("lang") or "", "sort_by": cat.get("sort") or "",
+           "with_original_language": cat.get("lang") or "",
+           "sort_by": "popularity.desc" if cat.get("sort") == ALPHA else cat.get("sort") or "",
            "year_from": year_from, "year_to": year_to}
     return {k: v for k, v in out.items() if v}
 
@@ -265,24 +268,31 @@ def verified(store):
 
 def pool(dash, cat):
     """Kandidáti z `/discover` (jen `tt` id, bez duplicit); None = výpadek serveru, index se nemění."""
-    return pool_for(dash, "series" if cat.get("kind") == "series" else "movie", params(cat))
+    return pool_for(dash, "series" if cat.get("kind") == "series" else "movie", params(cat), cat.get("sort") == ALPHA)
 
 
-def pool_for(dash, kind, discover_params):
-    """Totéž pro hotové parametry – sdílí to Stremio, které má katalogy v jiném tvaru."""
+def alpha_key(meta):
+    """Klíč pro řazení podle abecedy: název bez diakritiky a velikosti písmen."""
+    name = unicodedata.normalize("NFKD", str(meta.get("name") or ""))
+    return "".join(c for c in name if not unicodedata.combining(c)).casefold()
+
+
+def pool_for(dash, kind, discover_params, alpha=False):
+    """Totéž pro hotové parametry – sdílí to Stremio, které má katalogy v jiném tvaru. `alpha` = výsledek
+    (nejoblíbenější tituly podle filtrů, nejvýš `POOL_PAGES` stránek) seřadit podle abecedy."""
     out, seen = [], set()
     page, pages = 1, 1
     while page <= min(pages, POOL_PAGES):
         metas, pages = dash.discover(kind, discover_params, page)
         if metas is None:
-            return None if page == 1 else out
+            return None if page == 1 else (sorted(out, key=alpha_key) if alpha else out)
         for m in metas:
             mid = str(m.get("id") or "")
             if mid.startswith("tt") and mid not in seen:
                 seen.add(mid)
                 out.append(m)
         page += 1
-    return out
+    return sorted(out, key=alpha_key) if alpha else out
 
 
 def load_index(store, cat):

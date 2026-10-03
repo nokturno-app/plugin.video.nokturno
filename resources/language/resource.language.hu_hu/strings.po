@@ -3162,8 +3162,12 @@ msgid "Fairy tales with Czech dubbing"
 msgstr "Mesék cseh szinkronnal"
 
 msgctxt "#30287"
-msgid "Dubbing language"
-msgstr "Szinkron nyelve"
+msgid "Audio language"
+msgstr "Hang nyelve"
+
+msgctxt "#30288"
+msgid "Alphabet"
+msgstr "Ábécé"
 
 msgctxt "#30289"
 msgid "Pick music genres and enter your Last.fm key. Concerts are searched in the background."
@@ -3210,12 +3214,12 @@ msgid "A stream matching your requirements (dubbing, subtitles, quality, 5.1) is
 msgstr "A háttérben minden címhez a kéréseid szerinti streamet keres (szinkron, felirat, minőség, 5.1). A katalógus fokozatosan telik, és csak a lejátszható címeket mutatja."
 
 msgctxt "#30203"
-msgid "On the TV"
-msgstr "A tévén"
+msgid "Continue in Kodi"
+msgstr "Folytatás a Kodiban"
 
 msgctxt "#30204"
-msgid "On the phone (QR)"
-msgstr "Telefonon (QR)"
+msgid "Set up on the phone (recommended)"
+msgstr "Beállítás telefonon (ajánlott)"
 
 msgctxt "#30205"
 msgid "Edit on the phone"
@@ -3252,3 +3256,11 @@ msgstr "Katalógus típusa"
 msgctxt "#30235"
 msgid "Catalog saved."
 msgstr "Katalógus mentve."
+
+msgctxt "#31000"
+msgid "Use this list"
+msgstr "A lista használata"
+
+msgctxt "#31001"
+msgid "A disabled list stays filled in, it is just not shown in the menu."
+msgstr "A kikapcsolt lista kitöltve marad, csak nem jelenik meg a menüben."

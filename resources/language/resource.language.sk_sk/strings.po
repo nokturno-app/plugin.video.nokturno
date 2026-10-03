@@ -3164,8 +3164,12 @@ msgid "Fairy tales with Czech dubbing"
 msgstr "Rozprávky s CZ dabingom"
 
 msgctxt "#30287"
-msgid "Dubbing language"
-msgstr "Jazyk dabingu"
+msgid "Audio language"
+msgstr "Jazyk zvuku"
+
+msgctxt "#30288"
+msgid "Alphabet"
+msgstr "Abecedy"
 
 msgctxt "#30289"
 msgid "Pick music genres and enter your Last.fm key. Concerts are searched in the background."
@@ -3212,12 +3216,12 @@ msgid "A stream matching your requirements (dubbing, subtitles, quality, 5.1) is
 msgstr "Na pozadí sa pri každom titule hľadá stream podľa tvojich požiadaviek (dabing, titulky, kvalita, 5.1). Katalóg sa plní postupne a ukáže len to, čo sa dá prehrať."
 
 msgctxt "#30203"
-msgid "On the TV"
-msgstr "Na televízii"
+msgid "Continue in Kodi"
+msgstr "Pokračovať v nastavení v Kodi"
 
 msgctxt "#30204"
-msgid "On the phone (QR)"
-msgstr "Na mobile (QR)"
+msgid "Set up on the phone (recommended)"
+msgstr "Nastaviť cez mobil (odporúčame)"
 
 msgctxt "#30205"
 msgid "Edit on the phone"
@@ -3254,3 +3258,11 @@ msgstr "Druh katalógu"
 msgctxt "#30235"
 msgid "Catalog saved."
 msgstr "Katalóg uložený."
+
+msgctxt "#31000"
+msgid "Use this list"
+msgstr "Používať tento zoznam"
+
+msgctxt "#31001"
+msgid "A disabled list stays filled in, it is just not shown in the menu."
+msgstr "Vypnutý zoznam zostane vyplnený, len sa v menu neukáže."

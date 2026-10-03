@@ -1175,6 +1175,11 @@ def mylist_prefix(slot):
     return "mylist" if slot == 1 else f"mylist{slot}"
 
 
+def mylist_enabled(slot):
+    """Přepínač „Používat tento seznam“; vypnutý zůstane vyplněný, jen se v menu neukáže."""
+    return setting(f"{mylist_prefix(slot)}_enabled", "true") != "false"
+
+
 def mylist_choice(slot, key, count):
     """Index volby spinneru; neplatná nebo chybějící hodnota = 0 (výchozí)."""
     try:
@@ -1193,11 +1198,11 @@ def mylist_source(slot=1):
 
 def mylist_menu_item(position=MYLIST_POS_CATALOGS):
     """Vlastní seznamy v kořeni menu na daném místě, jen s vyplněnou adresou; víc seznamů
-    na jednom místě jde podle čísla slotu. Název z poslední načtené verze (bez dotazu na
+    na jednom místě jde podle čísla slotu, vypnutý se přeskočí. Název z poslední načtené verze (bez dotazu na
     síť, menu se tím nezdrží), jinak obecný."""
     for slot in MYLIST_SLOTS:
         url, _ = mylist_source(slot)
-        if url and mylist_choice(slot, "pos", 4) == position:
+        if url and mylist_enabled(slot) and mylist_choice(slot, "pos", 4) == position:
             folder_item(mylist.cached_title(STORE, url) or mylist_name(slot), mylist_url(slot),
                         icon=MYLIST_ICONS[mylist_choice(slot, "icon", len(MYLIST_ICONS))])
 
@@ -5057,7 +5062,7 @@ MYCAT_GENRES = {   # id žánrů TMDB → anglický název (česky přes `genre_
 # Ve formuláři jsou pod žánry; ukládá se klíč, ne id, ať jde seznam id později doplnit.
 MYCAT_KEYWORDS = tuple((key, ids, 30976, "Pohádky") for key, ids in mycat.KEYWORDS.items())
 MYCAT_SORTS = (("popularity.desc", 30954, "Oblíbenosti"), ("vote_average.desc", 30955, "Hodnocení"),
-               ("primary_release_date.desc", 30956, "Data vydání"))
+               ("primary_release_date.desc", 30956, "Data vydání"), (mycat.ALPHA, 30288, "Abecedy"))
 MYCAT_QUALITY_LABELS = ((0, 30885, "Libovolná"), (3, 0, "Full HD"), (3.5, 0, "2K"), (4, 0, "4K"))   # 0 = bez překladu
 MYCAT_TRACK_LABELS = (("", 30762, "Libovolné"), ("CZ", 30112, "Čeština"), ("SK", 30113, "Slovenština"),
                       ("CZ|SK", 30763, "Čeština nebo slovenština"), ("EN", 30114, "Angličtina"),
@@ -5223,7 +5228,7 @@ def mycat_form(ctype, cat=None):
     if verify:
         tracks = [v for v, _, _ in MYCAT_TRACK_LABELS]
         track_labels = [L(sid, fb) for _, sid, fb in MYCAT_TRACK_LABELS]
-        audio = _mycat_pick(L(30287, "Jazyk dabingu"), track_labels, cat.get("audio") or "", tracks)
+        audio = _mycat_pick(L(30287, "Jazyk zvuku"), track_labels, cat.get("audio") or "", tracks)
         subs = None if audio is None else _mycat_pick(L(30884, "Titulky"), track_labels, cat.get("subs") or "", tracks)
         qs = [v for v, _, _ in MYCAT_QUALITY_LABELS]
         q = None if subs is None else _mycat_pick(
@@ -5264,8 +5269,9 @@ def mycat_first_batch(cat, ask=True):
 
 def mycat_new(ctype):
     """Nový katalog: na televizi (dialogy), nebo na mobilu (QR)."""
-    idx = xbmcgui.Dialog().select(L(30945, "Nový katalog"), [L(30203, "Na televizi"), L(30204, "Na mobilu (QR)")])
-    if idx == 1:
+    idx = xbmcgui.Dialog().select(L(30945, "Nový katalog"), [L(30204, "Nastavit přes mobil (doporučujeme)"),
+                                                              L(30203, "Pokračovat v nastavení v Kodi")])
+    if idx == 0:
         mycat_remote(None, ctype)
         return
     if idx < 0:
@@ -5305,7 +5311,7 @@ def mycat_batch(cat_id):
 
 # --- editor katalogu z mobilu -------------------------------------------------------
 
-MYCAT_FORM_INPUTS = ("kind", "verify", "genres_movie", "genres_series", "keywords", "join", "countries",
+MYCAT_FORM_INPUTS = ("kind", "verify", "genres_movie", "genres_series", "join", "countries",
                      "years_mode", "year_from", "year_to", "years", "audio", "subs", "q", "surround")
 
 
@@ -5313,11 +5319,12 @@ def _mycat_form_values(cat, kind):
     """Záznam katalogu → hodnoty formuláře z mobilu (řetězce)."""
     def num(v):
         return str(v) if v else ""
-    genres = "|".join(str(g) for g in cat.get("genres") or [])
+    # klíčová slova (Pohádky) jsou na mobilu mezi žánry, ne ve zvláštní sekci
+    genres = "|".join([str(g) for g in cat.get("genres") or []] + [k for k in cat.get("keywords") or []])
     years_mode = "last" if cat.get("years") else "range" if cat.get("year_from") or cat.get("year_to") else "none"
     return {"kind": kind, "verify": "1" if cat.get("verify") else "0",
             "genres_movie": genres if kind == "movie" else "", "genres_series": genres if kind == "series" else "",
-            "keywords": "|".join(cat.get("keywords") or []), "join": cat.get("join") or "and",
+            "join": cat.get("join") or "and",
             "countries": "|".join(mycat.migrate_lang(cat)), "years_mode": years_mode,
             "year_from": num(cat.get("year_from")), "year_to": num(cat.get("year_to")), "years": num(cat.get("years")),
             "sort": cat.get("sort") or "popularity.desc", "audio": cat.get("audio") or "", "subs": cat.get("subs") or "",
@@ -5337,8 +5344,9 @@ def _mycat_fields_from_form(values):
         return [v for v in str(values.get(key) or "").split("|") if v]
     mode = values.get("years_mode")
     genres = [int(g) for g in multi("genres_" + kind) if g.isdigit()]
+    keywords = [k for k in multi("genres_" + kind) + multi("keywords") if k in mycat.KEYWORDS]
     q = values.get("q")
-    return kind, {"genres": genres, "keywords": multi("keywords"), "join": values.get("join"),
+    return kind, {"genres": genres, "keywords": list(dict.fromkeys(keywords)), "join": values.get("join"),
                   "countries": multi("countries"), "verify": values.get("verify") == "1",
                   "years": year("years", 1, 50) if mode == "last" else None,
                   "year_from": year("year_from") if mode == "range" else None,
@@ -5371,13 +5379,12 @@ def mycat_remote_schema(kind, new, name_auto=True):
     for k in ("movie", "series"):
         if new or k == kind:
             field = {"id": "genres_" + k, "type": "multi", "label": L(30948, "Žánry (nic = všechny)"),
-                     "options": [(str(g), genre_label(n)) for g, n in MYCAT_GENRES[k]]}
+                     "options": [(str(g), genre_label(n)) for g, n in MYCAT_GENRES[k]]
+                     + [(key, L(sid, fb)) for key, _, sid, fb in MYCAT_KEYWORDS]}
             if new:
                 field["enable"] = ("kind", k)
             fields.append(field)
     fields += [
-        {"id": "keywords", "type": "multi", "label": L(30976, "Pohádky"),
-         "options": [(key, L(sid, fb)) for key, _, sid, fb in MYCAT_KEYWORDS]},
         {"id": "join", "type": "choice", "label": L(30973, "Tituly musí mít"),
          "options": [("and", L(30974, "všechny vybrané žánry")), ("or", L(30975, "aspoň jeden vybraný žánr"))]},
         {"id": "countries", "type": "multi", "label": L(30244, "Země původu (nejvýš 5)"), "max": mycat.MAX_COUNTRIES,
@@ -5392,7 +5399,7 @@ def mycat_remote_schema(kind, new, name_auto=True):
         {"id": "years", "type": "text", "label": L(30771, "Kolik posledních let"), "enable": ("years_mode", "last")},
         {"id": "sort", "type": "choice", "label": L(30953, "Řadit podle"),
          "options": [(v, L(sid, fb)) for v, sid, fb in MYCAT_SORTS]},
-        {"id": "audio", "type": "choice", "label": L(30287, "Jazyk dabingu"), "options": tracks, "enable": stream},
+        {"id": "audio", "type": "choice", "label": L(30287, "Jazyk zvuku"), "options": tracks, "enable": stream},
         {"id": "subs", "type": "choice", "label": L(30884, "Titulky"), "options": tracks, "enable": stream},
         {"id": "q", "type": "choice", "label": L(30994, "Minimální kvalita"), "enable": stream,
          "options": [(str(v), L(sid, fb) if sid else fb) for v, sid, fb in MYCAT_QUALITY_LABELS]},
@@ -5524,7 +5531,11 @@ def list_mycat(apis, ctype, cat_id, page=1):
     if cat.get("verify"):
         list_mycat_verified(cat, ctype, page)
         return
-    metas, pages = dash.discover(ctype, mycat_params(cat), page=page)
+    if cat.get("sort") == mycat.ALPHA:   # nejoblíbenější tituly podle filtrů, seřazené podle abecedy (pool má cache)
+        pool = mycat.pool(dash, dict(cat, kind=ctype))
+        metas, pages = (None, 1) if pool is None else (pool[(page - 1) * 20:page * 20], max(1, -(-len(pool) // 20)))
+    else:
+        metas, pages = dash.discover(ctype, mycat_params(cat), page=page)
     if metas is None:
         notify(L(30959, "Katalog se nepodařilo načíst. Zkus to později."), xbmcgui.NOTIFICATION_WARNING)
         metas = []

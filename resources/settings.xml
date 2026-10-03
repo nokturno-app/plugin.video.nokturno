@@ -618,6 +618,11 @@
         </setting>
       </group>
       <group id="mylist" label="30981">
+        <setting id="mylist_enabled" type="boolean" label="31000" help="31001">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
         <setting id="mylist_url" type="string" label="30982" help="30987">
           <level>0</level>
           <default></default>
@@ -682,6 +687,11 @@
         </setting>
       </group>
       <group id="mylist2" label="30989">
+        <setting id="mylist2_enabled" type="boolean" label="31000" help="31001">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
         <setting id="mylist2_url" type="string" label="30982" help="30987">
           <level>0</level>
           <default></default>
@@ -746,6 +756,11 @@
         </setting>
       </group>
       <group id="mylist3" label="30990">
+        <setting id="mylist3_enabled" type="boolean" label="31000" help="31001">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
         <setting id="mylist3_url" type="string" label="30982" help="30987">
           <level>0</level>
           <default></default>

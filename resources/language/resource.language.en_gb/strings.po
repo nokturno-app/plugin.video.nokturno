@@ -3164,7 +3164,11 @@ msgid "Fairy tales with Czech dubbing"
 msgstr ""
 
 msgctxt "#30287"
-msgid "Dubbing language"
+msgid "Audio language"
+msgstr ""
+
+msgctxt "#30288"
+msgid "Alphabet"
 msgstr ""
 
 msgctxt "#30289"
@@ -3212,11 +3216,11 @@ msgid "A stream matching your requirements (dubbing, subtitles, quality, 5.1) is
 msgstr ""
 
 msgctxt "#30203"
-msgid "On the TV"
+msgid "Continue in Kodi"
 msgstr ""
 
 msgctxt "#30204"
-msgid "On the phone (QR)"
+msgid "Set up on the phone (recommended)"
 msgstr ""
 
 msgctxt "#30205"
@@ -3253,4 +3257,12 @@ msgstr ""
 
 msgctxt "#30235"
 msgid "Catalog saved."
+msgstr ""
+
+msgctxt "#31000"
+msgid "Use this list"
+msgstr ""
+
+msgctxt "#31001"
+msgid "A disabled list stays filled in, it is just not shown in the menu."
 msgstr ""

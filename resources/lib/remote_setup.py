@@ -317,7 +317,9 @@ class SetupServer:
                     rows.append(f'<label class="{row_class}"{attrs}><span>{label}{help_text}</span>'
                                 f'<input type="text" name="{esc(fid)}" id="{esc(fid)}" value="{esc(current)}" '
                                 f'autocapitalize="off" autocorrect="off" spellcheck="false"{auto_attrs}></label>')
-            parts.append(f'<details{" open" if section.get("open") else ""}><summary>{esc(section["label"])}'
+            # jediná sekce (katalog, výběr streamu) je rozbalená rovnou, sbalená by byla klik navíc
+            opened = section.get("open") or len(self.schema) == 1
+            parts.append(f'<details{" open" if opened else ""}><summary>{esc(section["label"])}'
                          f'</summary>{"".join(rows)}</details>')
         note = f'<p class="note{" err" if error else ""}">{esc(message)}</p>' if message else ""
         return PAGE.format(title=esc(t["title"]), intro=esc(t["intro"]), note=note, sections="".join(parts),

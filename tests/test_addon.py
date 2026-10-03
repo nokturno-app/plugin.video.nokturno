@@ -5671,7 +5671,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 128)   # +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs
+        self.assertEqual(len(volby), 131)   # +3 mylist1–3_enabled, +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):
@@ -6125,6 +6125,11 @@ class TestVlastniSeznam(unittest.TestCase):
         xbmcaddon.settings["mylist_url"] = ""
         default.mylist_menu_item()
         self.assertEqual(xbmcplugin.items, [])
+
+    def test_vypnuty_seznam_v_menu_neni(self):
+        xbmcaddon.settings.update({"mylist3_url": "https://example.test/3.json", "mylist_enabled": "false"})
+        default.mylist_menu_item()
+        self.assertEqual([params_of(u).get("slot") for u in xbmcplugin.urls()], ["3"])
 
     def test_tri_sloty_a_stary_odkaz(self):
         slot3 = {"mylist3_url": "https://example.test/3.json", "mylist3_header1": "X-Key: k"}
@@ -6775,9 +6780,9 @@ class TestVlastniKatalogy(unittest.TestCase):
         default.STORE.save("mycatlog", {})
         xbmcgui.Window(10000).clearProperty(default.VERIFY_MANUAL_PROP)
 
-    def _vytvor(self, multiselect=((3, 7), (0,)), selects=(0, 0, 0, 1, 1, 0), numeric=("1990", ""), name="",
+    def _vytvor(self, multiselect=((3, 7), (0,)), selects=(1, 0, 0, 1, 1, 0), numeric=("1990", ""), name="",
                 yesno=False):
-        # selects: TV/mobil, režim, spojení žánrů, roky (1 = Od–do), řazení, [požadavky na stream], ikona
+        # selects: mobil/TV (1 = TV), režim, spojení žánrů, roky (1 = Od–do), řazení, [požadavky na stream], ikona
         with mock.patch.object(xbmcgui.Dialog, "multiselect", side_effect=[list(m) for m in multiselect]), \
                 mock.patch.object(xbmcgui.Dialog, "select", side_effect=list(selects)) as sel, \
                 mock.patch.object(xbmcgui.Dialog, "numeric", side_effect=list(numeric), create=True), \
@@ -6802,7 +6807,7 @@ class TestVlastniKatalogy(unittest.TestCase):
 
     def test_rezim_se_streamem_se_pta_na_dabing_a_spusti_prvni_davku(self):
         # TV, se streamem, roky Posledních X, řazení, dabing CZ, titulky, Full HD, 5.1, zobrazení, ikona Seznam
-        cat = self._vytvor(multiselect=((0,), ()), selects=(0, 1, 2, 0, 1, 0, 1, 1, 0, 2), numeric=("3",),
+        cat = self._vytvor(multiselect=((0,), ()), selects=(1, 1, 2, 0, 1, 0, 1, 1, 0, 2), numeric=("3",),
                            yesno=True)[0]
         self.assertEqual((cat["verify"], cat["years"], cat["audio"], cat["q"], cat["surround"], cat["icon"]),
                          (True, 3, "CZ", 3, True, "DefaultVideoPlaylists.png"))
@@ -6828,13 +6833,13 @@ class TestVlastniKatalogy(unittest.TestCase):
         self.assertEqual(ms.call_args_list[1].kwargs["preselect"], [0, 1])
 
     def test_pohadky_jako_klicove_slovo(self):
-        cat = self._vytvor(multiselect=((18,), ()), selects=(0, 0, 0, 0, 0))[0]
+        cat = self._vytvor(multiselect=((18,), ()), selects=(1, 0, 0, 0, 0))[0]
         self.assertEqual((cat["genres"], cat["keywords"], cat["countries"]), ([], ["fairy"], []))
         self.assertEqual(default.mycat_params(cat), {"with_keywords": "3205|329731|358931|351899",
                                                      "sort_by": "popularity.desc"})
 
     def test_zruseni_nic_neulozi(self):
-        with mock.patch.object(xbmcgui.Dialog, "select", side_effect=[0, -1]):
+        with mock.patch.object(xbmcgui.Dialog, "select", side_effect=[1, -1]):
             default.main("action=mycat_new&type=movie")
         self.assertEqual(default.mycats(), [])
 
@@ -6899,10 +6904,20 @@ class TestKatalogZMobilu(unittest.TestCase):
         xbmcgui.Window(10000).clearProperty(default.VERIFY_MANUAL_PROP)
 
     def test_novy_katalog_nabidne_mobil(self):
-        with mock.patch.object(xbmcgui.Dialog, "select", return_value=1), \
+        with mock.patch.object(xbmcgui.Dialog, "select", return_value=0), \
                 mock.patch.object(default, "mycat_remote") as remote:
             default.main("action=mycat_new&type=series")
         remote.assert_called_once_with(None, "series")
+
+    def test_pohadky_mezi_zanry_na_mobilu(self):
+        fields = {f.get("id"): f for f in default.mycat_remote_schema("movie", True)[0]["fields"]}
+        self.assertNotIn("keywords", fields)
+        self.assertIn("fairy", [v for v, _ in fields["genres_movie"]["options"]])
+        kind, pole = default._mycat_fields_from_form({"kind": "movie", "genres_movie": "16|fairy"})
+        self.assertEqual((pole["genres"], pole["keywords"]), ([16], ["fairy"]))
+        self.assertEqual(default._mycat_form_values({"genres": [16], "keywords": ["fairy"]}, "movie")["genres_movie"],
+                         "16|fairy")
+        self.assertIn(default.mycat.ALPHA, [v for v, _ in fields["sort"]["options"]])
 
     def test_schema_ma_multi_a_auto(self):
         fields = {f.get("id"): f for f in default.mycat_remote_schema("movie", True)[0]["fields"]}
