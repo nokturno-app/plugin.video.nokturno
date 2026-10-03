@@ -2869,6 +2869,13 @@ class Engine:
             skip.add("hellspy")
         return frozenset(skip)
 
+    def verify_fingerprint(self):
+        """Otisk zdrojů, přes které ověřování opravdu hledá (`sources()` mínus `verify_sources()`). Výsledky
+        vlastních katalogů se mezi zařízeními přebírají jen při stejném otisku – mobil bez Luny nesmí ukazovat
+        tituly, které doma našla Luna."""
+        skip = self.verify_sources()
+        return ",".join(sorted(k for k, on in self.sources().items() if on and k not in skip))
+
     def verify_title(self, ctype, item_id, min_quality=0, surround=False, audio="", subs="", skip_sources=None):
         """Ověření titulu pro vlastní katalog. Film = `classify_quality`, seriál podle posledního
         odvysílaného dílu (`watch.aired_episodes`). True/False, None = zkusit později.

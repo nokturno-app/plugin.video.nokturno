@@ -8,10 +8,12 @@ S `verify` se zobrazí jen tituly, ke kterým se našel stream podle požadavků
 Synchronizace (`sync.py`, okruh `catalogs`) nese deník `mycatlog` (`{id: {"on", "ts"}}`), k němu celé
 definice (`c:<id>`) a kompaktní výsledky ověření (`r:<id>`). Home Assistant ověřuje nepřetržitě;
 zařízení, která vidí čerstvé cizí výsledky (`foreign_recent`), samo neověřuje a jen kreslí.
+Výsledky nesou otisk zdrojů (`Engine.verify_fingerprint`), převezme je jen zařízení se stejnými zdroji.
 """
 import datetime
 import time
 import unicodedata
+import uuid
 
 # `from .x import y`, ne `from . import x` — plochá kopie v Kodi umí jen tenhle tvar
 from abort import Aborted
@@ -319,6 +321,7 @@ def refresh(engine, store, dash, cid, size=1, verify=True, should_stop=None):
         return 0
     kind = "series" if cat.get("kind") == "series" else "movie"
     name, csig, now = INDEX + cid, sig(cat), _now()
+    src = engine.verify_fingerprint()
     index = store.reload(name, {})
     stale = index.get("sig") != csig or now - int(index.get("pool_ts") or 0) >= POOL_EVERY
     fresh = pool(dash, cat) if stale else None   # síť mimo zámek
@@ -326,6 +329,13 @@ def refresh(engine, store, dash, cid, size=1, verify=True, should_stop=None):
         if index.get("sig") != csig:
             index.clear()
             index["sig"] = csig
+        # ponytail: při změně zdrojů se staré výsledky nemažou, přeověří je běžná perioda (3/7 dní)
+        index["src"] = src
+        index.setdefault("salt", uuid.uuid4().hex[:8])
+        pending = index.pop("pending", None)
+        if isinstance(pending, dict) and pending.get("src") == src:
+            if merge_results(index, pending.get("res")) and pending.get("rstamp"):
+                index["rts"] = now
         if fresh is not None:
             merge_pool(index, fresh, now)
             index["pool_ts"] = now
@@ -398,7 +408,7 @@ def collect(store, since, seen):
             continue
         ts = max(v[1] for v in res.values())
         if seen({"ts": ts, "rts": index.get("rts")}) >= since:
-            out["r:" + cat["id"]] = {"ts": ts, "sig": sig(cat), "res": res}
+            out["r:" + cat["id"]] = {"ts": ts, "sig": sig(cat), "src": index.get("src") or "", "res": res}
     return out
 
 
@@ -445,6 +455,13 @@ def apply(store, changes, stamp=0):
                 if index.get("sig") != rec["sig"]:
                     index.clear()
                     index["sig"] = rec["sig"]
+                if not index.get("src"):   # vlastní zdroje ještě neznáme: počkat na první `refresh`
+                    if _ts(rec) >= _ts(index.get("pending")):
+                        index["pending"] = dict(rec, rstamp=stamp)
+                    continue
+                # výsledky ze zařízení s jinými zdroji (Luna doma, mobil bez ní) nepasují – zařízení ověřuje samo
+                if index["src"] != rec.get("src"):
+                    continue
                 taken = merge_results(index, rec.get("res"))
                 if taken and stamp:
                     index["rts"] = stamp

@@ -7032,6 +7032,9 @@ class TestOverovaneKatalogy(unittest.TestCase):
             def verify_title(self, kind, mid, *definition):
                 return mid == "tt1"
 
+            def verify_fingerprint(self):
+                return "webshare"
+
         default.verify_refresh({"dash": Dash(), "engine": Engine()}, "k1", 2)
         idx = default.STORE.reload(default.mycat.INDEX + "k1", {})
         self.assertTrue(idx["items"]["tt1"]["ok"] and idx["items"]["tt1"]["found"])

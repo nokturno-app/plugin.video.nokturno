@@ -5,6 +5,7 @@ Tvar: {"sig": str, "items": {id: {"ok": bool|None, "ts": int, "found": int, "gen
 "rank": int, "meta": dict}}, "foreign_ts": int}
 `found` = kdy titul poprvé vyhověl; `foreign_ts` = kdy sem naposledy přišly výsledky z jiného zařízení.
 """
+import hashlib
 import time
 
 RECHECK_AFTER = 3 * 86400   # titul, který nevyhověl: za kolik se zkusí znovu
@@ -13,6 +14,7 @@ RETRY_AFTER = 1800          # po selhání zkusit znovu za 30 min (`record`)
 SLOW_MISSES = 3             # koncerty: interpret bez nálezu tolikrát za sebou jde do pomalé koleje
 SLOW_RECHECK = 30 * 86400   # … a zkusí se znovu až za 30 dní (pole `misses` plní jen `concertcat`)
 NO_RANK = 10 ** 6           # položka, která přišla jen synchronizací a v místním poolu ještě není
+RANK_BUCKET = 20            # neověřené tituly: pořadí poolu po skupinách, uvnitř skupiny podle `salt` zařízení
 
 
 def signature(min_q, surround, audio, subs=""):
@@ -48,11 +50,18 @@ def _period(entry, recheck_after, recheck_found):
 
 def next_batch(index, now, size=8, recheck_after=RECHECK_AFTER, recheck_found=RECHECK_FOUND):
     """Splatné tituly (nový má ts 0 a je splatný vždy; vyhovující se kontroluje po `recheck_found`, ostatní po
-    `recheck_after`): nejdřív neověřené podle pořadí, pak nejstarší."""
+    `recheck_after`): nejdřív neověřené podle pořadí, pak nejstarší. Neověřené jdou po skupinách `RANK_BUCKET`
+    a uvnitř skupiny v pořadí podle `index["salt"]` – zařízení ve skupině synchronizace tak neověřují stejné tituly
+    ve stejnou chvíli."""
+    salt = str(index.get("salt") or "")
+
+    def spread(mid, rank):
+        return (rank // RANK_BUCKET, hashlib.md5((salt + mid).encode()).hexdigest() if salt else rank)
+
     due = [(m, e) for m, e in (index.get("items") or {}).items()
            if not e.get("ts") or now - e["ts"] >= _period(e, recheck_after, recheck_found)]
-    due.sort(key=lambda me: (me[1].get("ok") is not None, me[1].get("rank", 0) if me[1].get("ok") is None
-                             else me[1].get("ts") or 0))
+    due.sort(key=lambda me: (me[1].get("ok") is not None, spread(me[0], me[1].get("rank", 0))
+                             if me[1].get("ok") is None else (me[1].get("ts") or 0,)))
     return [m for m, _e in due][:size]
 
 
