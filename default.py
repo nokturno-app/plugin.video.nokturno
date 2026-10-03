@@ -5606,7 +5606,8 @@ def _concert_item(g, label):
     li = xbmcgui.ListItem(label=label)
     li.setLabel2(human_size(g["files"][0].get("size") or 0))
     li.setProperty("IsPlayable", "true")
-    li.setArt({"icon": CONCERT_ICON})
+    img = concertcat.image(g["files"])
+    li.setArt(dict({"icon": CONCERT_ICON}, **({"thumb": img, "poster": img} if img else {})))
     tag = li.getVideoInfoTag()
     tag.setTitle(label)
     duration = max((int(f.get("duration") or 0) for f in g["files"]), default=0)
@@ -5622,8 +5623,10 @@ def _concert_label(g):
 
 def _concert_artists(artists):
     for a in artists:
-        folder_item("%s (%d)" % (a["name"], len(concertcat.group(a["files"], a["name"]))),
-                    build_url(action="concerts_artist", a=a["id"]), icon=CONCERT_ICON)
+        li = xbmcgui.ListItem(label="%s (%d)" % (a["name"], len(concertcat.group(a["files"], a["name"]))))
+        img = concertcat.image(a["files"])
+        li.setArt(dict({"icon": CONCERT_ICON}, **({"thumb": img, "poster": img} if img else {})))
+        xbmcplugin.addDirectoryItem(HANDLE, build_url(action="concerts_artist", a=a["id"]), li, isFolder=True)
 
 
 def list_concerts():

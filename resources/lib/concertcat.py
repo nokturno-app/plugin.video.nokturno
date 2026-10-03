@@ -120,7 +120,7 @@ def pool(key, tags, opener=urllib.request.urlopen, page=1):
 def _ws(api, artist):
     files, _total = api.search(artist, limit=WS_LIMIT, offset=0)
     return [{"ref": "ws:" + f["ident"], "name": f.get("name") or "", "size": int(f.get("size") or 0),
-             "duration": 0, "source": "ws"} for f in files if f.get("ident")]
+             "duration": 0, "source": "ws", "img": f.get("img") or ""} for f in files if f.get("ident")]
 
 
 def _hs(api, artist):
@@ -128,7 +128,7 @@ def _hs(api, artist):
     for _ in range(HS_PAGES):
         files, nxt = api.search(artist, limit=HS_LIMIT, offset=offset)
         out += [{"ref": f"hs:{f['id']}:{f['hash']}", "name": f.get("name") or "", "size": int(f.get("size") or 0),
-                 "duration": int(f.get("duration") or 0), "source": "hs"} for f in files]
+                 "duration": int(f.get("duration") or 0), "source": "hs", "img": f.get("thumb") or ""} for f in files]
         if not nxt or nxt <= offset:
             break
         offset = nxt
@@ -138,7 +138,7 @@ def _hs(api, artist):
 def _fs(api, artist):
     files, _total = api.search(artist, limit=FS_LIMIT)
     return [{"ref": fastshare_ref(f), "name": f.get("name") or "", "size": int(f.get("size") or 0),
-             "duration": int(f.get("duration") or 0), "source": "fs"} for f in files]
+             "duration": int(f.get("duration") or 0), "source": "fs", "img": f.get("thumb") or ""} for f in files]
 
 
 SOURCES = (("webshare", "ws", _ws), ("hellspy", "hs", _hs), ("fastshare", "fs", _fs))
@@ -182,6 +182,11 @@ def search(engine, artist, rivals=(), should_stop=None):
         seen.add(f["ref"])
         out.append(f)
     return out[:MAX_FILES]
+
+
+def image(files):
+    """Náhled ze zdroje (WebShare `img`, HellSpy a FastShare `thumb`) – první soubor, který ho má, jinak ""."""
+    return next((f["img"] for f in files or () if f.get("img")), "")
 
 
 def group(files, artist):
@@ -419,6 +424,11 @@ def refresh(engine, store, size=1, should_stop=None):
                 index["page"], index["grow_ts"] = page, now
                 if not fresh:
                     index["pool_end"] = True   # žebříček došel
+        if not index.get("img"):   # index z doby před náhledy (10.0.0 beta): interpreti s koncerty jednou znovu
+            for e in (index.get("items") or {}).values():
+                if e.get("files"):
+                    e["ts"] = 0
+            index["img"] = 1
         batch = [(m, index["items"][m]["meta"].get("name") or "", list(index["items"][m].get("files") or []))
                  for m in next_batch(index, now, size)]
         names = [(e.get("meta") or {}).get("name") or "" for e in (index.get("items") or {}).values()]

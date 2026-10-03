@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.0.0~beta10" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.0.0~beta11" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.0.0~beta10 – Koncerty: seznam interpretů roste průběžně, další přibývají, ještě než se prohledají všichni dosavadní. Ověření klíče TMDB v nastavení.
+    <news>10.0.0~beta11 – Koncerty mají zase obrázky (náhled ze zdroje), interpreti s koncerty se jednou přeprohledají, aby je dostali.
+10.0.0~beta10 – Koncerty: seznam interpretů roste průběžně, další přibývají, ještě než se prohledají všichni dosavadní. Ověření klíče TMDB v nastavení.
 10.0.0~beta9 – Znovu puštěný stream si pamatuje zvukovou stopu a titulky z minulého sledování, předvolba z nastavení platí jen pro nový stream.
 10.0.0~beta8 – Výsledky ověření vlastních katalogů si mezi sebou předávají jen zařízení se stejnými zdroji (mobil bez Luny si katalog ověří sám) a zařízení ve skupině neověřují stejné tituly naráz. Hlavičky vlastních seznamů se synchronizují s účty, ne s nastavením.
 10.0.0~beta7 – Vlastní katalogy: nové pole Témata pod žánry (Pohádky, Vánoce, Halloween, Silvestr, Podle skutečné události, Podle knihy, Superhrdinové, Zombie a další), stačí jedno z vybraných, nejvýš 3. Upřesněné popisy řazení.
