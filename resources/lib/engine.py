@@ -1667,7 +1667,9 @@ class Engine:
             "vcodec": (stream.get("_media") or {}).get("vcodec") or "",
             "lowq": stream_lowq(stream),
             "url": stream.get("url") or "",
-            "subtitles": stream.get("subtitles") or [],
+            # Luna posílá titulky ve tvaru Stremia (`{"url", "lang"}`), klienti chtějí odkazy
+            "subtitles": [s if isinstance(s, str) else s.get("url") for s in stream.get("subtitles") or []
+                          if isinstance(s, str) or (isinstance(s, dict) and s.get("url"))],
         }
 
     def original_titles(self, meta, ctype, alt=None):
