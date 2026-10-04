@@ -5043,11 +5043,11 @@ class TestSynchronizaceRelay(unittest.TestCase):
         self.assertIsNone(default.sync_settings())
 
     def test_okruhy_podle_prepinacu(self):
-        self.assertEqual(default.sync_circles(), ("watched", "favourites", "history", "watchlist", "catalogs"),
+        self.assertEqual(default.sync_circles(), ("watched", "favourites", "history", "watchlist", "catalogs", "concerts"),
                          "výchozí stav je vše zapnuté")
         xbmcaddon.settings["sync_history"] = "false"
-        self.assertEqual(default.sync_circles(), ("watched", "favourites", "watchlist", "catalogs"))
-        for klic in ("sync_watched", "sync_favourites", "sync_watchlist", "sync_catalogs"):
+        self.assertEqual(default.sync_circles(), ("watched", "favourites", "watchlist", "catalogs", "concerts"))
+        for klic in ("sync_watched", "sync_favourites", "sync_watchlist", "sync_catalogs", "sync_concerts"):
             xbmcaddon.settings[klic] = "false"
         self.assertEqual(default.sync_circles(), ())
 
@@ -5169,14 +5169,14 @@ class TestSynchronizaceRelay(unittest.TestCase):
                     break
                 time.sleep(0.02)
         self.assertEqual(relay.call_count, 0)
-        self.assertEqual(ha.call_args[1]["circles"], ("watched", "favourites", "watchlist", "catalogs"))
+        self.assertEqual(ha.call_args[1]["circles"], ("watched", "favourites", "watchlist", "catalogs", "concerts"))
 
     def test_rucni_synchronizace_pres_ha_posila_okruhy(self):
         xbmcaddon.settings.update({"sync_mode": "0", "sync_url": "http://ha", "sync_key": "k",
                                    "sync_favourites": "false"})
         with mock.patch.object(default, "sync_once", return_value=(True, 0, 0, "")) as ha:
             default.sync_now()
-        self.assertEqual(ha.call_args[1]["circles"], ("watched", "history", "watchlist", "catalogs"))
+        self.assertEqual(ha.call_args[1]["circles"], ("watched", "history", "watchlist", "catalogs", "concerts"))
 
     # --- jedno středisko, ne dvě ---
 
@@ -5270,14 +5270,14 @@ class TestSynchronizaceRelay(unittest.TestCase):
 
     def test_nastaveni_a_ucty_jsou_vychozim_stavem_vypnute(self):
         """Sdílení hesel se nesmí zapnout samo tím, že uživatel založí skupinu."""
-        self.assertEqual(default.sync_circles(), ("watched", "favourites", "history", "watchlist", "catalogs"))
+        self.assertEqual(default.sync_circles(), ("watched", "favourites", "history", "watchlist", "catalogs", "concerts"))
 
     def test_zapnute_okruhy_se_pridaji_jen_u_relaye(self):
         xbmcaddon.settings.update({"sync_settings": "true", "sync_accounts": "true"})
         self.assertEqual(default.sync_circles(),
-                         ("watched", "favourites", "history", "watchlist", "catalogs", "settings", "accounts"))
+                         ("watched", "favourites", "history", "watchlist", "catalogs", "concerts", "settings", "accounts"))
         xbmcaddon.settings["sync_mode"] = "0"
-        self.assertEqual(default.sync_circles(), ("watched", "favourites", "history", "watchlist", "catalogs"),
+        self.assertEqual(default.sync_circles(), ("watched", "favourites", "history", "watchlist", "catalogs", "concerts"),
                          "Home Assistant nastavení ani účty nepřenáší")
 
     def test_hodnoty_nastaveni_jen_kdyz_je_okruh_zapnuty(self):
@@ -5716,7 +5716,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 132)   # +1 tmdb_check, +3 mylist1–3_enabled, +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs
+        self.assertEqual(len(volby), 133)   # +1 sync_concerts (10.3.0), +1 tmdb_check, +3 mylist1–3_enabled, +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):
@@ -7152,7 +7152,7 @@ class TestKoncerty(unittest.TestCase):
 
     def test_bez_nastaveni_jen_nastavit(self):
         default.list_concerts()
-        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["concerts_setup"])
+        self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()], ["concerts_setup", "concerts_search"])
 
     def test_nastaveni_ulozi_zanry_a_prvni_davku(self):
         with mock.patch.object(xbmcgui.Dialog, "multiselect", return_value=[0, 6]), \
@@ -7184,7 +7184,7 @@ class TestKoncerty(unittest.TestCase):
         self._index()
         default.list_concerts()
         self.assertEqual([params_of(u)["action"] for u in xbmcplugin.urls()],
-                         ["concerts_recent", "concerts_tags", "concerts_letters", "mycat_batch", "concerts_setup"])
+                         ["concerts_recent", "concerts_tags", "concerts_letters", "concerts_search", "mycat_batch", "concerts_setup"])
         xbmcplugin.reset()
         default.list_concerts_recent()
         play = params_of(xbmcplugin.urls()[0])

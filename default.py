@@ -2634,6 +2634,7 @@ def sync_targets():
 # u obou přepínačů schovává, když je vybraný Home Assistant).
 SYNC_CIRCLE_SETTINGS = {"watched": "sync_watched", "favourites": "sync_favourites",
                         "history": "sync_history", "watchlist": "sync_watchlist", "catalogs": "sync_catalogs",
+                        "concerts": "sync_concerts",
                         "settings": "sync_settings",
                         "accounts": "sync_accounts"}
 SYNC_RELAY_ONLY = ("settings", "accounts")
@@ -5659,6 +5660,7 @@ def list_concerts():
         li.getVideoInfoTag().setPlot(L(30289, "Vyber hudební žánry a zadej klíč Last.fm. Koncerty se hledají "
                                               "na pozadí."))
         xbmcplugin.addDirectoryItem(HANDLE, setup, li, isFolder=False)
+        action_item(L(31035, "Hledat interpreta"), build_url(action="concerts_search"), icon="DefaultAddonsSearch.png")
         xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
         return
     index = concertcat.load_index(STORE)
@@ -5668,6 +5670,7 @@ def list_concerts():
     folder_item(L(30877, "Nově přidané"), build_url(action="concerts_recent"), icon="DefaultRecentlyAddedMusicVideos.png")
     folder_item(L(30257, "Podle žánru"), build_url(action="concerts_tags"), icon="DefaultMusicGenres.png")
     folder_item(L(30258, "Podle abecedy"), build_url(action="concerts_letters"), icon="DefaultMusicArtists.png")
+    action_item(L(31035, "Hledat interpreta"), build_url(action="concerts_search"), icon="DefaultAddonsSearch.png")
     progress = (_swf(30219, "Prohledáno %s z %s – načíst teď", checked, total) if index.get("pool_end") else
                 _swf(31025, "Prohledáno %s interpretů, další přibývají – načíst teď", checked))
     action_item(progress,
@@ -5729,6 +5732,33 @@ def list_concerts_artist(artist_id):
     for g in concertcat.artist(concertcat.load_index(STORE), artist_id):
         _concert_item(g, _concert_label(g))
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
+
+
+def concerts_search():
+    """Ruční hledání interpreta: nejdřív mezi nalezenými, jinak ho prohledá ve zdrojích zařízení a přidá."""
+    text = xbmcgui.Dialog().input(L(31039, "Interpret")).strip()
+    if not text:
+        return
+    index = concertcat.load_index(STORE)
+    found = concertcat.find(index, text)
+    key = concertcat._key(text)
+    exact = [a for a in found if concertcat._key(a["name"]) == key]
+    mid = (exact[0] if exact else found[0] if len(found) == 1 else {}).get("id")
+    if not mid:
+        bg = xbmcgui.DialogProgressBG()
+        bg.create(L(30922, "Koncerty"), L(31038, "Hledám koncerty…"))
+        try:
+            mid = concertcat.add_artist(engine_of(get_apis()), STORE, text, should_stop)
+        finally:
+            bg.close()
+        usage.mark_feature(STORE, "concerts")
+        if mid is None:
+            notify(L(31036, "Zdroje teď neodpovídají, zkus to později."), xbmcgui.NOTIFICATION_WARNING)
+            return
+        if not concertcat.artist(concertcat.load_index(STORE), mid):
+            notify(_swf(31037, "Koncerty interpreta %s se nenašly.", text), xbmcgui.NOTIFICATION_INFO)
+            return
+    xbmc.executebuiltin("Container.Update(%s)" % build_url(action="concerts_artist", a=mid))
 
 
 def concerts_setup():
@@ -7744,6 +7774,7 @@ def router(query):
         "mycat_new": lambda: _tlacitko(lambda: mycat_new(p.get("type", "movie"))),
         "mycat_remote": lambda: _tlacitko(lambda: mycat_remote(p.get("id") or None, p.get("type", "movie"))),
         "concerts_setup": lambda: _tlacitko(concerts_setup),
+        "concerts_search": lambda: _tlacitko(concerts_search),
         "lastfm_check": lambda: _tlacitko(lastfm_check),
         "tmdb_check": lambda: _tlacitko(tmdb_check),
         "mycat_edit": lambda: _tlacitko(lambda: mycat_edit(p.get("id", ""))),

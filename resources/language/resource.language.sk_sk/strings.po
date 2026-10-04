@@ -3390,3 +3390,31 @@ msgstr "Zobraziť v hlavnom menu"
 msgctxt "#31032"
 msgid "Remove from main menu"
 msgstr "Odobrať z hlavného menu"
+
+msgctxt "#31033"
+msgid "Synchronize concerts"
+msgstr "Synchronizovať koncerty"
+
+msgctxt "#31034"
+msgid "Found concerts are shared with the other devices in the group. Each device shows only files from the sources it has enabled."
+msgstr "Nájdené koncerty sa zdieľajú s ostatnými zariadeniami v skupine. Každé zariadenie ukáže len súbory zo zdrojov, ktoré má zapnuté."
+
+msgctxt "#31035"
+msgid "Search for an artist"
+msgstr "Hľadať interpreta"
+
+msgctxt "#31036"
+msgid "The sources are not responding right now, try again later."
+msgstr "Zdroje teraz neodpovedajú, skús to neskôr."
+
+msgctxt "#31037"
+msgid "No concerts of %s were found."
+msgstr "Koncerty interpreta %s sa nenašli."
+
+msgctxt "#31038"
+msgid "Searching for concerts…"
+msgstr "Hľadám koncerty…"
+
+msgctxt "#31039"
+msgid "Artist"
+msgstr "Interpret"

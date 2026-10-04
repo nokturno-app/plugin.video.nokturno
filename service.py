@@ -1020,6 +1020,7 @@ class Syncer:
     # stavem vypnuté — sdílení přihlášení má být vědomé rozhodnutí
     CIRCLES = {"watched": "sync_watched", "favourites": "sync_favourites",
                "history": "sync_history", "watchlist": "sync_watchlist", "catalogs": "sync_catalogs",
+               "concerts": "sync_concerts",
                "settings": "sync_settings",
                "accounts": "sync_accounts"}
     RELAY_ONLY = ("settings", "accounts")

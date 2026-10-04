@@ -36,7 +36,7 @@ from sealbox import SealError, format_code, keys_for as _keys_for, new_code as _
     normalize_code, seal, unseal, valid_code as _valid_code
 from servers import urlopen as open_url
 from stats import COLLECT_URL
-from sync import CIRCLES, DEFAULT_CIRCLES, SNAPSHOTS, apply_changes, collect_changes, \
+from sync import CIRCLES, CONCERT_SECTION, DEFAULT_CIRCLES, SNAPSHOTS, apply_changes, collect_changes, \
     filter_circles
 
 SYNC_URL = COLLECT_URL.rsplit("/", 1)[0] + "/sync"
@@ -217,6 +217,14 @@ def sync_once(store, code, circles=DEFAULT_CIRCLES, base_url=SYNC_URL, name="", 
     if len(blob) > MAX_BLOB and payload.get("catalogs"):
         payload = dict(payload, catalogs={k: v for k, v in payload["catalogs"].items() if not k.startswith("r:")})
         blob = seal(keys, payload)
+    # Nálezy koncertů: nejdřív bez souborů (plán kontrol zůstane), pak celé pryč.
+    if len(blob) > MAX_BLOB and payload.get(CONCERT_SECTION):
+        sekce = {k: (dict(v, files=[]) if k.startswith("a:") else v) for k, v in payload[CONCERT_SECTION].items()}
+        payload = dict(payload, **{CONCERT_SECTION: sekce})
+        blob = seal(keys, payload)
+        if len(blob) > MAX_BLOB:
+            payload = {k: v for k, v in payload.items() if k != CONCERT_SECTION}
+            blob = seal(keys, payload)
 
     # Otisk stavu, ne blobu: nonce je pokaždé jiná, takže by se nahrávalo
     # každé kolo, i když se nic nezměnilo.

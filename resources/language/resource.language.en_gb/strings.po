@@ -3390,3 +3390,31 @@ msgstr ""
 msgctxt "#31032"
 msgid "Remove from main menu"
 msgstr ""
+
+msgctxt "#31033"
+msgid "Synchronize concerts"
+msgstr ""
+
+msgctxt "#31034"
+msgid "Found concerts are shared with the other devices in the group. Each device shows only files from the sources it has enabled."
+msgstr ""
+
+msgctxt "#31035"
+msgid "Search for an artist"
+msgstr ""
+
+msgctxt "#31036"
+msgid "The sources are not responding right now, try again later."
+msgstr ""
+
+msgctxt "#31037"
+msgid "No concerts of %s were found."
+msgstr ""
+
+msgctxt "#31038"
+msgid "Searching for concerts…"
+msgstr ""
+
+msgctxt "#31039"
+msgid "Artist"
+msgstr ""

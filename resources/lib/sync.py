@@ -23,6 +23,7 @@ import urllib.request
 
 # `from .watch import …`, ne `from . import watch` — plochá kopie v Kodi umí jen tenhle tvar
 from watch import SECTION as WATCH_SECTION, apply as watch_apply, collect as watch_collect
+from concertcat import SECTION as CONCERT_SECTION, apply as concert_apply, collect as concert_collect
 from mycat import SECTION as CAT_SECTION, apply as cat_apply, collect as cat_collect
 from store import ITEMS_MAX, WATCHED_MAX
 
@@ -40,6 +41,8 @@ CIRCLES = {
     "watchlist": (WATCH_SECTION,),
     # vlastní katalogy (`mycat.py`): definice a výsledky ověřování dostupnosti streamů
     "catalogs": (CAT_SECTION,),
+    # nalezené koncerty (`concertcat.py`): interpreti s několika největšími soubory
+    "concerts": (CONCERT_SECTION,),
     # volby doplňku a přihlášení ke zdrojům (`setsync.py`). Nejsou ve `Store`,
     # takže je `collect_changes` nesbírá — plní je hostitel přes `syncbox`
     # a přes Home Assistant nechodí vůbec.
@@ -47,7 +50,7 @@ CIRCLES = {
     "accounts": ("acclog",),
 }
 # Nastavení ani účty ve výchozím stavu nejdou — sdílení přihlášení má být vědomé.
-DEFAULT_CIRCLES = ("watched", "favourites", "history", "watchlist", "catalogs")
+DEFAULT_CIRCLES = ("watched", "favourites", "history", "watchlist", "catalogs", "concerts")
 # Snímky titulů jdou vždy k tomu, co se posílá — bez nich by druhá strana
 # neuměla položku vykreslit. `collect_changes` je omezuje na dotčené klíče.
 SNAPSHOTS = "items"
@@ -134,6 +137,7 @@ def collect_changes(store, since):
     return {"watched": watched, "favlog": favlog, "histlog": histlog, "next_hidden": next_hidden,
             WATCH_SECTION: watch_collect(store, since, _seen),
             CAT_SECTION: cat_collect(store, since, _seen),
+            CONCERT_SECTION: concert_collect(store, since, _seen),
             "items": _snapshots(items, watched, favlog)}
 
 
@@ -252,6 +256,7 @@ def apply_changes(store, changes, stamp=False):
         store.rebuild_history()   # zobrazený seznam podle sloučeného deníku
     applied += watch_apply(store, changes.get(WATCH_SECTION), stamp=now)
     applied += cat_apply(store, changes.get(CAT_SECTION), stamp=now)
+    applied += concert_apply(store, changes.get(CONCERT_SECTION), stamp=now)
     return applied
 
 

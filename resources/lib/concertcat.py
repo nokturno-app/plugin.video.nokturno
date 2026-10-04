@@ -3,9 +3,10 @@ zdrojích zapnutých u uživatele a seskupení nálezů do koncertů.
 
 Koncerty nejsou druh vlastního katalogu, ale jedna pevná konfigurace (`CONFIG`, jen vybrané žánry)
 a jeden index (`INDEX`, struktura `catindex`). Všechno běží na zařízení uživatele s jeho vlastním klíčem
-Last.fm; server se nepoužívá a nálezy se nesynchronizují (synchronizuje se jen konfigurace, okruh
-`catalogs`, záznam `c:concerts`). Sdílí Kodi, Home Assistant (jen konfiguraci) a Stremio. Do jádra patří
-jen obecný filtr (`concertfilter.py`), žádné seznamy souborů.
+Last.fm; server se nepoužívá. Konfigurace jde okruhem `catalogs` (záznam `c:concerts`), nálezy okruhem
+`concerts` (záznamy `a:<id>`, max `SYNC_FILES` souborů na interpreta); každé zařízení ukáže jen soubory
+ze zdrojů, které má samo zapnuté (`index["src"]`). Interpreta jde přidat i ručně (`add_artist`). Sdílí Kodi,
+Home Assistant a Stremio. Do jádra patří jen obecný filtr (`concertfilter.py`), žádné seznamy souborů.
 """
 import copy
 import time
@@ -17,7 +18,7 @@ import urllib.request
 
 # `from .x import y`, ne `from . import x` — plochá kopie v Kodi umí jen tenhle tvar
 from abort import Aborted
-from catindex import next_batch, record
+from catindex import NO_RANK, next_batch, record
 from concertfilter import _key, concert_key, concert_title, is_concert, normalize_title, rivals
 from fastshare_api import make_ref as fastshare_ref
 from hellspy_api import HellspyError, HellspyRateLimited
@@ -26,6 +27,8 @@ from webshare_api import WebshareApiError
 _LOGGER = logging.getLogger(__name__)
 
 CONFIG = "concerts"            # {"tags": [...], "ts": int} – vybrané žánry (synchronizuje se)
+SECTION = "concerts"           # sekce synchronizace (okruh `concerts`): nálezy `a:<id>`
+SYNC_FILES = 10                # souborů na interpreta, které jdou do synchronizace (největší první)
 INDEX = "concerts_index"       # struktura `catindex`; u položky `files` = nálezy, u souboru `t` = první nález
 RETRY = 1800                   # po selhání načtení poolu z Last.fm další pokus nejdřív za 30 min
 LASTFM_URL = "https://ws.audioscrobbler.com/2.0/"
@@ -145,14 +148,26 @@ def _fs(api, artist):
 SOURCES = (("webshare", "ws", _ws), ("hellspy", "hs", _hs), ("fastshare", "fs", _fs))
 
 
+def _on(engine):
+    """Zdroje zapnuté pro koncerty; FastShare bez kreditu a zdroje v pauze se na pozadí nevolají
+    (viz `Engine.verify_sources`)."""
+    on = dict(engine.sources())
+    for name in getattr(engine, "verify_sources", lambda: ())():
+        on[name] = False
+    return on
+
+
+def src_of(engine):
+    """Zkratky zdrojů, které `engine` pro koncerty použije (seřazené, čárkou)."""
+    on = _on(engine)
+    return ",".join(sorted(attr for source, attr, _fn in SOURCES if on.get(source)))
+
+
 def search(engine, artist, rivals=(), should_stop=None):
     """Koncerty `artist` ve zdrojích, které má `engine` zapnuté (WebShare, HellSpy, FastShare): soubory
     `{"ref", "name", "size", "duration", "source"}`, nejvýš `MAX_FILES`, největší první. Chyba jednoho zdroje
     ho jen vynechá; selhaly-li všechny zapnuté (nebo žádný není zapnutý), vrací `None` = zkusit později."""
-    on = dict(engine.sources())
-    # FastShare bez kreditu a zdroje v pauze se na pozadí nevolají (viz `Engine.verify_sources`)
-    for name in getattr(engine, "verify_sources", lambda: ())():
-        on[name] = False
+    on = _on(engine)
     tried = failed = 0
     found = []
     for source, attr, fn in SOURCES:
@@ -215,10 +230,7 @@ def group(files, artist):
 def visible(index, sort="pool"):
     """Interpreti s nálezem (`ok` a soubory) jako `{"id", "name", "files"}`; `sort`: „pool“ = pořadí poolu,
     „found“ = nově nalezení první, „name“ = podle abecedy."""
-    rows = []
-    for mid, e in (index.get("items") or {}).items():
-        if e.get("ok") is True and e.get("files") and (e.get("meta") or {}).get("name"):
-            rows.append((e, {"id": mid, "name": e["meta"]["name"], "files": e["files"]}))
+    rows = _artists(index)
     if sort == "name":
         rows.sort(key=lambda r: r[1]["name"].casefold())
     elif sort == "found":
@@ -257,11 +269,13 @@ def sig(tags):
 
 
 def retag(index, tags):
-    """Změna žánrů nemaže nalezené koncerty: zůstanou interpreti, kteří mají aspoň jeden z vybraných žánrů,
+    """Změna žánrů nemaže nalezené koncerty: zůstanou interpreti, kteří mají aspoň jeden z vybraných žánrů
+    (nebo byli přidáni ručně),
     seznam z Last.fm se stáhne znovu od první stránky (nové žánry). Mění `index` na místě a vrací ho."""
     keep = set(tags)
     items = index.get("items") or {}
-    for mid in [m for m, e in items.items() if not keep & set((e.get("meta") or {}).get("tags") or [])]:
+    for mid in [m for m, e in items.items()
+                if not keep & set((e.get("meta") or {}).get("tags") or []) and not (e.get("meta") or {}).get("manual")]:
         del items[mid]
     for k in ("pool_ts", "pool_try", "page", "grow_ts", "pool_end"):
         index.pop(k, None)
@@ -440,6 +454,7 @@ def refresh(engine, store, size=1, should_stop=None):
                 index["page"], index["grow_ts"] = page, now
                 if not fresh:
                     index["pool_end"] = True   # žebříček došel
+        index["src"] = src_of(engine)
         if not index.get("img"):   # index z doby před náhledy (10.0.0 beta): interpreti s koncerty jednou znovu
             for e in (index.get("items") or {}).values():
                 if e.get("files"):
@@ -478,11 +493,14 @@ def refresh(engine, store, size=1, should_stop=None):
 
 
 def _artists(index):
-    """Interpreti s nálezem: `[(entry, {"id", "name", "files"})]`."""
+    """Interpreti s nálezem: `[(entry, {"id", "name", "files"})]`. Soubory jen ze zdrojů zařízení
+    (`index["src"]`; neznámé = všechny), takže cizí nálezy z jiného zařízení ukáže jen to, co jde přehrát."""
+    on = set(filter(None, str(index.get("src") or "").split(",")))
     rows = []
     for mid, e in (index.get("items") or {}).items():
-        if e.get("ok") is True and e.get("files") and (e.get("meta") or {}).get("name"):
-            rows.append((e, {"id": mid, "name": e["meta"]["name"], "files": e["files"]}))
+        files = [f for f in e.get("files") or [] if not on or f.get("source") in on]
+        if files and (e.get("meta") or {}).get("name"):
+            rows.append((e, {"id": mid, "name": e["meta"]["name"], "files": files}))
     return rows
 
 
@@ -533,3 +551,147 @@ def artist(index, mid):
         if a["id"] == mid:
             return group(a["files"], a["name"])
     return []
+
+
+def find(index, text):
+    """Interpreti s nálezem, jejichž jméno obsahuje `text` (bez diakritiky a velikosti písmen), abecedně, max 50."""
+    q = normalize_title(text or "")
+    if not q:
+        return []
+    rows = [a for _e, a in _artists(index) if q in normalize_title(a["name"])]
+    return sorted(rows, key=lambda a: a["name"].casefold())[:50]
+
+
+def add_artist(engine, store, name, should_stop=None):
+    """Ruční přidání interpreta: prohledá zdroje zařízení a uloží nálezy (nezávisle na žánrech a klíči Last.fm).
+    Vrací id interpreta, nebo None při krátkém jménu a výpadku všech zdrojů."""
+    name = (name or "").strip()
+    key = _key(name)
+    if len(key) < 2:
+        return None
+    mid, tags = "a:" + key, config(store)["tags"]
+    csig = sig(tags)
+    with store.updating(INDEX, {}) as index:
+        if index.get("sig") != csig:
+            retag(index, tags)
+        items = index.setdefault("items", {})
+        entry = items.get(mid)
+        if entry is None:
+            entry = items[mid] = {"ok": None, "ts": 0, "rank": NO_RANK, "genres": [],
+                                  "meta": {"id": mid, "name": name, "tags": []}}
+        entry.setdefault("meta", {"id": mid, "name": name, "tags": []})["manual"] = True
+        index["src"] = src_of(engine)
+        old = list(entry.get("files") or [])
+        names = [(e.get("meta") or {}).get("name") or "" for e in items.values()]
+    with engine.background():
+        files = search(engine, name, rivals(name, names), should_stop)
+        if files is not None:
+            files = _merge_files(engine, old, files, _now(), should_stop)
+    if files is None:
+        return None
+    with store.updating(INDEX, {}) as index:
+        entry = (index.get("items") or {}).get(mid)
+        if entry is not None:
+            record(index, mid, bool(files), _now())
+            entry["misses"] = 0 if files else int(entry.get("misses") or 0) + 1
+            if files:
+                entry["files"] = files
+            else:
+                entry.pop("files", None)
+    return mid
+
+
+# --- synchronizace nálezů (okruh `concerts`) ----------------------------------------------
+
+def collect(store, since, seen):
+    """Změny sekce `concerts` od `since`: konfigurace (`c`) a prověření interpreti (`a:<id>`)."""
+    out = {}
+    cfg = collect_config(store)
+    if cfg and seen(cfg) >= since:
+        out["c"] = cfg
+    index = load_index(store)
+    for mid, e in (index.get("items") or {}).items():
+        meta = e.get("meta") or {}
+        if e.get("ok") is None or not e.get("ts") or not meta.get("name"):
+            continue
+        if seen({"ts": e["ts"], "rts": e.get("rts")}) < since:
+            continue
+        files = sorted(e.get("files") or [], key=lambda f: -int(f.get("size") or 0))[:SYNC_FILES]
+        m = {"name": meta["name"], "tags": list(meta.get("tags") or [])}
+        if meta.get("manual"):
+            m["manual"] = True
+        out["a:" + mid.partition(":")[2]] = {
+            "ts": int(e["ts"]), "ok": bool(e["ok"]), "misses": int(e.get("misses") or 0),
+            "src": index.get("src") or "", "meta": m,
+            "files": [[f.get("ref"), f.get("name"), int(f.get("size") or 0), int(f.get("duration") or 0),
+                       f.get("source"), f.get("img") or "" if i == 0 else "", int(f.get("t") or 0)]
+                      for i, f in enumerate(files)]}
+    return out
+
+
+def _foreign_files(rec):
+    out = []
+    for r in rec.get("files") or []:
+        if not (isinstance(r, (list, tuple)) and len(r) >= 7 and isinstance(r[0], str) and r[0]):
+            continue
+        try:
+            out.append({"ref": r[0], "name": str(r[1] or ""), "size": int(r[2] or 0), "duration": int(r[3] or 0),
+                        "source": str(r[4] or ""), "img": str(r[5] or ""), "t": int(r[6] or 0) or int(rec["ts"]),
+                        "s": int(rec["ts"])})
+        except (TypeError, ValueError):
+            continue
+    return out
+
+
+def apply(store, changes, stamp=0):
+    """Slije cizí nálezy; vrací počet přijatých záznamů. Soubory se sjednotí vždy, plán kontrol (`ok`, `ts`,
+    `misses`) se převezme jen od zařízení se stejnými zdroji – jinak si interpreta zařízení prohledá samo."""
+    if not isinstance(changes, dict) or not changes:
+        return 0
+    applied = 0
+    for key, rec in changes.items():
+        if key == "c":
+            applied += apply_config(store, rec, stamp)
+            continue
+        kind, _, k = str(key).partition(":")
+        meta = rec.get("meta") if isinstance(rec, dict) else None
+        if kind != "a" or not k or not isinstance(meta, dict) or not meta.get("name") or not rec.get("ts"):
+            continue
+        try:
+            ts = int(rec["ts"])
+        except (TypeError, ValueError):
+            continue
+        rec = dict(rec, ts=ts)
+        mid, tags = "a:" + k, config(store)["tags"]
+        csig = sig(tags)
+        mtags = [t for t in TAGS if t in set(meta.get("tags") or ())]
+        manual = bool(meta.get("manual"))
+        with store.updating(INDEX, {}) as index:
+            if index.get("sig") != csig:
+                retag(index, tags)
+            items = index.setdefault("items", {})
+            entry = items.get(mid)
+            if entry is None:
+                if not manual and not set(mtags) & set(tags):
+                    continue
+                m = {"id": mid, "name": str(meta["name"]), "tags": mtags}
+                if manual:
+                    m["manual"] = True
+                entry = items[mid] = {"ok": None, "ts": 0, "rank": NO_RANK, "genres": list(mtags), "meta": m}
+            elif ts <= int(entry.get("ts") or 0):
+                continue
+            elif manual:
+                entry.setdefault("meta", {"id": mid, "name": str(meta["name"]), "tags": mtags})["manual"] = True
+            merged = {f["ref"]: f for f in _foreign_files(rec)}
+            merged.update({f["ref"]: f for f in entry.get("files") or []})
+            files = sorted(merged.values(), key=lambda f: -int(f.get("size") or 0))[:MAX_FILES]
+            if files:
+                entry["files"] = files
+            if rec.get("src") and rec.get("src") == index.get("src"):
+                entry["ok"], entry["ts"], entry["misses"] = bool(rec.get("ok")), ts, int(rec.get("misses") or 0)
+                if not entry["ok"]:
+                    entry.pop("files", None)
+            if stamp:
+                entry["rts"] = stamp
+            applied += 1
+    return applied

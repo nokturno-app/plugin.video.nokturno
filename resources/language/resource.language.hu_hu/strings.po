@@ -3388,3 +3388,31 @@ msgstr "Megjelenítés a főmenüben"
 msgctxt "#31032"
 msgid "Remove from main menu"
 msgstr "Eltávolítás a főmenüből"
+
+msgctxt "#31033"
+msgid "Synchronize concerts"
+msgstr "Koncertek szinkronizálása"
+
+msgctxt "#31034"
+msgid "Found concerts are shared with the other devices in the group. Each device shows only files from the sources it has enabled."
+msgstr "A megtalált koncertek megosztásra kerülnek a csoport többi eszközével. Minden eszköz csak a saját bekapcsolt forrásaiból mutat fájlokat."
+
+msgctxt "#31035"
+msgid "Search for an artist"
+msgstr "Előadó keresése"
+
+msgctxt "#31036"
+msgid "The sources are not responding right now, try again later."
+msgstr "A források most nem válaszolnak, próbáld újra később."
+
+msgctxt "#31037"
+msgid "No concerts of %s were found."
+msgstr "%s koncertjei nem találhatók."
+
+msgctxt "#31038"
+msgid "Searching for concerts…"
+msgstr "Koncertek keresése…"
+
+msgctxt "#31039"
+msgid "Artist"
+msgstr "Előadó"
