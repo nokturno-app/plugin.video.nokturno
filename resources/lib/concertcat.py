@@ -1,11 +1,13 @@
-"""Modul Koncerty: seznam interpretů (pool) z Last.fm podle vybraných hudebních žánrů, hledání koncertů ve
-zdrojích zapnutých u uživatele a seskupení nálezů do koncertů.
+"""Modul Koncerty: seznam interpretů (pool) z Last.fm podle vybraných hudebních žánrů, hledání koncertů
+v uživatelově vlastním úložišti (WebDAV) a volitelně v úložištích třetích stran, která si sám zapnul
+a nastavil (WebShare, HellSpy, FastShare), a seskupení nálezů do koncertů.
 
 Koncerty nejsou druh vlastního katalogu, ale jedna pevná konfigurace (`CONFIG`, jen vybrané žánry)
 a jeden index (`INDEX`, struktura `catindex`). Všechno běží na zařízení uživatele s jeho vlastním klíčem
 Last.fm; server se nepoužívá. Konfigurace jde okruhem `catalogs` (záznam `c:concerts`), nálezy okruhem
 `concerts` (záznamy `a:<id>`, max `SYNC_FILES` souborů na interpreta); každé zařízení ukáže jen soubory
-ze zdrojů, které má samo zapnuté (`index["src"]`). Interpreta jde přidat i ručně (`add_artist`). Sdílí Kodi,
+ze zdrojů, které má samo zapnuté (`index["src"]`). Soubory z vlastního úložiště (`dav:`) se nesynchronizují –
+odkaz platí jen pro úložiště toho zařízení. Interpreta jde přidat i ručně (`add_artist`). Sdílí Kodi,
 Home Assistant a Stremio. Do jádra patří jen obecný filtr (`concertfilter.py`), žádné seznamy souborů.
 """
 import copy
@@ -21,9 +23,10 @@ import urllib.request
 # `from .x import y`, ne `from . import x` — plochá kopie v Kodi umí jen tenhle tvar
 from abort import Aborted
 from catindex import NO_RANK, next_batch, record
-from concertfilter import _key, concert_key, concert_title, is_concert, normalize_title, rivals
+from concertfilter import MIN_SIZE, _key, concert_key, concert_title, is_concert, normalize_title, rivals
 from fastshare_api import make_ref as fastshare_ref
 from hellspy_api import HellspyError, HellspyRateLimited
+from storage_api import StorageError  # noqa: F401 – i pro testy
 from webshare_api import WebshareApiError
 
 _LOGGER = logging.getLogger(__name__)
@@ -190,6 +193,30 @@ def pool(key, tags, opener=urllib.request.urlopen, page=1):
 
 # --- hledání ---------------------------------------------------------------------------
 
+def _dav(storages, artist):
+    """Vlastní úložiště: soubory, v jejichž cestě je jméno interpreta. Filtr koncertu (`match`) dostane celou
+    cestu, takže stačí složka „Koncerty/Kabát/…“; zobrazuje se název souboru, bez jména interpreta
+    i se složkou nad ním. Vadné úložiště se vynechá, selžou-li všechna, vyhodí chybu."""
+    out, errors = [], []
+    for api in storages:
+        try:
+            files, _total = api.search(artist, limit=10 ** 6)
+        except StorageError as err:
+            errors.append(err)
+            continue
+        aname = normalize_title(artist)
+        for f in files:
+            parts = f["path"].split("/")
+            name = f["name"]
+            if len(parts) > 1 and f" {aname} " not in f" {normalize_title(name)} ":
+                name = parts[-2] + " - " + name
+            out.append({"ref": f"dav:{api.slot}:{f['path']}", "name": name, "size": int(f.get("size") or 0),
+                        "duration": 0, "source": "dav", "img": "", "match": " - ".join(parts)})
+    if errors and len(errors) == len(storages):
+        raise errors[0]
+    return out
+
+
 def _ws(api, artist):
     files, _total = api.search(artist, limit=WS_LIMIT, offset=0)
     return [{"ref": "ws:" + f["ident"], "name": f.get("name") or "", "size": int(f.get("size") or 0),
@@ -214,7 +241,8 @@ def _fs(api, artist):
              "duration": int(f.get("duration") or 0), "source": "fs", "img": f.get("thumb") or ""} for f in files]
 
 
-SOURCES = (("webshare", "ws", _ws), ("hellspy", "hs", _hs), ("fastshare", "fs", _fs))
+# Vlastní úložiště první; úložiště třetích stran jen ta, která si uživatel zapnul a nastavil.
+SOURCES = (("storage", "dav", _dav), ("webshare", "ws", _ws), ("hellspy", "hs", _hs), ("fastshare", "fs", _fs))
 
 
 def _on(engine):
@@ -233,7 +261,8 @@ def src_of(engine):
 
 
 def search(engine, artist, rivals=(), should_stop=None):
-    """Koncerty `artist` ve zdrojích, které má `engine` zapnuté (WebShare, HellSpy, FastShare): soubory
+    """Koncerty `artist` ve vlastním úložišti a ve zdrojích, které má `engine` zapnuté (WebShare, HellSpy,
+    FastShare): soubory
     `{"ref", "name", "size", "duration", "source"}`, nejvýš `MAX_FILES`, největší první. Chyba jednoho zdroje
     ho jen vynechá; selhaly-li všechny zapnuté (nebo žádný není zapnutý), vrací `None` = zkusit později."""
     on = _on(engine)
@@ -245,7 +274,7 @@ def search(engine, artist, rivals=(), should_stop=None):
         if should_stop and should_stop():
             return None
         tried += 1
-        api = getattr(engine, attr, None)
+        api = (getattr(engine, "storages", None) or None) if attr == "dav" else getattr(engine, attr, None)
         if api is None:   # např. WebShare, kterému nešel login
             failed += 1
             continue
@@ -262,7 +291,9 @@ def search(engine, artist, rivals=(), should_stop=None):
         return None
     out, seen = [], set()
     for f in sorted(found, key=lambda f: -f["size"]):
-        if f["ref"] in seen or not is_concert(f["name"], artist, f["size"], f["duration"], rivals):
+        match = f.pop("match", None) or f["name"]
+        size = f["size"] or (MIN_SIZE if f["source"] == "dav" else 0)   # HTML výpis úložiště velikost nezná
+        if f["ref"] in seen or not is_concert(match, artist, size, f["duration"], rivals):
             continue
         seen.add(f["ref"])
         out.append(f)
@@ -439,6 +470,9 @@ def link_ok(engine, ref):
     """Žije soubor? Zkusí vydat odkaz (jako `verify_missed` na dashboardu). True/False = ověřeno, None = nejde
     to poznat (FastShare vydá odkaz jen za kredit, zdroj vypnutý, výpadek sítě) – soubor pak zůstává."""
     try:
+        if ref.startswith("dav:"):
+            api, path = engine.storage_for(ref)
+            return any(f["path"] == path for f in api.files())
         if ref.startswith("ws:"):
             api = engine.ws
             return None if api is None else bool(api.file_link(ref[3:]))
@@ -724,7 +758,8 @@ def collect(store, since, seen):
             continue
         if seen({"ts": e["ts"], "rts": e.get("rts")}) < since:
             continue
-        files = sorted(e.get("files") or [], key=lambda f: -int(f.get("size") or 0))[:SYNC_FILES]
+        files = sorted((f for f in e.get("files") or [] if f.get("source") != "dav"),
+                       key=lambda f: -int(f.get("size") or 0))[:SYNC_FILES]
         m = {"name": meta["name"], "tags": list(meta.get("tags") or [])}
         if meta.get("manual"):
             m["manual"] = True
@@ -740,7 +775,8 @@ def collect(store, since, seen):
 def _foreign_files(rec):
     out = []
     for r in rec.get("files") or []:
-        if not (isinstance(r, (list, tuple)) and len(r) >= 7 and isinstance(r[0], str) and r[0]):
+        if not (isinstance(r, (list, tuple)) and len(r) >= 7 and isinstance(r[0], str) and r[0]) \
+                or r[0].startswith("dav:"):
             continue
         try:
             out.append({"ref": r[0], "name": str(r[1] or ""), "size": int(r[2] or 0), "duration": int(r[3] or 0),
@@ -798,7 +834,8 @@ def apply(store, changes, stamp=0):
             files = sorted(merged.values(), key=lambda f: -int(f.get("size") or 0))[:MAX_FILES]
             if files:
                 entry["files"] = files
-            if rec.get("src") and rec.get("src") == index.get("src"):
+            # s vlastním úložištěm si plán kontrol vede každé zařízení samo (úložiště má každé jiné)
+            if rec.get("src") and rec.get("src") == index.get("src") and "dav" not in rec["src"].split(","):
                 entry["ok"], entry["ts"], entry["misses"] = bool(rec.get("ok")), ts, int(rec.get("misses") or 0)
                 entry["st"] = ts
                 if not entry["ok"]:

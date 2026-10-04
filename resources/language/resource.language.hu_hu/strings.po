@@ -2866,8 +2866,8 @@ msgid "Last.fm API key"
 msgstr "Last.fm API-kulcs"
 
 msgctxt "#30786"
-msgid "Needed only for concert catalogs. Free key at last.fm/api."
-msgstr "Csak a koncertkatalógusokhoz kell. Ingyenes kulcs: last.fm/api."
+msgid "Needed only for Concerts (list of artists by music genre). Free key at last.fm/api."
+msgstr "Csak a Koncertekhez kell (előadók listája zenei műfaj szerint). Ingyenes kulcs: last.fm/api."
 
 msgctxt "#30787"
 msgid "Check key"
@@ -3170,8 +3170,8 @@ msgid "Alphabet – popular titles by name"
 msgstr "Ábécé – népszerű címek név szerint"
 
 msgctxt "#30289"
-msgid "Pick music genres and enter your Last.fm key. Concerts are searched in the background."
-msgstr "Válassz zenei műfajokat és add meg a Last.fm kulcsot. A koncerteket a háttérben keressük."
+msgid "Searches for concerts in your own storage and builds a catalog from them, optionally also in third-party storages you have enabled and set up. Pick music genres and enter your Last.fm key."
+msgstr "Koncerteket keres a saját tárhelyeden, és katalógust készít belőlük, opcionálisan az általad engedélyezett és beállított harmadik féltől származó tárhelyeken is. Válassz zenei műfajokat és add meg a Last.fm kulcsot."
 
 msgctxt "#30290"
 msgid "Pick a template or fill in the catalog by hand, then save."
@@ -3394,8 +3394,8 @@ msgid "Synchronize concerts"
 msgstr "Koncertek szinkronizálása"
 
 msgctxt "#31034"
-msgid "Found concerts are shared with the other devices in the group. Each device shows only files from the sources it has enabled."
-msgstr "A megtalált koncertek megosztásra kerülnek a csoport többi eszközével. Minden eszköz csak a saját bekapcsolt forrásaiból mutat fájlokat."
+msgid "Concerts found in third-party storages are shared with the other devices in the group; each device shows only files from the sources it has enabled. Files from your own storage stay on this device."
+msgstr "A harmadik féltől származó tárhelyeken talált koncertek megosztásra kerülnek a csoport többi eszközével, mindegyik csak a saját bekapcsolt forrásaiból mutat fájlokat. A saját tárhelyed fájljai csak ezen az eszközön maradnak."
 
 msgctxt "#31035"
 msgid "Search for an artist"

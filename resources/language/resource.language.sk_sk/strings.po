@@ -2868,8 +2868,8 @@ msgid "Last.fm API key"
 msgstr "Last.fm API kľúč"
 
 msgctxt "#30786"
-msgid "Needed only for concert catalogs. Free key at last.fm/api."
-msgstr "Potrebné len pre katalógy koncertov. Kľúč zadarmo na last.fm/api."
+msgid "Needed only for Concerts (list of artists by music genre). Free key at last.fm/api."
+msgstr "Potrebné len pre Koncerty (zoznam interpretov podľa hudobných žánrov). Kľúč zadarmo na last.fm/api."
 
 msgctxt "#30787"
 msgid "Check key"
@@ -3172,8 +3172,8 @@ msgid "Alphabet – popular titles by name"
 msgstr "Abecedy – obľúbené tituly podľa názvu"
 
 msgctxt "#30289"
-msgid "Pick music genres and enter your Last.fm key. Concerts are searched in the background."
-msgstr "Vyber hudobné žánre a zadaj kľúč Last.fm. Koncerty sa hľadajú na pozadí."
+msgid "Searches for concerts in your own storage and builds a catalog from them, optionally also in third-party storages you have enabled and set up. Pick music genres and enter your Last.fm key."
+msgstr "Hľadá koncerty v tvojom vlastnom úložisku a skladá z nich katalóg, voliteľne aj v úložiskách tretích strán, ktoré máš povolené a nastavené. Vyber hudobné žánre a zadaj kľúč Last.fm."
 
 msgctxt "#30290"
 msgid "Pick a template or fill in the catalog by hand, then save."
@@ -3396,8 +3396,8 @@ msgid "Synchronize concerts"
 msgstr "Synchronizovať koncerty"
 
 msgctxt "#31034"
-msgid "Found concerts are shared with the other devices in the group. Each device shows only files from the sources it has enabled."
-msgstr "Nájdené koncerty sa zdieľajú s ostatnými zariadeniami v skupine. Každé zariadenie ukáže len súbory zo zdrojov, ktoré má zapnuté."
+msgid "Concerts found in third-party storages are shared with the other devices in the group; each device shows only files from the sources it has enabled. Files from your own storage stay on this device."
+msgstr "Koncerty nájdené v úložiskách tretích strán sa zdieľajú s ostatnými zariadeniami v skupine, každé ukáže len súbory zo zdrojov, ktoré má zapnuté. Súbory z vlastného úložiska zostávajú len na tomto zariadení."
 
 msgctxt "#31035"
 msgid "Search for an artist"

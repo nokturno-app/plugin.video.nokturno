@@ -2868,7 +2868,7 @@ msgid "Last.fm API key"
 msgstr ""
 
 msgctxt "#30786"
-msgid "Needed only for concert catalogs. Free key at last.fm/api."
+msgid "Needed only for Concerts (list of artists by music genre). Free key at last.fm/api."
 msgstr ""
 
 msgctxt "#30787"
@@ -3172,7 +3172,7 @@ msgid "Alphabet – popular titles by name"
 msgstr ""
 
 msgctxt "#30289"
-msgid "Pick music genres and enter your Last.fm key. Concerts are searched in the background."
+msgid "Searches for concerts in your own storage and builds a catalog from them, optionally also in third-party storages you have enabled and set up. Pick music genres and enter your Last.fm key."
 msgstr ""
 
 msgctxt "#30290"
@@ -3396,7 +3396,7 @@ msgid "Synchronize concerts"
 msgstr ""
 
 msgctxt "#31034"
-msgid "Found concerts are shared with the other devices in the group. Each device shows only files from the sources it has enabled."
+msgid "Concerts found in third-party storages are shared with the other devices in the group; each device shows only files from the sources it has enabled. Files from your own storage stay on this device."
 msgstr ""
 
 msgctxt "#31035"

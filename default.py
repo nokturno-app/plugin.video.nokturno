@@ -5603,7 +5603,8 @@ def list_mycat(apis, ctype, cat_id, page=1):
 
 # --- koncerty ------------------------------------------------------------------------
 # Samostatný modul v hlavním menu: uživatel vybere hudební žánry (štítky Last.fm), interprety
-# z nich prohledává služba na pozadí (`concertcat.refresh`) ve WebShare, HellSpy a FastShare.
+# z nich prohledává služba na pozadí (`concertcat.refresh`) ve vlastním úložišti a volitelně ve WebShare,
+# HellSpy a FastShare, pokud je má uživatel zapnuté.
 # Výpisy čtou jen index (`concerts_index`), žádná síť.
 
 # štítky Last.fm (`concertcat.TAGS`): tag → (id řetězce, český fallback)
@@ -5657,8 +5658,9 @@ def list_concerts():
     if not concertcat.configured(STORE) or not setting("lastfm_key").strip():
         li = xbmcgui.ListItem(label=L(30256, "Nastavit koncerty"))
         li.setArt({"icon": "DefaultAddonProgram.png"})
-        li.getVideoInfoTag().setPlot(L(30289, "Vyber hudební žánry a zadej klíč Last.fm. Koncerty se hledají "
-                                              "na pozadí."))
+        li.getVideoInfoTag().setPlot(L(30289, "Hledá koncerty ve tvém vlastním úložišti a skládá z nich katalog, "
+                                              "volitelně i v úložištích třetích stran, která máš povolená a "
+                                              "nastavená. Vyber hudební žánry a zadej klíč Last.fm."))
         xbmcplugin.addDirectoryItem(HANDLE, setup, li, isFolder=False)
         action_item(L(31035, "Hledat interpreta"), build_url(action="concerts_search"), icon="DefaultAddonsSearch.png")
         xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
@@ -5866,7 +5868,7 @@ def concerts_setup():
 
 
 def play_ref(apis, ref, name="", alts=""):
-    """Přehraje vnitřní odkaz (`ws:`/`hs:`/`fs:`) bez titulu; nejde-li první, zkusí kopie z `alts` (po čárkách)."""
+    """Přehraje vnitřní odkaz (`dav:`/`ws:`/`hs:`/`fs:`) bez titulu; nejde-li první, zkusí kopie z `alts` (po čárkách)."""
     mylist_play(apis, "|".join([ref] + [a for a in (alts or "").split(",") if a]), name)
 
 

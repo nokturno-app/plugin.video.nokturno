@@ -2868,8 +2868,8 @@ msgid "Last.fm API key"
 msgstr "Last.fm API klíč"
 
 msgctxt "#30786"
-msgid "Needed only for concert catalogs. Free key at last.fm/api."
-msgstr "Potřeba jen pro katalogy koncertů. Klíč zdarma na last.fm/api."
+msgid "Needed only for Concerts (list of artists by music genre). Free key at last.fm/api."
+msgstr "Potřeba jen pro Koncerty (seznam interpretů podle hudebních žánrů). Klíč zdarma na last.fm/api."
 
 msgctxt "#30787"
 msgid "Check key"
@@ -3172,8 +3172,8 @@ msgid "Alphabet – popular titles by name"
 msgstr "Abecedy – oblíbené tituly podle názvu"
 
 msgctxt "#30289"
-msgid "Pick music genres and enter your Last.fm key. Concerts are searched in the background."
-msgstr "Vyber hudební žánry a zadej klíč Last.fm. Koncerty se hledají na pozadí."
+msgid "Searches for concerts in your own storage and builds a catalog from them, optionally also in third-party storages you have enabled and set up. Pick music genres and enter your Last.fm key."
+msgstr "Hledá koncerty ve tvém vlastním úložišti a skládá z nich katalog, volitelně i v úložištích třetích stran, která máš povolená a nastavená. Vyber hudební žánry a zadej klíč Last.fm."
 
 msgctxt "#30290"
 msgid "Pick a template or fill in the catalog by hand, then save."
@@ -3396,8 +3396,8 @@ msgid "Synchronize concerts"
 msgstr "Synchronizovat koncerty"
 
 msgctxt "#31034"
-msgid "Found concerts are shared with the other devices in the group. Each device shows only files from the sources it has enabled."
-msgstr "Nalezené koncerty se sdílí s ostatními zařízeními ve skupině. Každé zařízení ukáže jen soubory ze zdrojů, které má zapnuté."
+msgid "Concerts found in third-party storages are shared with the other devices in the group; each device shows only files from the sources it has enabled. Files from your own storage stay on this device."
+msgstr "Koncerty nalezené v úložištích třetích stran se sdílí s ostatními zařízeními ve skupině, každé ukáže jen soubory ze zdrojů, které má zapnuté. Soubory z vlastního úložiště zůstávají jen na tomto zařízení."
 
 msgctxt "#31035"
 msgid "Search for an artist"
