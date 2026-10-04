@@ -1285,6 +1285,22 @@
           <data>RunPlugin(plugin://plugin.video.nokturno/?action=setup_wizard)</data>
           <control format="action" type="button"/>
         </setting>
+        <setting id="menu_edit_action" type="action" label="31053" help="31058">
+          <level>0</level>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <data>RunPlugin(plugin://plugin.video.nokturno/?action=menu_edit)</data>
+          <control format="action" type="button"/>
+        </setting>
+        <setting id="menu_reset_action" type="action" label="31057">
+          <level>0</level>
+          <constraints>
+            <allowempty>true</allowempty>
+          </constraints>
+          <data>RunPlugin(plugin://plugin.video.nokturno/?action=menu_reset)</data>
+          <control format="action" type="button"/>
+        </setting>
         <setting id="clear_cache_action" type="action" label="30106" help="30935">
           <level>0</level>
           <constraints>

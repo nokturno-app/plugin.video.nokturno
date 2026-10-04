@@ -3454,3 +3454,43 @@ msgstr ""
 msgctxt "#31048"
 msgid "Czechoslovakia"
 msgstr ""
+
+msgctxt "#31049"
+msgid "The stream could not be played – choose another one."
+msgstr ""
+
+msgctxt "#31050"
+msgid "Move up"
+msgstr ""
+
+msgctxt "#31051"
+msgid "Move down"
+msgstr ""
+
+msgctxt "#31052"
+msgid "Hide from menu"
+msgstr ""
+
+msgctxt "#31053"
+msgid "Edit main menu"
+msgstr ""
+
+msgctxt "#31054"
+msgid "Hidden items can be restored in Settings → Advanced → Edit main menu."
+msgstr ""
+
+msgctxt "#31055"
+msgid "Items in the main menu"
+msgstr ""
+
+msgctxt "#31056"
+msgid "Main menu reset to default."
+msgstr ""
+
+msgctxt "#31057"
+msgid "Reset main menu"
+msgstr ""
+
+msgctxt "#31058"
+msgid "Choose which items the main menu shows. Change the order in the context menu of an item (Move up / Move down)."
+msgstr ""

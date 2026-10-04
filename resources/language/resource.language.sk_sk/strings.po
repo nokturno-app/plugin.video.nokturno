@@ -3454,3 +3454,43 @@ msgstr "Voliteľné úložiská tretích strán"
 msgctxt "#31048"
 msgid "Czechoslovakia"
 msgstr "Československo"
+
+msgctxt "#31049"
+msgid "The stream could not be played – choose another one."
+msgstr "Stream sa nepodarilo prehrať – vyber iný."
+
+msgctxt "#31050"
+msgid "Move up"
+msgstr "Posunúť nahor"
+
+msgctxt "#31051"
+msgid "Move down"
+msgstr "Posunúť nadol"
+
+msgctxt "#31052"
+msgid "Hide from menu"
+msgstr "Skryť z menu"
+
+msgctxt "#31053"
+msgid "Edit main menu"
+msgstr "Upraviť hlavné menu"
+
+msgctxt "#31054"
+msgid "Hidden items can be restored in Settings → Advanced → Edit main menu."
+msgstr "Skryté položky vrátiš v Nastaveniach → Pokročilé → Upraviť hlavné menu."
+
+msgctxt "#31055"
+msgid "Items in the main menu"
+msgstr "Položky v hlavnom menu"
+
+msgctxt "#31056"
+msgid "Main menu reset to default."
+msgstr "Hlavné menu vrátené na predvolené."
+
+msgctxt "#31057"
+msgid "Reset main menu"
+msgstr "Predvolené hlavné menu"
+
+msgctxt "#31058"
+msgid "Choose which items the main menu shows. Change the order in the context menu of an item (Move up / Move down)."
+msgstr "Vyber, ktoré položky hlavné menu ukazuje. Poradie zmeníš v miestnej ponuke položky (Posunúť nahor / nadol)."

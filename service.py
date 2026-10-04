@@ -475,6 +475,18 @@ class Player(xbmc.Player):
 
     def onPlayBackError(self):
         self.reset()
+        # stream Nokturna se nerozjel (typicky uložený stream z Pokračovat, který zmizel ze zdroje):
+        # bez výběru streamu by na ovladači bez dlouhého stisku nešlo zkusit jiný
+        raw = xbmcgui.Window(10000).getProperty(PROP)
+        xbmcgui.Window(10000).clearProperty(PROP)
+        try:
+            pick = (json.loads(raw) if raw else {}).get("pick")
+        except ValueError:
+            pick = None
+        if pick:
+            xbmcgui.Dialog().notification(L(30000), L(31049, "Stream se nepodařilo přehrát – vyber jiný."),
+                                          xbmcgui.NOTIFICATION_WARNING, 6000)
+            xbmc.executebuiltin("RunPlugin(%s)" % pick)
 
 
 # --- SyncWatch: společné sledování -----------------------------------------------------

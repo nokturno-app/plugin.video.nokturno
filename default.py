@@ -2405,7 +2405,7 @@ def stream_lines(s):
 
 
 def mark_playing(key, title="", year=None, kind="movie", stream_url=None, stream_subs=None, stream_langs=None,
-                 replay=None):
+                 replay=None, pick=None):
     # stream_url/stream_subs: vnitřní reference zvoleného streamu (ne podepsaný odkaz zdroje,
     # ten vyprší) — služba (Player.save_resume) si je uloží k pozici, ať se dá „Pokračovat ve
     # sledování“ pustit rovnou bez nového hledání (viz add_playable/add_snapshot_item)
@@ -2416,7 +2416,7 @@ def mark_playing(key, title="", year=None, kind="movie", stream_url=None, stream
     xbmcgui.Window(10000).setProperty(PLAYING_PROP, json.dumps(
         {"id": key, "title": title, "year": year, "kind": kind,
          "stream_url": stream_url, "stream_subs": stream_subs, "stream_langs": stream_langs or [],
-         "replay": replay}))
+         "replay": replay, "pick": pick}))
 
 
 SUBS_DIR = os.path.join(PROFILE, "subs")
@@ -4919,6 +4919,129 @@ def whats_new():
 
 # --- obrazovky --------------------------------------------------------------------
 
+# Kořen menu: pořadí a skrytí položek si volí uživatel (Discord, spacik78 2026-10-04).
+# Uloženo v profilu (`menu.json`), ne v nastavení – rozvržení patří zařízení, nepřenáší se.
+ROOT_ITEMS = ("search", "continue", "watchlist", "movies", "series", "concerts", "tv",
+              "favourites", "syncwatch", "storage", "downloads")
+ROOT_FIXED = ("search",)   # skrýt nejde, bez hledání by doplněk nešel ovládat
+
+
+def root_layout():
+    """(pořadí, skryté). Položka přidaná novou verzí se zařadí za svého výchozího předchůdce."""
+    data = STORE.load("menu", {}) or {}
+    order = list(dict.fromkeys(k for k in data.get("order") or [] if k in ROOT_ITEMS))
+    for i, k in enumerate(ROOT_ITEMS):
+        if k not in order:
+            prev = ROOT_ITEMS[i - 1] if i else None
+            order.insert(order.index(prev) + 1 if prev in order else 0, k)
+    hidden = {k for k in data.get("hidden") or [] if k in ROOT_ITEMS and k not in ROOT_FIXED}
+    return order, hidden
+
+
+def root_save(order, hidden):
+    STORE.save("menu", {"order": list(order), "hidden": sorted(hidden)})
+    xbmc.executebuiltin("Container.Refresh")
+
+
+def root_shown(apis):
+    """Které položky mají co ukázat (bez sítě – čte profil a nastavení)."""
+    return {"search": True, "movies": True, "series": True, "concerts": True, "tv": True,
+            "syncwatch": True,
+            "continue": bool(STORE.in_progress() or STORE.recently_watched(1)),
+            "watchlist": bool(watch_lib.series(STORE) or watch_lib.wanted(STORE) or watch_lib.results(STORE)),
+            # obojí, co je uvnitř: Můj seznam i Naposledy zhlédnuté
+            "favourites": bool(STORE.favourites() or STORE.recently_watched(1)),
+            "storage": bool(apis.get("dav")),
+            "downloads": bool(setting("download_dir") or sync_targets())}
+
+
+def root_label(key):
+    if key == "syncwatch":
+        return sw_title()
+    return L(*{"search": (30150, "Hledat"), "continue": (30063, "Pokračovat ve sledování"),
+               "watchlist": (30900, "Hlídané"), "movies": (30012, "Filmy"), "series": (30013, "Seriály"),
+               "concerts": (30922, "Koncerty"), "tv": (30483, "TV program"),
+               "favourites": (30060, "Můj seznam"), "storage": (30387, "Moje úložiště"),
+               "downloads": (30391, "Stažené")}[key])
+
+
+def root_context(key):
+    ctx = [(L(31050, "Posunout nahoru"), runplugin(action="menu_move", key=key, step="-1")),
+           (L(31051, "Posunout dolů"), runplugin(action="menu_move", key=key, step="1"))]
+    if key not in ROOT_FIXED:
+        ctx.append((L(31052, "Skrýt z menu"), runplugin(action="menu_hide", key=key)))
+    ctx.append((L(31053, "Upravit hlavní menu"), runplugin(action="menu_edit")))
+    return ctx
+
+
+def root_item(key):
+    ctx = root_context(key)
+    if key == "search":
+        folder_item(root_label(key), build_url(action="search", type="any"), icon="DefaultAddonsSearch.png",
+                    context=[(L(30106), runplugin(action="clear_cache"))] + ctx)
+    elif key == "watchlist":
+        new = watch_lib.new_count(STORE)
+        label = root_label(key)
+        if new:
+            label = f"{label}  [COLOR {WATCH_NEW}]· {new} {L(30908, 'nový díl')}[/COLOR]"
+        # jen ikony standardní sady skinu (vlastní ikony uživatel nechce); s novým dílem
+        # „nově přidané díly“, jinak seznam videí
+        icon = "DefaultRecentlyAddedEpisodes.png" if new else "DefaultVideoPlaylists.png"
+        folder_item(label, build_url(action="watchlist"), icon=icon, context=ctx)
+    elif key == "syncwatch":
+        # společné sledování; ve skupině ukazuje i kód, ať je vidět, že běží
+        sw_code = sw_session().get("code")
+        action_item("%s · %s" % (sw_title(), sw_code) if sw_code else sw_title(),
+                    build_url(action="syncwatch"), icon="DefaultNetwork.png", context=ctx)
+    else:
+        url, icon = {"continue": (build_url(action="continue"), "DefaultInProgressShows.png"),
+                     "movies": (build_url(action="browse", type="movie"), "DefaultMovies.png"),
+                     "series": (build_url(action="browse", type="series"), "DefaultTVShows.png"),
+                     "concerts": (build_url(action="concerts"), CONCERT_ICON),
+                     "tv": (build_url(action="tv"), "DefaultAddonPVRClient.png"),
+                     "favourites": (build_url(action="favourites"), "DefaultFavourites.png"),
+                     "storage": (build_url(action="dav_browse"), "DefaultHardDisk.png"),
+                     "downloads": (build_url(action="downloads"), "DefaultHardDisk.png")}[key]
+        folder_item(root_label(key), url, icon=icon, context=ctx)
+
+
+def menu_move(apis, key, step):
+    """Posune položku o jedno místo mezi položkami, které jsou v menu právě vidět."""
+    order, hidden = root_layout()
+    shown = root_shown(apis)
+    seen = [k for k in order if k not in hidden and shown[k]]
+    if key not in seen:
+        return
+    j = seen.index(key) + step
+    if not 0 <= j < len(seen):
+        return
+    # přesun (ne prohození), ať neviditelné položky mezi nimi zůstanou na svém místě
+    order.remove(key)
+    order.insert(order.index(seen[j]) + (step > 0), key)
+    root_save(order, hidden)
+
+
+def menu_hide(key):
+    order, hidden = root_layout()
+    if key in ROOT_ITEMS and key not in ROOT_FIXED:
+        root_save(order, hidden | {key})
+        notify(L(31054, "Skryté položky vrátíš v Nastavení → Pokročilé → Upravit hlavní menu."))
+
+
+def menu_edit():
+    order, hidden = root_layout()
+    keys = [k for k in order if k not in ROOT_FIXED]
+    sel = xbmcgui.Dialog().multiselect(L(31055, "Položky v hlavním menu"), [root_label(k) for k in keys],
+                                       preselect=[i for i, k in enumerate(keys) if k not in hidden])
+    if sel is not None:
+        root_save(order, {k for i, k in enumerate(keys) if i not in sel})
+
+
+def menu_reset():
+    root_save(ROOT_ITEMS, set())
+    notify(L(31056, "Hlavní menu vráceno na výchozí."))
+
+
 def main_menu(apis):
     mark_used()
     if not any(apis.values()):
@@ -4965,42 +5088,21 @@ def main_menu(apis):
     # Jedno hledání, jedny Filmy a jedny Seriály — dřív tu byly Filmy/Seriály zvlášť za
     # každý zdroj katalogu (Luna, Sosáč, databáze), každé s vlastními podkategoriemi.
     # Který zdroj stojí za kterým seznamem, rozhoduje až `browse_menu`.
+    # Pořadí a skrytí položek si volí uživatel (místní nabídka, Nastavení → Pokročilé),
+    # položky bez obsahu (Pokračovat, Hlídané…) se dál schovávají samy
+    order, hidden = root_layout()
+    shown = root_shown(apis)
     mylist_menu_item(MYLIST_POS_TOP)
-    folder_item(L(30150, "Hledat"), build_url(action="search", type="any"),
-               icon="DefaultAddonsSearch.png", context=[(L(30106), runplugin(action="clear_cache"))])
-    if STORE.in_progress() or STORE.recently_watched(1):
-        folder_item(L(30063), build_url(action="continue"), icon="DefaultInProgressShows.png")
-    # Hlídané hned pod Pokračovat, jen s obsahem; nové díly rovnou v popisku
-    if watch_lib.series(STORE) or watch_lib.wanted(STORE) or watch_lib.results(STORE):
-        new = watch_lib.new_count(STORE)
-        label = L(30900, "Hlídané")
-        if new:
-            label = f"{label}  [COLOR {WATCH_NEW}]· {new} {L(30908, 'nový díl')}[/COLOR]"
-        # jen ikony standardní sady skinu (vlastní ikony uživatel nechce); s novým dílem
-        # „nově přidané díly“, jinak seznam videí
-        icon = "DefaultRecentlyAddedEpisodes.png" if new else "DefaultVideoPlaylists.png"
-        folder_item(label, build_url(action="watchlist"), icon=icon)
-    mylist_menu_item(MYLIST_POS_WATCH)
-    folder_item(L(30012), build_url(action="browse", type="movie"), icon="DefaultMovies.png")
-    folder_item(L(30013), build_url(action="browse", type="series"), icon="DefaultTVShows.png")
-    # sezónní a tematické katalogy zapnuté na dashboardu (bez vydání nové verze)
-    dash_catalog_items(apis, "root")
-    mylist_menu_item()
-    folder_item(L(30922, "Koncerty"), build_url(action="concerts"), icon=CONCERT_ICON)
-    folder_item(L(30483, "TV program"), build_url(action="tv"), icon="DefaultAddonPVRClient.png")
-    # jako Pokračovat výš: na čisté instalaci nevede do prázdna. Podmínka musí pokrýt
-    # obojí, co je uvnitř — Můj seznam i Naposledy zhlédnuté (to je schované až tam).
-    # První přidaný titul řádek rozsvítí hned, `toggle_fav()` volá Container.Refresh.
-    if STORE.favourites() or STORE.recently_watched(1):
-        folder_item(L(30060), build_url(action="favourites"), icon="DefaultFavourites.png")
-    # společné sledování; ve skupině ukazuje i kód, ať je vidět, že běží
-    sw_code = sw_session().get("code")
-    action_item("%s · %s" % (sw_title(), sw_code) if sw_code else sw_title(),
-                build_url(action="syncwatch"), icon="DefaultNetwork.png")
-    if apis.get("dav"):
-        folder_item(L(30387, "Moje úložiště"), build_url(action="dav_browse"), icon="DefaultHardDisk.png")
-    if setting("download_dir") or sync_targets():
-        folder_item(L(30391, "Stažené"), build_url(action="downloads"), icon="DefaultHardDisk.png")
+    for key in order:
+        if key not in hidden and shown[key]:
+            root_item(key)
+        # kotvy pro vlastní seznamy a katalogy z dashboardu platí i u skryté položky
+        if key == "watchlist":
+            mylist_menu_item(MYLIST_POS_WATCH)
+        elif key == "series":
+            # sezónní a tematické katalogy zapnuté na dashboardu (bez vydání nové verze)
+            dash_catalog_items(apis, "root")
+            mylist_menu_item()
     mylist_menu_item(MYLIST_POS_BOTTOM)
     action_item(L(30392, "Nastavení"), build_url(action="settings"), icon="DefaultAddonProgram.png")
     # bez cache na disk — položky se mění podle stavu (Novinky, Pokračovat), zpět do
@@ -7548,7 +7650,9 @@ def play(apis, ctype, item_id, series_id=None, url=None, alt=None, subs="", pref
                        subs="|".join(chosen.get("subtitles") or []))
     mark_playing(item_id, stats_title, year if year.isdigit() else None, "series" if video else ctype,
                 stream_url=chosen.get("url"), stream_subs="|".join(chosen.get("subtitles") or []),
-                stream_langs=list(chosen.get("langs") or []), replay=replay)
+                stream_langs=list(chosen.get("langs") or []), replay=replay,
+                # soubor se rozklíčoval, ale nerozjel (mrtvý odkaz) – služba pak otevře výběr streamu
+                pick=None if sw else build_url(action="title", type=ctype, id=item_id, series=series_id, alt=alt))
     xbmcplugin.setResolvedUrl(HANDLE, True, li)
     if video and not sw:
         upnext_notify(meta, video, series_id or split_episode_id(item_id)[0], alt)
@@ -7894,6 +7998,9 @@ def router(query):
         "mycat_delete": lambda: _tlacitko(lambda: mycat_delete(p.get("id", ""))),
         "mycat_menu": lambda: _tlacitko(lambda: mycat_menu(p.get("id", ""), p.get("on") == "1")),
         "mycat_batch": lambda: _tlacitko(lambda: mycat_batch(p.get("id", ""))),
+        "menu_hide": lambda: _tlacitko(lambda: menu_hide(p.get("key", ""))),
+        "menu_edit": lambda: _tlacitko(menu_edit),
+        "menu_reset": lambda: _tlacitko(menu_reset),
         "toggle_watched": lambda: toggle_watched(p["id"]),
         "remove_progress": lambda: remove_progress(p["id"], p.get("series")),
         "search": lambda: search_menu(p.get("type") or p.get("kind") or "any"),
@@ -8018,6 +8125,8 @@ def router(query):
         apis = get_apis()
         if not action:
             main_menu(apis)
+        elif action == "menu_move":
+            _tlacitko(lambda: menu_move(apis, p.get("key", ""), -1 if p.get("step") == "-1" else 1))
         elif action == "accounts":
             list_accounts(apis)
         elif action == "accounts_refresh":
@@ -8169,7 +8278,7 @@ MARKS_SKIP = frozenset((
     "concerts_letter", "concerts_artist", "concerts_setup", "concerts_find", "concerts_add",
     "watch_series", "want", "watch_episode", "watch_flag", "watch_seen", "watch_check", "watch_check_now",
     "whats_new", "ha_files", "settings", "transfer_send", "transfer_receive",
-    "transfer_file_save", "transfer_file_load",
+    "transfer_file_save", "transfer_file_load", "menu_move", "menu_hide", "menu_edit", "menu_reset",
 ))
 
 

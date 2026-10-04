@@ -5717,7 +5717,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 133)   # +1 sync_concerts (10.3.0), +1 tmdb_check, +3 mylist1–3_enabled, +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs
+        self.assertEqual(len(volby), 135)   # +2 menu_edit_action, menu_reset_action (hlavní menu), +1 sync_concerts (10.3.0), +1 tmdb_check, +3 mylist1–3_enabled, +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):
@@ -7385,3 +7385,54 @@ class TestStitekSdilej(unittest.TestCase):
             self.assertIn("Sdilej.cz", default.stream_label_parts(s)["source"])
         with mock.patch.object(default, "fs_provider", return_value="fastshare"):
             self.assertIn("FastShare", default.stream_label_parts(s)["source"])
+
+
+class TestNerozjetyStream(unittest.TestCase):
+    """Stream se rozklíčoval, ale nerozjel – služba otevře výběr streamu (ovladač bez dlouhého stisku)."""
+
+    def test_chyba_prehrani_otevre_vyber(self):
+        xbmc.builtins.clear()
+        xbmcgui.Window(10000).setProperty(service.PROP, json.dumps(
+            {"id": "tt1", "pick": "plugin://plugin.video.nokturno/?action=title&id=tt1"}))
+        service.Player(store=default.STORE, stats=None).onPlayBackError()
+        self.assertEqual(xbmc.builtins, ["RunPlugin(plugin://plugin.video.nokturno/?action=title&id=tt1)"])
+        self.assertEqual(xbmcgui.Window(10000).getProperty(service.PROP), "")
+
+    def test_bez_pick_nic(self):
+        xbmc.builtins.clear()
+        xbmcgui.Window(10000).setProperty(service.PROP, json.dumps({"id": "tt1"}))
+        service.Player(store=default.STORE, stats=None).onPlayBackError()
+        self.assertEqual(xbmc.builtins, [])
+
+
+class TestHlavniMenu(unittest.TestCase):
+    """Pořadí a skrytí položek kořene menu (Discord, spacik78 2026-10-04)."""
+
+    def setUp(self):
+        default.STORE.save("menu", {})
+        self.addCleanup(default.STORE.save, "menu", {})
+        self.vse = dict.fromkeys(default.ROOT_ITEMS, True)
+
+    def test_vychozi_poradi(self):
+        self.assertEqual(default.root_layout(), (list(default.ROOT_ITEMS), set()))
+
+    def test_posun_preskoci_neviditelne(self):
+        self.vse["watchlist"] = False   # prázdné Hlídané nejsou vidět, posun přes ně skočí
+        with mock.patch.object(default, "root_shown", return_value=self.vse):
+            default.menu_move({}, "movies", -1)
+        order, _ = default.root_layout()
+        self.assertLess(order.index("movies"), order.index("continue"))
+        self.assertLess(order.index("continue"), order.index("watchlist"))
+
+    def test_skryti_a_hledani_nejde_skryt(self):
+        default.menu_hide("concerts")
+        default.menu_hide("search")
+        self.assertEqual(default.root_layout()[1], {"concerts"})
+
+    def test_nova_polozka_za_predchudce(self):
+        default.STORE.save("menu", {"order": ["series", "movies", "search"], "hidden": ["nesmysl"]})
+        order, hidden = default.root_layout()
+        self.assertEqual(sorted(order), sorted(default.ROOT_ITEMS))
+        self.assertEqual(order[:4], ["series", "concerts", "tv", "favourites"])   # za předchůdcem Seriály
+        self.assertEqual(order.index("continue"), order.index("search") + 1)
+        self.assertEqual(hidden, set())

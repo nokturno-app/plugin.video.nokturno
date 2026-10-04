@@ -3452,3 +3452,43 @@ msgstr "Opcionális harmadik féltől származó tárhelyek"
 msgctxt "#31048"
 msgid "Czechoslovakia"
 msgstr "Csehszlovákia"
+
+msgctxt "#31049"
+msgid "The stream could not be played – choose another one."
+msgstr "A stream lejátszása nem sikerült – válassz másikat."
+
+msgctxt "#31050"
+msgid "Move up"
+msgstr "Mozgatás feljebb"
+
+msgctxt "#31051"
+msgid "Move down"
+msgstr "Mozgatás lejjebb"
+
+msgctxt "#31052"
+msgid "Hide from menu"
+msgstr "Elrejtés a menüből"
+
+msgctxt "#31053"
+msgid "Edit main menu"
+msgstr "Főmenü szerkesztése"
+
+msgctxt "#31054"
+msgid "Hidden items can be restored in Settings → Advanced → Edit main menu."
+msgstr "A rejtett elemeket a Beállítások → Speciális → Főmenü szerkesztése alatt állíthatod vissza."
+
+msgctxt "#31055"
+msgid "Items in the main menu"
+msgstr "A főmenü elemei"
+
+msgctxt "#31056"
+msgid "Main menu reset to default."
+msgstr "A főmenü visszaállítva."
+
+msgctxt "#31057"
+msgid "Reset main menu"
+msgstr "Főmenü visszaállítása"
+
+msgctxt "#31058"
+msgid "Choose which items the main menu shows. Change the order in the context menu of an item (Move up / Move down)."
+msgstr "Válaszd ki, mely elemeket mutassa a főmenü. A sorrendet az elem helyi menüjében módosíthatod (Mozgatás feljebb / lejjebb)."
