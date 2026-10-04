@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.4.0" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.4.1" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -15,10 +15,10 @@
          drží stav mezi spuštěními, tělo default.py se spouští znovu — viz
          dokumentace.md § Reuse invoker. -->
     <reuselanguageinvoker>true</reuselanguageinvoker>
-    <summary lang="en_GB">Player and search tool for your own storage and third-party storage services</summary>
-    <summary lang="cs_CZ">Přehrávač a vyhledávač nad vlastním úložištěm i úložišti třetích stran</summary>
-    <summary lang="sk_SK">Prehrávač a vyhľadávač nad vlastným úložiskom aj úložiskami tretích strán</summary>
-    <summary lang="hu_HU">Lejátszó és kereső saját tárhelyhez és harmadik felek tárhelyeihez</summary>
+    <summary lang="en_GB">Player and search tool for your own storage, optionally also for third-party storage services</summary>
+    <summary lang="cs_CZ">Přehrávač a vyhledávač nad vlastním úložištěm, volitelně i nad úložišti třetích stran</summary>
+    <summary lang="sk_SK">Prehrávač a vyhľadávač nad vlastným úložiskom, voliteľne aj nad úložiskami tretích strán</summary>
+    <summary lang="hu_HU">Lejátszó és kereső saját tárhelyhez, opcionálisan harmadik felek tárhelyeihez is</summary>
     <description lang="en_GB">Nokturno is a player and search tool for Kodi. It plays files from your own storage (WebDAV, NAS, up to three folders) and from the storage services and catalogues of third parties that you enable in the settings, each one separately: WebShare, Sosáč, HellSpy, Sledujteto, FastShare / Sdilej.cz, Přehraj.to, CZtor and Luna. It searches for subtitles on OpenSubtitles. Nokturno itself does not host or distribute any content and does not verify the legal status of the files it finds – you are responsible for what you play. Features: search across sources and file choice with a filter, Continue watching, My list, Watchlist, SyncWatch (watch together), sync between several Kodi devices, set up from phone and settings transfer, TV guide, downloads, Trakt and a TMDb Helper player.</description>
     <description lang="cs_CZ">Nokturno je přehrávač a vyhledávač pro Kodi. Přehrává soubory z tvého vlastního úložiště (WebDAV, NAS, až tři složky) i z úložišť a katalogů třetích stran, které si v nastavení zapneš, každé zvlášť: WebShare, Sosáč, HellSpy, Sledujteto, FastShare / Sdilej.cz, Přehraj.to, CZtor a Luna. Titulky hledá na OpenSubtitles. Nokturno samo žádný obsah nehostuje ani nešíří a neověřuje právní status souborů, které najde – za to, co přehráváš, odpovídáš ty. Umí: hledání napříč zdroji a výběr souboru s filtrem, Pokračovat ve sledování, Můj seznam, Hlídané, SyncWatch (společné sledování), synchronizaci více Kodi, nastavení z mobilu a přenos nastavení, TV program, stahování, Trakt a přehrávač pro TMDb Helper.</description>
     <description lang="sk_SK">Nokturno je prehrávač a vyhľadávač pre Kodi. Prehráva súbory z tvojho vlastného úložiska (WebDAV, NAS, až tri zložky) aj z úložísk a katalógov tretích strán, ktoré si v nastaveniach zapneš, každé zvlášť: WebShare, Sosáč, HellSpy, Sledujteto, FastShare / Sdilej.cz, Přehraj.to, CZtor a Luna. Titulky hľadá na OpenSubtitles. Nokturno samo žiadny obsah nehostuje ani nešíri a neoveruje právny status súborov, ktoré nájde – za to, čo prehrávaš, zodpovedáš ty. Vie: vyhľadávanie naprieč zdrojmi a výber súboru s filtrom, Pokračovať v sledovaní, Môj zoznam, Sledované, SyncWatch (spoločné sledovanie), synchronizáciu viacerých Kodi, nastavenie z mobilu a prenos nastavenia, TV program, sťahovanie, Trakt a prehrávač pre TMDb Helper.</description>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.4.0 – Koncerty hledají ve tvém vlastním úložišti a skládají z nich katalog, volitelně i v úložištích třetích stran, která máš povolená a nastavená.
+    <news>10.4.1 – Průvodce prvním nastavením začíná vlastním úložištěm. Úložiště třetích stran jsou u nové instalace vypnutá, stávající nastavení zůstává.
+10.4.0 – Koncerty hledají ve tvém vlastním úložišti a skládají z nich katalog, volitelně i v úložištích třetích stran, která máš povolená a nastavená.
 10.3.4 – Hledání interpreta ukazuje průběh a výsledky naskočí hned.
 10.3.3 – Koncerty interpreta mají v názvu i jeho jméno (Kabát – Koncert v Aréně).
 10.3.2 – Hledání interpreta u koncertů najde i méně známá jména (Lucie → Lucie Bílá) a opraví překlep (arakian → Arakain).

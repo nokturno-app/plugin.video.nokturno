@@ -3431,7 +3431,7 @@ class TestPreruseniPriKonciKodi(unittest.TestCase):
 
     def test_jadro_i_klienti_dostanou_should_stop(self):
         xbmcaddon.settings.update(dav1_url="http://nas.lan/dav/", dav1_username="u", dav1_password="p",
-                                  streamuj_username="u", streamuj_password="p")
+                                  streamuj_username="u", streamuj_password="p", sosac_enabled="true")
         engine = default.KodiEngine()
         self.assertIs(engine.should_stop, default.should_stop)
         self.assertIs(default.get_storages()[0].should_stop, default.should_stop)
@@ -5675,12 +5675,13 @@ class TestPrehrajto(unittest.TestCase):
         schema = default.remote_setup_schema()
         self.assertIn("pt", {s["id"] for s in schema})
 
-    def test_zdroj_je_po_aktualizaci_zapnuty(self):
-        """Přehraj.to funguje i bez účtu, takže ho má mít každý rovnou zapnutý."""
+    def test_zdroj_je_ve_vychozim_stavu_vypnuty(self):
+        """Od 10.4.1 zapíná úložiště třetích stran jen uživatel sám; existující instalace převede
+        `migrate_third_party_default` (viz `TestTretiStranyVychoziVypnute`)."""
         import xml.etree.ElementTree as ET
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volba = next(s for s in root.iter("setting") if s.get("id") == "pt_enabled")
-        self.assertEqual(volba.findtext("default"), "true")
+        self.assertEqual(volba.findtext("default"), "false")
 
     def test_kategorii_nejvyse_dvacet(self):
         """Kodi dává tlačítkům kategorií id -200 + pořadí a od -180 začínají ovládací
@@ -6814,6 +6815,68 @@ class TestLunaVychoziVypnuta(unittest.TestCase):
         xbmcaddon.settings["luna_enabled"] = "false"    # uživatel ji pak vědomě vypne
         default.migrate_luna_default()
         self.assertEqual(xbmcaddon.settings["luna_enabled"], "false")
+
+
+class TestTretiStranyVychoziVypnute(unittest.TestCase):
+    """Od 10.4.1 jsou Přehraj.to, Sosáč a HellSpy ve výchozím stavu vypnuté; existující instalace je má dál."""
+    IDS = ("pt_enabled", "sosac_enabled", "hs_enabled")
+
+    def setUp(self):
+        xbmcaddon.settings.clear()
+        default.STORE.save("third_party_default_migrated", "")
+        self._prior = default._PRIOR_SEEN_VERSION
+        self._smazat_profil()
+
+    def tearDown(self):
+        xbmcaddon.settings.clear()
+        default._PRIOR_SEEN_VERSION = self._prior
+        self._smazat_profil()
+
+    @staticmethod
+    def _smazat_profil():
+        try:
+            os.remove(os.path.join(default.PROFILE, "settings.xml"))
+        except OSError:
+            pass
+
+    @staticmethod
+    def _profil(*radky):
+        os.makedirs(default.PROFILE, exist_ok=True)
+        with open(os.path.join(default.PROFILE, "settings.xml"), "w", encoding="utf-8") as f:
+            f.write('<settings version="2">\n    %s\n</settings>\n' % "\n    ".join(radky))
+
+    def test_vychozi_vypnuto(self):
+        import xml.etree.ElementTree as ET
+        root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
+        for sid in self.IDS:
+            self.assertEqual(root.find(".//setting[@id='%s']/default" % sid).text, "false", sid)
+
+    def test_cerstva_instalace_zustane_bez_nich(self):
+        default._PRIOR_SEEN_VERSION = ""
+        default.migrate_third_party_default()
+        self.assertFalse(any(sid in xbmcaddon.settings for sid in self.IDS))
+
+    def test_nezmeneny_prepinac_zustane_zapnuty(self):
+        self._profil('<setting id="pt_enabled" default="true">true</setting>',
+                     '<setting id="sosac_enabled">false</setting>',
+                     '<setting id="hs_enabled" default="true">true</setting>')
+        default.migrate_third_party_default()
+        self.assertEqual(xbmcaddon.settings.get("pt_enabled"), "true")
+        self.assertEqual(xbmcaddon.settings.get("hs_enabled"), "true")
+        self.assertNotIn("sosac_enabled", xbmcaddon.settings)   # vědomě vypnutý zůstane vypnutý
+
+    def test_bez_ulozeneho_nastaveni_po_aktualizaci(self):
+        default._PRIOR_SEEN_VERSION = "10.4.0"
+        default.migrate_third_party_default()
+        for sid in self.IDS:
+            self.assertEqual(xbmcaddon.settings.get(sid), "true", sid)
+
+    def test_bezi_jen_jednou(self):
+        default._PRIOR_SEEN_VERSION = "10.4.0"
+        default.migrate_third_party_default()
+        xbmcaddon.settings["hs_enabled"] = "false"
+        default.migrate_third_party_default()
+        self.assertEqual(xbmcaddon.settings["hs_enabled"], "false")
 
 
 class TestVlastniKatalogy(unittest.TestCase):

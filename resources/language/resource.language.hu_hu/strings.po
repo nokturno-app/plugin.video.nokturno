@@ -155,8 +155,8 @@ msgid "Smallest"
 msgstr "Legkisebb"
 
 msgctxt "#30104"
-msgid "The source is not enabled or set up – check Sources and accounts and Own storage in settings"
-msgstr "A forrás nincs bekapcsolva vagy beállítva – nézd meg a beállításokban a Források és fiókok és a Saját tárhely részt"
+msgid "The source is not enabled or set up – check Own storage and Sources and accounts in settings"
+msgstr "A forrás nincs bekapcsolva vagy beállítva – nézd meg a beállításokban a Saját tárhely és a Források és fiókok részt"
 
 msgctxt "#30060"
 msgid "My list"
@@ -791,8 +791,8 @@ msgid "Settings saved"
 msgstr "Beállítások elmentve"
 
 msgctxt "#30358"
-msgid "Done. You can change any of this later in the add-on settings.\nWithout a TMDB key and without Luna, catalogues and search still work, only descriptions will be in English."
-msgstr "Kész. Mindez később bármikor módosítható a bővítmény beállításaiban.\nTMDB-kulcs és Luna nélkül a katalógusok és a keresés is működik, csak a leírások lesznek angolul."
+msgid "Done. You can change any of this later in the add-on settings.\nWithout a TMDB key, catalogues and search still work, only descriptions will be in English."
+msgstr "Kész. Mindez később bármikor módosítható a bővítmény beállításaiban.\nTMDB-kulcs nélkül a katalógusok és a keresés is működik, csak a leírások lesznek angolul."
 
 msgctxt "#30359"
 msgid "Run setup wizard"
@@ -1092,8 +1092,8 @@ msgid "Shows a QR code on the TV. Open it on a phone connected to the same Wi-Fi
 msgstr "QR-kódot mutat a TV-n. Nyisd meg egy ugyanahhoz a Wi-Fihez csatlakozó telefonon, és töltsd ki a beállításokat a böngészőben – nem kell jelszót gépelni a távirányítóval. Csak a helyi hálózaton működik."
 
 msgctxt "#30449"
-msgid "You can fill in accounts and sources on your phone – the TV shows a QR code, the phone just needs the same Wi-Fi and you don't type passwords with the remote. Or go through a short wizard with the remote.[CR]You can skip this and fill it in later in the add-on settings."
-msgstr "A fiókokat és forrásokat a telefonodon is kitöltheted – a TV mutat egy QR-kódot, a telefonnak csak ugyanaz a Wi-Fi kell, és nem kell jelszót gépelni a távirányítóval. Vagy végigmehetsz egy rövid varázslón a távirányítóval.[CR]Ezt kihagyhatod, és később is kitöltheted a bővítmény beállításaiban."
+msgid "You can fill in your own storage and, optionally, third-party accounts on your phone – the TV shows a QR code, the phone just needs the same Wi-Fi and you don't type passwords with the remote. Or go through a short wizard with the remote.[CR]You can skip this and fill it in later in the add-on settings."
+msgstr "A saját tárhelyedet és opcionálisan a harmadik felek fiókjait a telefonodon is kitöltheted – a TV mutat egy QR-kódot, a telefonnak csak ugyanaz a Wi-Fi kell, és nem kell jelszót gépelni a távirányítóval. Vagy végigmehetsz egy rövid varázslón a távirányítóval.[CR]Ezt kihagyhatod, és később is kitöltheted a bővítmény beállításaiban."
 
 msgctxt "#30450"
 msgid "From phone"
@@ -1957,8 +1957,8 @@ msgid "Options such as preferred language, stream sorting or enabled sources. Th
 msgstr "Olyan beállítások, mint a kívánt nyelv, a streamek sorrendje vagy a bekapcsolt források. A letöltési mappa és maga a szinkronizálás beállítása nem kerül megosztásra."
 
 msgctxt "#30686"
-msgid "Sign-ins to the sources (WebShare, Sosáč, Sledujteto, FastShare, Přehraj.to, OpenSubtitles, Luna, own storage) and the TMDB key. Passwords travel encrypted and the server cannot read them, but anyone holding the group code can – give the code only to your own devices. CZtor and Trakt must be paired on each device separately."
-msgstr "A forrásokhoz tartozó bejelentkezések (WebShare, Sosáč, Sledujteto, FastShare, Přehraj.to, OpenSubtitles, Luna, saját tárhely) és a TMDB-kulcs. A jelszavak titkosítva utaznak, a szerver nem olvassa el őket, de akinél a csoportkód van, elolvassa – a kód csak a saját eszközökre való. A CZtort és a Traktot minden eszközön külön kell párosítani."
+msgid "Sign-ins to your own storage and to the third-party sources you use (WebShare, Sosáč, Sledujteto, FastShare, Přehraj.to, OpenSubtitles, Luna) and the TMDB key. Passwords travel encrypted and the server cannot read them, but anyone holding the group code can – give the code only to your own devices. CZtor and Trakt must be paired on each device separately."
+msgstr "A saját tárhelyhez és az általad használt harmadik féltől származó forrásokhoz tartozó bejelentkezések (WebShare, Sosáč, Sledujteto, FastShare, Přehraj.to, OpenSubtitles, Luna) és a TMDB-kulcs. A jelszavak titkosítva utaznak, a szerver nem olvassa el őket, de akinél a csoportkód van, elolvassa – a kód csak a saját eszközökre való. A CZtort és a Traktot minden eszközön külön kell párosítani."
 
 msgctxt "#30688"
 msgid "Synchronisation goes through the dashboard. With Home Assistant, enter the same group code in the integration settings as well."
@@ -3436,3 +3436,15 @@ msgstr "Még nem keresve"
 msgctxt "#31044"
 msgid "nothing found"
 msgstr "nincs találat"
+
+msgctxt "#31045"
+msgid "Do you have your own storage (WebDAV, NAS)? Nokturno plays films, series and concerts from it."
+msgstr "Van saját tárhelyed (WebDAV, NAS)? A Nokturno filmeket, sorozatokat és koncerteket játszik le róla."
+
+msgctxt "#31046"
+msgid "Third-party storages are optional. In the next steps you can turn on only the ones you want to use."
+msgstr "A harmadik felek tárhelyei opcionálisak. A következő lépésekben csak azokat kapcsolod be, amelyeket használni szeretnél."
+
+msgctxt "#31047"
+msgid "Optional third-party storages"
+msgstr "Opcionális harmadik féltől származó tárhelyek"

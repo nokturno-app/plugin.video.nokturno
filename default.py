@@ -440,6 +440,31 @@ def migrate_luna_default():
         ADDON.setSetting("luna_enabled", "true")
 
 
+THIRD_PARTY_DEFAULT_ON = ("pt_enabled", "sosac_enabled", "hs_enabled")
+
+
+def migrate_third_party_default():
+    """Od 10.4.1 jsou úložiště třetích stran ve výchozím stavu vypnutá – zapne je jen uživatel sám
+    (dřív Přehraj.to, Sosáč a HellSpy zapnuté rovnou). Existující instalace o ně nesmí přijít:
+    nezměněný přepínač (značka `default="true"`, jako v `migrate_luna_default`) nebo přepínač, který
+    v uloženém nastavení ještě není, se zapíše natvrdo jako zapnutý. Bez profilového settings.xml
+    rozhoduje dřívější verze (`_PRIOR_SEEN_VERSION`): čerstvá instalace zůstane bez nich. Běží jednou."""
+    if STORE.load("third_party_default_migrated", ""):
+        return
+    STORE.save("third_party_default_migrated", "1")
+    try:
+        with open(os.path.join(PROFILE, "settings.xml"), encoding="utf-8") as f:
+            ulozeno = f.read()
+    except (IOError, OSError):
+        ulozeno = None
+    if ulozeno is None and not _PRIOR_SEEN_VERSION:
+        return    # čerstvá instalace
+    for sid in THIRD_PARTY_DEFAULT_ON:
+        if ulozeno is None or '<setting id="%s" default="true">' % sid in ulozeno \
+                or '<setting id="%s"' % sid not in ulozeno:
+            ADDON.setSetting(sid, "true")
+
+
 def _existing_install():
     """Instalace, která běžela už před zavedením právního upozornění, se bere jako
     automaticky odsouhlasená — nikdo starý nemusí nic doklikávat. Platí jen pro
@@ -556,7 +581,7 @@ def get_luna():
 
 
 def get_sosac():
-    if not on("sosac_enabled"):
+    if not on("sosac_enabled", "false"):
         return None
     # veřejné JSONy Sosáče + streamuj.tv s účtem Streamuj. Starší cesta přes
     # Stremio rozhraní Sosáče (userId, login k Sosáči) je pryč — katalogy jsou
@@ -3709,7 +3734,23 @@ def transfer_apply(payload):
 
 
 def _wizard_accounts(dialog):
-    """Průvodce ovladačem: účty a zdroje otázku po otázce."""
+    """Průvodce ovladačem: nejdřív vlastní úložiště, pak volitelné zdroje třetích stran otázku po otázce."""
+    if dialog.yesno(L(30374, "Vlastní úložiště"),
+                    L(31045, "Máš vlastní úložiště (WebDAV, NAS)? Nokturno z něj přehrává filmy, seriály i koncerty.")):
+        url = dialog.input(L(30379, "Adresa složky"))
+        if url:
+            ADDON.setSetting("dav1_url", url)
+            ADDON.setSetting("dav1_enabled", "true")
+            user = dialog.input(L(30381, "Uživatelské jméno"))
+            if user:
+                ADDON.setSetting("dav1_username", user)
+                pwd = dialog.input(L(30383, "Heslo"), option=xbmcgui.ALPHANUM_HIDE_INPUT)
+                if pwd:
+                    ADDON.setSetting("dav1_password", pwd)
+
+    dialog.ok(L(31047, "Volitelná úložiště třetích stran"),
+              L(31046, "Úložiště třetích stran jsou volitelná. V dalších krocích zapneš jen ta, která chceš používat."))
+
     if dialog.yesno(L(30340, "WebShare"), L(30341, "Máš účet WebShare?")):
         user = dialog.input(L(30342, "WebShare – e-mail"))
         if user:
@@ -3831,8 +3872,8 @@ def setup_wizard(force=False):
         # úvodní volba (přání uživatele 2026-09-16): z mobilu, průvodce ovladačem, nebo přeskočit
         choice = dialog.yesnocustom(
             L(30336, "Vítej v Nokturnu"),
-            L(30449, "Účty a zdroje můžeš vyplnit v mobilu – na TV se ukáže QR kód, stačí mobil ve stejné "
-                     "Wi-Fi a hesla nepíšeš ovladačem. Nebo projdi krátkého průvodce ovladačem.[CR]"
+            L(30449, "Vlastní úložiště a volitelně i účty třetích stran můžeš vyplnit v mobilu – na TV se "
+                     "ukáže QR kód, stačí mobil ve stejné Wi-Fi a hesla nepíšeš ovladačem. Nebo projdi krátkého průvodce ovladačem.[CR]"
                      "Kdykoli to můžeš přeskočit a doplnit později v Nastavení doplňku."),
             customlabel=L(30450, "Z mobilu"), nolabel=L(30339, "Přeskočit"), yeslabel=L(30451, "Průvodce ovladačem"),
         )
@@ -3870,7 +3911,7 @@ def setup_wizard(force=False):
         xbmcaddon.Addon(TMDBH_ID).setSetting(TMDBH_LANGUAGE_KEY, lang)
 
     dialog.ok(L(30357, "Nastavení uloženo"),
-              L(30358, "Hotovo. Vše se dá kdykoli změnit v nastavení doplňku.[CR]Bez klíče TMDB a bez Luny fungují "
+              L(30358, "Hotovo. Vše se dá kdykoli změnit v nastavení doplňku.[CR]Bez klíče TMDB fungují "
                        "katalogy i hledání dál, jen popisy budou anglicky."))
     STORE.save("wizard_done", True)
 
@@ -3928,6 +3969,8 @@ def test_sources():
         raise LunaError(L(sid, fallback))
 
     checks = {
+        # vlastní úložiště první – jen kořen složky, ověří adresu i heslo, strom se prochází až při hledání
+        **{api.name: (lambda api=api: api.check()) for api in storages},
         "Luna": check_luna if luna else None,
         "Sosáč": (lambda: len(sosac._get(SOSAC_EXPORT + "souboryzanry.json", ttl=0) or {}))
         if isinstance(sosac, SosacDirect) else None,
@@ -3940,8 +3983,6 @@ def test_sources():
         "CZtor": check_cztor if cz else None,
         # jen ověření klíče, mimo cache — 401 se překládá na "neplatný TMDB API klíč" v tmdb_api._get
         "TMDB": (lambda: tmdb._get("/configuration") and None) if tmdb else None,
-        # jen kořen složky — ověří adresu i heslo, celý strom se prochází až při hledání
-        **{api.name: (lambda api=api: api.check()) for api in storages},
     }
     lines = []
     with ThreadPoolExecutor(max_workers=5) as pool:
@@ -8151,6 +8192,7 @@ def main(query):
         migrate_sync_mode_default()
         migrate_terms()
         migrate_luna_default()
+        migrate_third_party_default()
         migrate_catalogs_v2()
         action = dict(urllib.parse.parse_qsl(query.lstrip("?"))).get("action") or ""
         # do nastavení a k textu podmínek se uživatel musí dostat i bez souhlasu — jinak

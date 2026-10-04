@@ -222,7 +222,7 @@
       <group id="pt" label="30708">
         <setting id="pt_enabled" type="boolean" label="30709" help="30710">
           <level>0</level>
-          <default>true</default>
+          <default>false</default>
           <control type="toggle"/>
         </setting>
         <setting id="pt_email" type="string" label="30711" help="30712">
@@ -254,7 +254,7 @@
       <group id="sosac" label="30030">
         <setting id="sosac_enabled" type="boolean" label="30031" help="30304">
           <level>0</level>
-          <default>true</default>
+          <default>false</default>
           <control type="toggle"/>
         </setting>
         <setting id="streamuj_username" type="string" label="30128" help="30305">
@@ -294,7 +294,7 @@
       <group id="hs" label="30194">
         <setting id="hs_enabled" type="boolean" label="30195" help="30196">
           <level>0</level>
-          <default>true</default>
+          <default>false</default>
           <control type="toggle"/>
         </setting>
       </group>

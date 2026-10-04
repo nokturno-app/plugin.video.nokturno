@@ -155,8 +155,8 @@ msgid "Smallest"
 msgstr "Najmenšie"
 
 msgctxt "#30104"
-msgid "The source is not enabled or set up – check Sources and accounts and Own storage in settings"
-msgstr "Zdroj nie je zapnutý alebo nastavený – skontroluj v nastaveniach Zdroje a účty a Vlastné úložisko"
+msgid "The source is not enabled or set up – check Own storage and Sources and accounts in settings"
+msgstr "Zdroj nie je zapnutý alebo nastavený – skontroluj v nastaveniach Vlastné úložisko a Zdroje a účty"
 
 msgctxt "#30060"
 msgid "My list"
@@ -792,8 +792,8 @@ msgid "Settings saved"
 msgstr "Nastavenia uložené"
 
 msgctxt "#30358"
-msgid "Done. You can change any of this later in the add-on settings.\nWithout a TMDB key and without Luna, catalogues and search still work, only descriptions will be in English."
-msgstr "Hotovo. Všetko sa dá kedykoľvek zmeniť v nastaveniach doplnku.\nBez kľúča TMDB a bez Luny fungujú katalógy aj hľadanie ďalej, len popisy budú po anglicky."
+msgid "Done. You can change any of this later in the add-on settings.\nWithout a TMDB key, catalogues and search still work, only descriptions will be in English."
+msgstr "Hotovo. Všetko sa dá kedykoľvek zmeniť v nastaveniach doplnku.\nBez kľúča TMDB fungujú katalógy aj hľadanie ďalej, len popisy budú po anglicky."
 
 msgctxt "#30359"
 msgid "Run setup wizard"
@@ -1093,8 +1093,8 @@ msgid "Shows a QR code on the TV. Open it on a phone connected to the same Wi-Fi
 msgstr "Na TV sa zobrazí QR kód. Otvor ho mobilom pripojeným k tej istej Wi-Fi a vyplň nastavenia v prehliadači – bez písania hesiel ovládačom. Funguje len v miestnej sieti."
 
 msgctxt "#30449"
-msgid "You can fill in accounts and sources on your phone – the TV shows a QR code, the phone just needs the same Wi-Fi and you don't type passwords with the remote. Or go through a short wizard with the remote.[CR]You can skip this and fill it in later in the add-on settings."
-msgstr "Účty a zdroje môžeš vyplniť v mobile – na TV sa zobrazí QR kód, stačí mobil v tej istej Wi-Fi a heslá nepíšeš ovládačom. Alebo použi krátkeho sprievodcu ovládačom.[CR]Kedykoľvek to môžeš preskočiť a doplniť neskôr v Nastaveniach doplnku."
+msgid "You can fill in your own storage and, optionally, third-party accounts on your phone – the TV shows a QR code, the phone just needs the same Wi-Fi and you don't type passwords with the remote. Or go through a short wizard with the remote.[CR]You can skip this and fill it in later in the add-on settings."
+msgstr "Vlastné úložisko a voliteľne aj účty tretích strán môžeš vyplniť v mobile – na TV sa zobrazí QR kód, stačí mobil v tej istej Wi-Fi a heslá nepíšeš ovládačom. Alebo použi krátkeho sprievodcu ovládačom.[CR]Kedykoľvek to môžeš preskočiť a doplniť neskôr v Nastaveniach doplnku."
 
 msgctxt "#30450"
 msgid "From phone"
@@ -1959,8 +1959,8 @@ msgid "Options such as preferred language, stream sorting or enabled sources. Th
 msgstr "Voľby ako preferovaný jazyk, zoradenie streamov alebo zapnuté zdroje. Nezdieľa sa priečinok na sťahovanie ani samotné nastavenie synchronizácie."
 
 msgctxt "#30686"
-msgid "Sign-ins to the sources (WebShare, Sosáč, Sledujteto, FastShare, Přehraj.to, OpenSubtitles, Luna, own storage) and the TMDB key. Passwords travel encrypted and the server cannot read them, but anyone holding the group code can – give the code only to your own devices. CZtor and Trakt must be paired on each device separately."
-msgstr "Prihlásenie k zdrojom (WebShare, Sosáč, Sledujteto, FastShare, Přehraj.to, OpenSubtitles, Luna, vlastné úložisko) a kľúč k TMDB. Heslá idú zašifrované a server ich neprečíta, ale kto má kód skupiny, prečíta ich – kód patrí len vlastným zariadeniam. CZtor a Trakt sa musia spárovať na každom zariadení zvlášť."
+msgid "Sign-ins to your own storage and to the third-party sources you use (WebShare, Sosáč, Sledujteto, FastShare, Přehraj.to, OpenSubtitles, Luna) and the TMDB key. Passwords travel encrypted and the server cannot read them, but anyone holding the group code can – give the code only to your own devices. CZtor and Trakt must be paired on each device separately."
+msgstr "Prihlásenie k vlastnému úložisku a k zdrojom tretích strán, ktoré používaš (WebShare, Sosáč, Sledujteto, FastShare, Přehraj.to, OpenSubtitles, Luna), a kľúč k TMDB. Heslá idú zašifrované a server ich neprečíta, ale kto má kód skupiny, prečíta ich – kód patrí len vlastným zariadeniam. CZtor a Trakt sa musia spárovať na každom zariadení zvlášť."
 
 msgctxt "#30688"
 msgid "Synchronisation goes through the dashboard. With Home Assistant, enter the same group code in the integration settings as well."
@@ -3438,3 +3438,15 @@ msgstr "Zatiaľ neprehľadané"
 msgctxt "#31044"
 msgid "nothing found"
 msgstr "nič sa nenašlo"
+
+msgctxt "#31045"
+msgid "Do you have your own storage (WebDAV, NAS)? Nokturno plays films, series and concerts from it."
+msgstr "Máš vlastné úložisko (WebDAV, NAS)? Nokturno z neho prehráva filmy, seriály aj koncerty."
+
+msgctxt "#31046"
+msgid "Third-party storages are optional. In the next steps you can turn on only the ones you want to use."
+msgstr "Úložiská tretích strán sú voliteľné. V ďalších krokoch zapneš len tie, ktoré chceš používať."
+
+msgctxt "#31047"
+msgid "Optional third-party storages"
+msgstr "Voliteľné úložiská tretích strán"

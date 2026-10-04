@@ -12,7 +12,7 @@ Nokturno je přehrávač a vyhledávač pro Kodi a Home Assistant. Přehrává s
 
 1. V Kodi povol *Nastavení → Systém → Doplňky → **Neznámé zdroje***.
 2. Přidej zdroj `https://nokturno.stream/repo/` a z něj nainstaluj `repository.nokturno.zip`, pak doplněk **Nokturno** (přesný postup níž v [Instalaci](#instalace)).
-3. Po instalaci tě **průvodce** provede vyplněním zdrojů. Nic víc není nutné – HellSpy a Přehraj.to fungují bez účtu a katalogy bez nastavení.
+3. Po instalaci tě **průvodce** provede nastavením: nejdřív vlastní úložiště, pak volitelně úložiště třetích stran, která chceš používat. Žádné z nich není zapnuté samo, katalogy fungují bez nastavení.
 
 Nastavení účtů se dá pohodlně vyplnit **z mobilu** (QR kód na TV) nebo přenést z jiného Kodi.
 
@@ -58,13 +58,13 @@ Přihlašovací údaje zůstávají v Kodi – doplněk je posílá jen službě
 - **Přenos nastavení do dalšího Kodi** (od 6.2.0) – kód `NKT-XXXX-XXXX`, obsah šifrovaný, platí 15 minut; nebo přes soubor na USB. CZtor a Trakt se nepřenášejí
 - **Titulky z OpenSubtitles** (od 6.4.0) – doplní české a slovenské titulky, když je zdroje nemají; bez účtu 5 za den, s vlastním 20
 - **Pro Tebe** a **Náhodný film / seriál** (od 6.3.0) – doporučení podle historie zhlédnutého (počítá se v tvém Kodi) a losování titulu v oblíbeném žánru s tvým jazykem
-- **Stav zdrojů v menu** (od 6.3.1) – řádek nahoře se ukáže, jen když je co řešit (předplatné, Luna, HellSpy, Premium, CZtor, Přehraj.to)
+- **Stav zdrojů v menu** (od 6.3.1) – řádek nahoře se ukáže, jen když je co řešit (vlastní úložiště, předplatné, Luna, HellSpy, Premium, CZtor, Přehraj.to)
 - **Diagnostika Luny** – tlačítka *Najít Lunu v síti* a *Ověřit nastavení Luny*, které řeknou konkrétní příčinu
 - **TV program**, **podobné tituly** a **katalogy z dashboardu** (i s podsložkami)
 - **Sloučené verze streamů** (`×3`), zvuk a titulky podle preferovaného jazyka (čeština, slovenština, angličtina, maďarština), stahování z kontextového menu s navazováním po přerušení
 - **Hlášení o pádech** a zprávy z dashboardu (obojí anonymní, hlášení jde vypnout)
 - **Průvodce prvním nastavením** – hned po instalaci požádá o souhlas s podmínkami a nabídne vyplnění zdrojů **z mobilu** (QR kód) nebo krátkého průvodce ovladačem. Pak změří rychlost internetu pro datový tok a – je-li nainstalovaný TMDb Helper – nastaví Nokturno jako jeho přehrávač a přepne ho do jazyka Kodi. Jde přeskočit a kdykoli znovu spustit z *Nastavení → Pokročilé*.
-- **Přesná hláška, když zdroj neodpoví** – jmenuje konkrétní zdroj (WebShare, Luna, Sosáč…), ne obecnou chybu. Výsledky ze zbylých fungujících zdrojů se zobrazí normálně.
+- **Přesná hláška, když zdroj neodpoví** – jmenuje konkrétní zdroj (vlastní úložiště, WebShare, Luna…), ne obecnou chybu. Výsledky ze zbylých fungujících zdrojů se zobrazí normálně.
 - **Hledat** napříč zapnutými zdroji – jeden dotaz pro filmy i seriály; volba typu se nabídne, jen když dotaz najde obojí. Stejný titul z více zdrojů jen jednou, zdroj je vidět až ve výběru streamu
 - **rok v dotazu je filtr** – „Pět švestek 2026“ vrátí jen film z roku 2026; číslo, které patří k názvu („2012“, „Blade Runner 2049“), se jako rok nebere
 - **Hledat na WebShare** – soubory přímo z WebShare API (řazení: relevance / nejnovější / hodnocení / velikost)
@@ -149,7 +149,7 @@ Vlastní úložiště nastavíš v kategorii *Vlastní úložiště* (adresa Web
 - **HellSpy** – jen přepínač v nastavení, rozhraní je veřejné a účet nepotřebuje.
 - **Sledujteto** – e-mail a heslo ve skupině *Sledujteto*. Hledá se s jakýmkoli účtem, přehrát jde jen s **Premium**; *Nastavení → Pokročilé → Ověřit zdroje* ukáže, jestli je aktivní.
 - **FastShare** – jméno a heslo ve skupině *FastShare*; volbou *Účet z* vybereš, jestli máš účet na FastShare, nebo na Sdilej.cz (od 8.4.0, katalog je stejný, účty ne). Hledá se i bez účtu, přehrání se odečte z **kreditu** podle velikosti souboru (pokud nemáš neomezené stahování); *Nastavení → Pokročilé → Ověřit zdroje* ukáže, kolik kreditu zbývá. Soubor chce cookie z přihlášení, Kodi ji posílá samo. Podrobně v [nápovědě](https://nokturno-app.github.io/nokturno-napoveda/cs/sdilej-cz).
-- **Přehraj.to** – zapnuté rovnou po instalaci, účet není potřeba. E-mail a heslo (skupina *Přehraj.to*) přidají další strany výsledků a u **Premium** původní soubor místo překódovaného 1080p. Server omezuje dotazy z jedné adresy (HTTP 429) – doplněk pak zdroj na 10 minut přeskočí; *Nastavení → Pokročilé → Ověřit zdroje* ukáže stav.
+- **Přehraj.to** – zapneš přepínačem ve skupině *Přehraj.to*, účet není potřeba. E-mail a heslo (skupina *Přehraj.to*) přidají další strany výsledků a u **Premium** původní soubor místo překódovaného 1080p. Server omezuje dotazy z jedné adresy (HTTP 429) – doplněk pak zdroj na 10 minut přeskočí; *Nastavení → Pokročilé → Ověřit zdroje* ukáže stav.
 - **CZtor** – *Nastavení → Zdroje a účty → CZtor → Spárovat PINem*: na TV se ukáže PIN, zadáš ho na `cztor.com/activate`; heslo se do doplňku nezadává. Podrobně v [nápovědě](https://nokturno-app.github.io/nokturno-napoveda/cs/cztor).
 - **Luna** – v nové instalaci vypnutá, zapneš ji přepínačem *Používat Lunu*. Otevři setup stránku Luny (`http://IP-Luny:7126/setup`), zkopíruj **adresu doplňku** (`…/e1.XXXX/manifest.json`) a vlož ji do pole *Adresa doplňku nebo token*; adresa serveru se z ní vezme sama. Tlačítka *Najít Lunu v síti* a *Ověřit nastavení Luny* řeknou, co nefunguje. Luna běží jako APK přímo na Android TV boxu (adresa `http://127.0.0.1:7126`), jako program na počítači nebo NAS, nebo jako addon Home Assistantu, a vždy potřebuje WebShare VIP.
 - **Vlastní databáze filmů a seriálů (TMDB)** – nepovinné, ale s klíčem má přednost i před Lunou (viz níž): zdarma klíč z [themoviedb.org](https://www.themoviedb.org/signup) → ikona profilu → *Nastavení* → *API* → *Request an API Key* → *Developer* → krátký formulář → zkopíruj **API Key (v3 auth)** (ne delší "API Read Access Token") do *Nastavení → Zdroje a účty → TMDB API*. Bez klíče se použije Luna (je-li dostupná), jinak zdarma veřejný katalog Sosáče a Cinemeta, ale bez českého popisu. S klíčem mají české popisy i katalogy ze Sosáče.

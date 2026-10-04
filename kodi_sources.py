@@ -27,7 +27,7 @@ def stats_sources(get):
 
     return [name for name, active in (
         ("luna", zapnuto("luna_enabled") and vyplneno("token")),
-        ("sosac", zapnuto("sosac_enabled") and vyplneno("streamuj_username")),
+        ("sosac", zapnuto("sosac_enabled", "false") and vyplneno("streamuj_username")),
         ("webshare", zapnuto("ws_enabled", "false") and vyplneno("ws_username")),
         ("hellspy", zapnuto("hs_enabled", "false")),
         ("sledujteto", zapnuto("st_enabled", "false") and vyplneno("st_email")),
