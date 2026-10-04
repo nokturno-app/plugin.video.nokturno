@@ -5752,8 +5752,22 @@ def list_concerts_artist(artist_id):
 def concerts_search():
     """Ruční hledání interpreta: zadaný text, pak výpis kandidátů (jako výsledky hledání titulů)."""
     text = xbmcgui.Dialog().input(L(31039, "Interpret")).strip()
-    if text:
-        xbmc.executebuiltin("Container.Update(%s)" % build_url(action="concerts_find", q=text))
+    if not text:
+        return
+    # Last.fm se ptá tady, s ukazatelem průběhu: výpis by jinak po zmizení kolečka ~3 s stál bez odezvy
+    bg = xbmcgui.DialogProgressBG()
+    bg.create(L(30922, "Koncerty"), "%s: %s" % (L(31039, "Interpret"), text))
+    try:
+        _concert_candidates(text)
+    finally:
+        bg.close()
+    xbmc.executebuiltin("Container.Update(%s)" % build_url(action="concerts_find", q=text))
+
+
+def _concert_candidates(text):
+    """Kandidáti z Last.fm pro výpis hledání, 10 min v cache (hledání a výpis jsou dva běhy pluginu)."""
+    return STORE.cached_if("concerts_find:" + concertcat._key(text), 600,
+                           lambda: concertcat.lastfm_search(setting("lastfm_key").strip(), text))
 
 
 def list_concerts_find(text):
@@ -5787,7 +5801,7 @@ def list_concerts_find(text):
 
     for st in sorted((v for v in known.values() if v["match"] and v["count"]), key=lambda v: v["name"].casefold()):
         add(st["name"])
-    for c in concertcat.lastfm_search(setting("lastfm_key").strip(), text):
+    for c in _concert_candidates(text):
         add(c["name"], c["listeners"])
     add(text, exact=0)   # záloha: zadaný text (bez klíče s opravou jména přes Last.fm, je-li klíč)
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)

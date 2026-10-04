@@ -7153,6 +7153,16 @@ class TestKoncerty(unittest.TestCase):
         self.assertEqual(rows[2], ({"action": "concerts_add", "name": "alf", "exact": "0"}, False))
         self.assertEqual(len(rows), 3)
 
+    def test_hledani_se_pta_lastfm_jen_jednou(self):
+        self._index()
+        kand = [{"name": "Gama", "listeners": 5}]
+        with mock.patch.object(xbmcgui.Dialog, "input", return_value="gama"), \
+                mock.patch.object(default.concertcat, "lastfm_search", return_value=kand) as lf:
+            default.concerts_search()
+            default.list_concerts_find("gama")
+        self.assertEqual(lf.call_count, 1)   # výpis bere výsledek z cache, nečeká znovu na Last.fm
+        self.assertEqual(params_of(xbmcplugin.items[0][1])["name"], "Gama")
+
     def test_znovu_prohledat_u_interpreta(self):
         self._index()
         default.list_concerts_artist("a:alfa")

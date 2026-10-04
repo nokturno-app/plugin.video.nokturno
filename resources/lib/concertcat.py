@@ -10,6 +10,7 @@ Home Assistant a Stremio. Do jádra patří jen obecný filtr (`concertfilter.py
 """
 import copy
 import re
+import threading
 import time
 import json
 import logging
@@ -107,6 +108,9 @@ def lastfm_search(key, text, limit=100, opener=urllib.request.urlopen):
     prvních 10 bez filtru. Bez klíče a při výpadku prázdné – hledání pak jede s tím, co uživatel napsal."""
     if not key or len(_key(text or "")) < 2:
         return []
+    fix = {}   # oprava překlepu souběžně s hledáním – dva dotazy za sebou byly znát (~3 s)
+    worker = threading.Thread(target=lambda: fix.setdefault("name", lastfm_name(key, text, opener)), daemon=True)
+    worker.start()
     try:
         data = _lastfm(key, {"method": "artist.search", "artist": text, "limit": 100}, opener)
     except ConcertError as err:
@@ -129,7 +133,8 @@ def lastfm_search(key, text, limit=100, opener=urllib.request.urlopen):
     out.sort(key=lambda a: bool(COLLAB_RE.search(a["name"])))
     word = re.compile(r"(?<!\w)%s(?!\w)" % re.escape(normalize_title(text)))
     hits = [a for a in out if word.search(normalize_title(a["name"]))] or out[:10]
-    fixed = lastfm_name(key, text, opener)   # překlep: „arakian“ → Arakain (Last.fm má i interpreta Arakian)
+    worker.join(25)
+    fixed = fix.get("name")   # překlep: „arakian“ → Arakain (Last.fm má i interpreta Arakian)
     if fixed and _key(fixed) not in {_key(a["name"]) for a in hits}:
         hits.insert(0, {"name": fixed, "listeners": 0})
     return hits[:limit]
