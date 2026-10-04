@@ -9,6 +9,7 @@ ze zdrojů, které má samo zapnuté (`index["src"]`). Interpreta jde přidat i 
 Home Assistant a Stremio. Do jádra patří jen obecný filtr (`concertfilter.py`), žádné seznamy souborů.
 """
 import copy
+import re
 import time
 import json
 import logging
@@ -44,6 +45,7 @@ LINK_CHECKS = 10        # neviděných souborů na interpreta a kontrolu, které
 MAX_FILES = 30         # souborů na interpreta (nejlepší podle velikosti)
 SHOWS = ("pool", "found", "name")
 WS_LIMIT, HS_LIMIT, HS_PAGES, FS_LIMIT = 100, 40, 2, 100
+COLLAB_RE = re.compile(r"\s[&x+]\s|/|,\s|\s(feat|ft)\.?\s", re.I)   # spolupráce ve výsledcích hledání
 RENAME_BATCH = 5        # ručně přidaných interpretů, kterým se v jedné dávce dohledá jméno z Last.fm
 KEY_REJECTED = (4, 10, 26)   # chybové kódy Last.fm: špatný, neplatný nebo zablokovaný klíč
 
@@ -98,13 +100,15 @@ def lastfm_name(key, name, opener=urllib.request.urlopen):
     return found or None
 
 
-def lastfm_search(key, text, limit=10, opener=urllib.request.urlopen):
+def lastfm_search(key, text, limit=100, opener=urllib.request.urlopen):
     """Kandidáti z Last.fm pro ruční hledání (`artist.search`): `[{"name", "listeners"}]` v pořadí Last.fm,
-    bez duplicit podle `_key`. Bez klíče a při výpadku prázdné – hledání pak jede s tím, co uživatel napsal."""
+    bez duplicit podle `_key`. Last.fm vrací i podobná jména („lucie“ → Luci4, Lucid, St. Lucia) a Lucii Bílou
+    až na 14. místě, proto se bere 100 výsledků a nechají se jména s hledaným slovem; nezbude-li nic (překlep),
+    prvních 10 bez filtru. Bez klíče a při výpadku prázdné – hledání pak jede s tím, co uživatel napsal."""
     if not key or len(_key(text or "")) < 2:
         return []
     try:
-        data = _lastfm(key, {"method": "artist.search", "artist": text, "limit": limit}, opener)
+        data = _lastfm(key, {"method": "artist.search", "artist": text, "limit": 100}, opener)
     except ConcertError as err:
         _LOGGER.debug("Last.fm hledání „%s“: %s", text, err)
         return []
@@ -121,7 +125,14 @@ def lastfm_search(key, text, limit=10, opener=urllib.request.urlopen):
         except (TypeError, ValueError):
             listeners = 0
         out.append({"name": name, "listeners": listeners})
-    return out[:limit]
+    # spolupráce („Arakain & Lucie Bílá“, „X/Y“) na konec – nevyhazovat, „Earth, Wind & Fire“ je kapela
+    out.sort(key=lambda a: bool(COLLAB_RE.search(a["name"])))
+    word = re.compile(r"(?<!\w)%s(?!\w)" % re.escape(normalize_title(text)))
+    hits = [a for a in out if word.search(normalize_title(a["name"]))] or out[:10]
+    fixed = lastfm_name(key, text, opener)   # překlep: „arakian“ → Arakain (Last.fm má i interpreta Arakian)
+    if fixed and _key(fixed) not in {_key(a["name"]) for a in hits}:
+        hits.insert(0, {"name": fixed, "listeners": 0})
+    return hits[:limit]
 
 
 def _nice(name):
