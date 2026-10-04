@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.2.3" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.2.4" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.2.3 – Přehrání streamu z Luny s titulky už nespadne.
+    <news>10.2.4 – Drobné opravy.
+10.2.3 – Přehrání streamu z Luny s titulky už nespadne.
 10.1.3 – Vlastní katalog synchronizovaný z jiného zařízení se naplní hned po otevření, i když Kodi na pozadí nemá síť.
 10.1.2 – Vlastní katalog synchronizovaný z jiného zařízení s jinými zdroji už není prázdný: hned ukáže, co tam bylo nalezené, a tituly, které tady nejdou, po ověření zmizí.
 10.1.0 – Vlastní katalog jde dlouhým stiskem (místní nabídka) zobrazit přímo v menu Filmy nebo Seriály a zase odebrat.

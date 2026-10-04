@@ -1913,7 +1913,6 @@ class Engine:
             if not urls:
                 return
             taken.update(urls)
-            self._media_hints(urls)
             for url in urls:
                 pool.submit(self._media_from_file, url)
         except Exception as err:  # noqa: BLE001 – předčítání je bonus, výpis nesmí shodit
@@ -1984,26 +1983,6 @@ class Engine:
         store.cached_if(f"mediafail:{url}", MEDIA_UNKNOWN_TTL, lambda: dict(info, _ts=time.time()), fresh=True)
         return info
 
-    def _media_hints(self, urls):
-        """Hlavičky souborů ze společné cache serveru (`DashApi.media`) do vlastní cache
-        pod týmž klíčem `media:<url>`, pod kterým by ležely přečtené — `_media_from_file`
-        je pak najde a soubor nečte. Jen se zapnutou volbou `media_hints` (Kodi a HA ji
-        vážou na povolené statistiky: dotaz prozradí serveru identy souborů, které
-        uživatel zrovna otvírá), jen pro `SHARED_MEDIA` (jeden ident = tentýž soubor
-        pro každého) a jen pro to, co v cache ještě není. Stremio volbu nemá — společnou
-        cache má přímo na disku, viz `shared_store`."""
-        if not self._opt("media_hints", False):
-            return
-        want = [u for u in dict.fromkeys(urls)
-                if u and u.startswith(SHARED_MEDIA) and self.shared.peek_cached(f"{MEDIA_KEY}{u}", AUDIO_TTL) is None]
-        if not want:
-            return
-        t0 = time.time()
-        hits = self.dash.media(want)
-        for url, info in hits.items():
-            self.shared.cached_if(f"{MEDIA_KEY}{url}", AUDIO_TTL, lambda info=info: info, fresh=True)
-        self.last_timings["hlavičky ze serveru"] = f"{len(hits)}/{len(want)} za {time.time() - t0:.1f}s"
-
     def _fastshare_unlimited(self):
         """Má účet FastShare neomezené stahování? Přihlášení se pamatuje (`FastshareApi.account`),
         při chybě se bere „ne" — čtení hlavičky je bonus, kvůli němu se kredit riskovat nebude."""
@@ -2073,10 +2052,7 @@ class Engine:
         # pak mají ověřené všechno, bez čekání
         rest = [self._probe_url(s) for s in ordered[limit:]] + [
             s["url"] for s in background if not s.get("_tracks") and str(s.get("url") or "").startswith(schemes)]
-        # hlavičky, které už někdo přečetl, ze serveru — jeden dotaz místo desítek čtení
-        t_hints = time.monotonic()
-        self._media_hints([self._probe_url(s) for s in todo] + rest)
-        detail = {"hints": time.monotonic() - t_hints}
+        detail = {}
         self.last_timings["hlavičky detail"] = detail
         # skutečný počet čtených hlaviček bývá výrazně nižší než limit —
         # ukazatel průběhu si podle něj dopočítá reálné 100 %, ne odhad

@@ -81,9 +81,6 @@ DAY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 CHANNEL_RE = re.compile(r"^[a-z0-9][a-z0-9-]{0,39}$")
 OS_KEY_RE = re.compile(r"^[A-Za-z0-9]{16,64}$")   # tvar klíče OpenSubtitles
 TRAKT_KEY_RE = re.compile(r"^[A-Za-z0-9_-]{20,128}$")   # hex (staré aplikace) i base64url (developer.trakt.tv)
-MEDIA_TIMEOUT = 2      # dotaz na hlavičky ze serveru — kratší než strop čtení hlaviček (3 s)
-MEDIA_MAX = 50         # identů na jeden dotaz (server víc odmítne)
-MEDIA_IDENT_RE = re.compile(r"^(ws|hs|fs|cz):[A-Za-z0-9:_./=-]{1,120}$")
 KINDS = ("movie", "series")
 PLACEMENTS = ("root", "browse")
 # ikony, které klient umí přeložit na obrázek — neznámá se zahodí na výchozí
@@ -352,36 +349,6 @@ class DashApi:
         data = self._load("nokturno:dash:trakt-key", TRAKT_KEY_TTL, fetch) or {}
         cid, sec = str(data.get("client_id") or ""), str(data.get("client_secret") or "")
         return (cid, sec) if TRAKT_KEY_RE.match(cid) and TRAKT_KEY_RE.match(sec) else ("", "")
-
-    # --- hlavičky souborů ze společné cache serveru ------------------------------------
-
-    def media(self, idents):
-        """`{ident: hlavička}` pro soubory, které už někdo jiný přečetl — ze společné
-        cache Stremia na serveru (`GET /media?ids=`). Jen trefy; co server nezná, si
-        klient přečte sám jako dřív. Prázdný slovník při výpadku, a na `DOWN_TTL`
-        se síť nezkouší — čtení hlaviček má strop 3 s a server ho nesmí prožrat.
-
-        Výsledek se tu **necachuje**: volající ho zapíše pod týž klíč `media:<ident>`,
-        pod kterým by ležela vlastní přečtená hlavička, takže zbytek kódu nepozná rozdíl.
-        Idents jen ze zdrojů, kde jeden ident je tentýž soubor pro každého (`engine.SHARED_MEDIA`).
-        """
-        idents = [i for i in dict.fromkeys(idents) if isinstance(i, str) and MEDIA_IDENT_RE.match(i)][:MEDIA_MAX]
-        if not idents:
-            return {}
-        if self.cache is not None and self.cache.peek_cached(DOWN_KEY, DOWN_TTL) is not None:
-            return {}
-        try:
-            data = self._get("/media", timeout=MEDIA_TIMEOUT, ids=",".join(idents))
-        except DashApiError:
-            if self.cache is not None:
-                self.cache.cached_if(DOWN_KEY, DOWN_TTL, lambda: {"t": int(time.time())}, fresh=True)
-            return {}
-        hits = (data or {}).get("hits") if isinstance(data, dict) else None
-        if not isinstance(hits, dict):
-            return {}
-        # jen tvar, který dává `mediainfo.probe()` — server je cizí vstup jako každý jiný
-        return {i: v for i, v in hits.items() if i in idents and isinstance(v, dict)
-                and (v.get("audio") or v.get("height") or v.get("size"))}
 
 
 if __name__ == "__main__":

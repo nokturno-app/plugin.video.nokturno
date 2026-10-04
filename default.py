@@ -895,9 +895,6 @@ def engine_options():
         "tmdb_api_key": setting("tmdb_api_key"),
         # klíč Last.fm pro katalogy koncertů (`mycat.refresh_concert` ho čte přes `_opt`)
         "lastfm_key": setting("lastfm_key").strip(),
-        # hlavičky souborů ze společné cache serveru (`Engine._media_hints`): dotaz
-        # prozradí serveru identy otvíraných souborů, proto jen s povolenými statistikami
-        "media_hints": on("stats_enabled", "false"),
     }
 
 
