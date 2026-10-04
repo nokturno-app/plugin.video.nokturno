@@ -7220,7 +7220,7 @@ class TestKoncerty(unittest.TestCase):
         self.assertEqual(xbmcplugin.items[0][2].getLabel(), "A (1)")
         xbmcplugin.reset()
         default.main("action=mycat_artist&a=a:alfa")   # starý odkaz z bety 1
-        self.assertEqual(xbmcplugin.items[0][2].getLabel(), "Live (1990)")
+        self.assertEqual(xbmcplugin.items[0][2].getLabel(), "Alfa – Live (1990)")
 
     def test_migrace_koncertniho_katalogu(self):
         default.STORE.save("catalogs_v2", "")

@@ -5738,10 +5738,10 @@ def list_concerts_artist(artist_id):
     """Koncerty jednoho interpreta a na konci „Znovu prohledat“ s datem posledního hledání."""
     set_content("videos")
     index = concertcat.load_index(STORE)
-    for g in concertcat.artist(index, artist_id):
-        _concert_item(g, _concert_label(g))
     entry = (index.get("items") or {}).get(artist_id) or {}
     name = (entry.get("meta") or {}).get("name")
+    for g in concertcat.artist(index, artist_id):   # jméno interpreta i tady: „Kabát – Koncert v Aréně (2014)“
+        _concert_item(g, "%s – %s" % (name, _concert_label(g)) if name else _concert_label(g))
     if name:
         st = concertcat.status(index, "").get(concertcat._key(name)) or {}
         action_item("%s – %s" % (L(31040, "Znovu prohledat"), _concert_searched(st.get("searched"))),
