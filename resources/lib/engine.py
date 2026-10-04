@@ -18,7 +18,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from abort import Aborted, BackgroundPool, check as check_stop, gather, never
 import accounts as accounts_lib
@@ -299,6 +299,43 @@ def _episode_re(season, episode):
     se, ep = int(season), int(episode)
     return re.compile(rf"(?<![a-z0-9])s0?{se}e0?{ep}(?!\d)|s{se:02d}e{ep:02d}"
                       rf"|(?<!\d){se:02d}?x{ep:02d}(?!\d)|(?<!\d){se}x{ep:02d}(?!\d)")
+
+
+# název dílu, který nic neříká („Epizoda 5“, „Episode 5“, „5. díl“) – podle něj nepárovat
+GENERIC_EPISODE_WORDS = {"epizoda", "episode", "dil", "cast", "part", "pilot", "seria", "serie", "season"}
+
+
+def _episode_name_match(video, series_words):
+    """Pozná díl ze souboru bez čísla dílu podle názvu dílu nebo data vysílání.
+
+    Pořady jako „Cestou necestou“ mají na WebShare soubory „Cestou necestou
+    (Da Nang (Vietnam)) 07.03.2025 1080p.mp4“ – bez S09E05, jen s místem a datem.
+    Vrací funkci nad `_fold_name` tvarem souboru, nebo None, když díl nemá
+    použitelný název ani datum.
+    """
+    words = [w for w in re.findall(r"[a-z0-9]+", _fold_name(video.get("title") or ""))
+             if len(w) > 2 and not w.isdigit()]
+    if any(w in GENERIC_EPISODE_WORDS for w in words) or not set(words) - set(series_words):
+        words = []
+    dates = []
+    try:
+        aired = datetime.strptime(video.get("released") or "", "%Y-%m-%d")
+    except ValueError:
+        aired = None
+    if aired:
+        # ±1 den: STV nahrávky nesou datum vysílání v SR, TMDB den před ním
+        for day in (aired + timedelta(days=k) for k in (-1, 0, 1)):
+            y, mo, d = day.year, day.month, day.day
+            dates += [rf"(?<!\d)0?{d}[. _-]0?{mo}[. _-]{y}(?!\d)", rf"(?<!\d){y}[. _-]{mo:02d}[. _-]{d:02d}(?!\d)"]
+    if not words and not dates:
+        return None
+    date_re = re.compile("|".join(dates)) if dates else None
+
+    def match(folded):
+        tokens = set(re.findall(r"[a-z0-9]+", folded))
+        return bool(words and all(w in tokens for w in words)) or bool(date_re and date_re.search(folded))
+    match.by_name = bool(words)
+    return match
 
 
 def _title_pattern(text):
@@ -1773,10 +1810,17 @@ class Engine:
         # a u epizody i její číslo (S02E01 / 2x01 / 02x01)
         wanted = [p for p in [_title_pattern(title)] + [_title_pattern(o) for o in origs] if p[0]]
         variants = [group for group, _tail, _short in wanted]
-        episode_re = None
+        episode_re = episode_name = None
         if video:
             se, ep = int(video.get("season") or 0), int(video.get("episode") or 0)
             episode_re = _episode_re(se, ep)
+            episode_name = _episode_name_match(video, [w for group in variants for w in group])
+            if episode_name:
+                # soubor bez čísla dílu najde fulltext jen podle názvu dílu,
+                # soubory pojmenované jen datem („STV-HD-Cestou-necestou.2016-03-12“) holý název
+                if episode_name.by_name:
+                    queries.append(f"{title} {video['title']}")
+                queries.append(title)
 
         # rok v názvu souboru rozliší stejnojmenné filmy („pět švestek“ 1983 vs. 2026);
         # roky, které patří k názvu titulu („Blade Runner 2049“), se ignorují
@@ -1809,7 +1853,10 @@ class Engine:
                 return False
             if not year_ok(folded):
                 return False
-            return not episode_re or bool(episode_re.search(folded))
+            if not episode_re or episode_re.search(folded):
+                return True
+            # soubor bez jakéhokoli čísla dílu: díl podle názvu nebo data vysílání
+            return bool(episode_name) and not EPISODE_ANY_RE.search(folded) and episode_name(folded)
 
         # fulltext WebShare na „I'll Be Seeing You“ soubor „Ill Be Seeing You…“ nenajde
         queries += [APOSTROPHE_RE.sub("", q) for q in queries if APOSTROPHE_RE.search(q)]
