@@ -3147,7 +3147,12 @@ class Engine:
                 try:
                     data = fetch(chyby)
                 except Exception as err:  # noqa: BLE001 – ani nečekaná chyba zdroje nesmí shodit ostatní
-                    _LOGGER.warning("streamy %s (%s): %s", item_id, label, err)
+                    # nečekaná chyba (ne síť, ne účet) jde s tracebackem: v logu jen text „NoneType…“
+                    # neřekne, kde vznikla (hlášení z Discordu u seriálů na WebShare)
+                    neocekavana = not isinstance(err, (WebshareError, HellspyError, SosacError, PrehrajtoError,
+                                                       FastshareError, SledujtetoError, CztorError, LunaError,
+                                                       StorageError, OpenSubtitlesError, CinemetaError, TmdbError))
+                    _LOGGER.warning("streamy %s (%s): %s", item_id, label, err, exc_info=neocekavana)
                     if label not in SUBS_TASKS:   # bez titulků se streamy cachovat smí
                         chyby.append((label, err))
                     data = []

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.7.0" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.7.1~beta1" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.7.0 – Položky hlavního menu jde řadit a skrývat: místní nabídka položky (Posunout nahoru / dolů, Skrýt z menu), skryté vrátíš v Nastavení → Pokročilé → Upravit hlavní menu. Díl seriálu se najde i v souboru bez čísla dílu, podle názvu dílu nebo data vysílání. Stream, který se nerozjede, nabídne výběr jiného.
+    <news>10.7.1~beta1 – Drobné opravy.
+10.7.0 – Položky hlavního menu jde řadit a skrývat: místní nabídka položky (Posunout nahoru / dolů, Skrýt z menu), skryté vrátíš v Nastavení → Pokročilé → Upravit hlavní menu. Díl seriálu se najde i v souboru bez čísla dílu, podle názvu dílu nebo data vysílání. Stream, který se nerozjede, nabídne výběr jiného.
 10.5.0 – V zemi původu vlastního katalogu jde vybrat i Československo – starší české a slovenské filmy a seriály.
 10.4.1 – Průvodce prvním nastavením začíná vlastním úložištěm. Úložiště třetích stran jsou u nové instalace vypnutá, stávající nastavení zůstává.
 10.4.0 – Koncerty hledají ve tvém vlastním úložišti a skládají z nich katalog, volitelně i v úložištích třetích stran, která máš povolená a nastavená.
