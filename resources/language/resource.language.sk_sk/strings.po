@@ -3418,3 +3418,23 @@ msgstr "Hľadám koncerty…"
 msgctxt "#31039"
 msgid "Artist"
 msgstr "Interpret"
+
+msgctxt "#31040"
+msgid "Search again"
+msgstr "Znovu prehľadať"
+
+msgctxt "#31041"
+msgid "Last searched %s"
+msgstr "Naposledy prehľadané %s"
+
+msgctxt "#31042"
+msgid "%s listeners on Last.fm"
+msgstr "%s poslucháčov na Last.fm"
+
+msgctxt "#31043"
+msgid "Not searched yet"
+msgstr "Zatiaľ neprehľadané"
+
+msgctxt "#31044"
+msgid "nothing found"
+msgstr "nič sa nenašlo"

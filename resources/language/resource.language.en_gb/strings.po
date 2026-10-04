@@ -3418,3 +3418,23 @@ msgstr ""
 msgctxt "#31039"
 msgid "Artist"
 msgstr ""
+
+msgctxt "#31040"
+msgid "Search again"
+msgstr ""
+
+msgctxt "#31041"
+msgid "Last searched %s"
+msgstr ""
+
+msgctxt "#31042"
+msgid "%s listeners on Last.fm"
+msgstr ""
+
+msgctxt "#31043"
+msgid "Not searched yet"
+msgstr ""
+
+msgctxt "#31044"
+msgid "nothing found"
+msgstr ""

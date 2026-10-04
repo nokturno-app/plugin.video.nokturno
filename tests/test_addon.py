@@ -7142,6 +7142,28 @@ class TestKoncerty(unittest.TestCase):
         catindex.record(idx, "a:beta", False, int(time.time()))
         default.STORE.save("concerts_index", idx)
 
+    def test_hledani_vypise_kandidaty_z_lastfm(self):
+        self._index()
+        kand = [{"name": "Alfa", "listeners": 1000}, {"name": "Alfa Beta", "listeners": 10}]
+        with mock.patch.object(default.concertcat, "lastfm_search", return_value=kand):
+            default.list_concerts_find("alf")
+        rows = [(params_of(u), f) for _h, u, _li, f in xbmcplugin.items]
+        self.assertEqual(rows[0], ({"action": "concerts_artist", "a": "a:alfa"}, True))
+        self.assertEqual(rows[1], ({"action": "concerts_add", "name": "Alfa Beta", "exact": "1"}, False))
+        self.assertEqual(rows[2], ({"action": "concerts_add", "name": "alf", "exact": "0"}, False))
+        self.assertEqual(len(rows), 3)
+
+    def test_znovu_prohledat_u_interpreta(self):
+        self._index()
+        default.list_concerts_artist("a:alfa")
+        posledni = params_of(xbmcplugin.items[-1][1])
+        self.assertEqual(posledni, {"action": "concerts_add", "name": "Alfa", "exact": "1"})
+        with mock.patch.object(default.concertcat, "add_artist", return_value="a:alfa") as add, \
+                mock.patch.object(default, "get_apis", return_value={}), \
+                mock.patch.object(default, "engine_of", return_value=None):
+            default.concerts_add("Alfa", True)
+        self.assertTrue(add.call_args.kwargs["exact"])
+
     def test_klic_je_v_jadru(self):
         self.assertEqual(default.engine_options()["lastfm_key"], "klic")
 

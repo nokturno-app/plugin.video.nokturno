@@ -5726,39 +5726,93 @@ def list_concerts_letter(letter):
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
 
 
+def _concert_searched(ts):
+    """„Naposledy prohledáno 3. 10. 2026“ / „Zatím neprohledáno“."""
+    if not ts:
+        return L(31043, "Zatím neprohledáno")
+    t = time.localtime(ts)
+    return _swf(31041, "Naposledy prohledáno %s", "%d. %d. %d" % (t.tm_mday, t.tm_mon, t.tm_year))
+
+
 def list_concerts_artist(artist_id):
-    """Koncerty jednoho interpreta."""
+    """Koncerty jednoho interpreta a na konci „Znovu prohledat“ s datem posledního hledání."""
     set_content("videos")
-    for g in concertcat.artist(concertcat.load_index(STORE), artist_id):
+    index = concertcat.load_index(STORE)
+    for g in concertcat.artist(index, artist_id):
         _concert_item(g, _concert_label(g))
+    entry = (index.get("items") or {}).get(artist_id) or {}
+    name = (entry.get("meta") or {}).get("name")
+    if name:
+        st = concertcat.status(index, "").get(concertcat._key(name)) or {}
+        action_item("%s – %s" % (L(31040, "Znovu prohledat"), _concert_searched(st.get("searched"))),
+                    build_url(action="concerts_add", name=name, exact=1), icon="DefaultAddonsUpdates.png")
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
 
 
 def concerts_search():
-    """Ruční hledání interpreta: nejdřív mezi nalezenými, jinak ho prohledá ve zdrojích zařízení a přidá."""
+    """Ruční hledání interpreta: zadaný text, pak výpis kandidátů (jako výsledky hledání titulů)."""
     text = xbmcgui.Dialog().input(L(31039, "Interpret")).strip()
-    if not text:
+    if text:
+        xbmc.executebuiltin("Container.Update(%s)" % build_url(action="concerts_find", q=text))
+
+
+def list_concerts_find(text):
+    """Výsledky hledání interpreta: nalezení v katalogu a kandidáti z Last.fm (Lucie → Lucie, Lucie Bílá…).
+    Interpret s koncerty je složka, neprohledaný nebo bez nálezu se klikem prohledá ve zdrojích zařízení."""
+    set_content("files")
+    known = concertcat.status(concertcat.load_index(STORE), text)
+    shown = set()
+
+    def add(name, listeners=None, exact=1):
+        k = concertcat._key(name)
+        if k in shown:
+            return
+        shown.add(k)
+        st = known.get(k) or {}
+        lines = [_swf(31042, "%s posluchačů na Last.fm", "{:,}".format(listeners).replace(",", " "))] \
+            if listeners else []
+        if st.get("count"):
+            li = xbmcgui.ListItem(label="%s (%d)" % (st["name"], st["count"]))
+            li.setArt({"icon": CONCERT_ICON})
+            li.getVideoInfoTag().setPlot("\n".join(lines))
+            xbmcplugin.addDirectoryItem(HANDLE, build_url(action="concerts_artist", a=st["id"]), li, isFolder=True)
+            return
+        lines.append(_concert_searched(st.get("searched")) + (" – " + L(31044, "nic nenalezeno")
+                                                               if st.get("searched") else ""))
+        li = xbmcgui.ListItem(label=st.get("name") or name)
+        li.setArt({"icon": "DefaultMusicArtists.png"})
+        li.getVideoInfoTag().setPlot("\n".join(lines))
+        xbmcplugin.addDirectoryItem(HANDLE, build_url(action="concerts_add", name=name, exact=exact), li,
+                                    isFolder=False)
+
+    for st in sorted((v for v in known.values() if v["match"] and v["count"]), key=lambda v: v["name"].casefold()):
+        add(st["name"])
+    for c in concertcat.lastfm_search(setting("lastfm_key").strip(), text):
+        add(c["name"], c["listeners"])
+    add(text, exact=0)   # záloha: zadaný text (bez klíče s opravou jména přes Last.fm, je-li klíč)
+    xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
+
+
+def concerts_add(name, exact):
+    """Prohledá interpreta ve zdrojích zařízení (nově přidaného i „Znovu prohledat“) a otevře jeho koncerty."""
+    bg = xbmcgui.DialogProgressBG()
+    bg.create(L(30922, "Koncerty"), L(31038, "Hledám koncerty…"))
+    try:
+        mid = concertcat.add_artist(engine_of(get_apis()), STORE, name, should_stop, exact=exact)
+    finally:
+        bg.close()
+    usage.mark_feature(STORE, "concerts")
+    if mid is None:
+        notify(L(31036, "Zdroje teď neodpovídají, zkus to později."), xbmcgui.NOTIFICATION_WARNING)
         return
-    index = concertcat.load_index(STORE)
-    found = concertcat.find(index, text)
-    key = concertcat._key(text)
-    exact = [a for a in found if concertcat._key(a["name"]) == key]
-    mid = (exact[0] if exact else found[0] if len(found) == 1 else {}).get("id")
-    if not mid:
-        bg = xbmcgui.DialogProgressBG()
-        bg.create(L(30922, "Koncerty"), L(31038, "Hledám koncerty…"))
-        try:
-            mid = concertcat.add_artist(engine_of(get_apis()), STORE, text, should_stop)
-        finally:
-            bg.close()
-        usage.mark_feature(STORE, "concerts")
-        if mid is None:
-            notify(L(31036, "Zdroje teď neodpovídají, zkus to později."), xbmcgui.NOTIFICATION_WARNING)
-            return
-        if not concertcat.artist(concertcat.load_index(STORE), mid):
-            notify(_swf(31037, "Koncerty interpreta %s se nenašly.", text), xbmcgui.NOTIFICATION_INFO)
-            return
-    xbmc.executebuiltin("Container.Update(%s)" % build_url(action="concerts_artist", a=mid))
+    if not concertcat.artist(concertcat.load_index(STORE), mid):
+        notify(_swf(31037, "Koncerty interpreta %s se nenašly.", name), xbmcgui.NOTIFICATION_INFO)
+        xbmc.executebuiltin("Container.Refresh")
+        return
+    if xbmc.getInfoLabel("Container.FolderPath").find("action=concerts_artist") >= 0:
+        xbmc.executebuiltin("Container.Refresh")
+    else:
+        xbmc.executebuiltin("Container.Update(%s)" % build_url(action="concerts_artist", a=mid))
 
 
 def concerts_setup():
@@ -7775,6 +7829,7 @@ def router(query):
         "mycat_remote": lambda: _tlacitko(lambda: mycat_remote(p.get("id") or None, p.get("type", "movie"))),
         "concerts_setup": lambda: _tlacitko(concerts_setup),
         "concerts_search": lambda: _tlacitko(concerts_search),
+        "concerts_add": lambda: _tlacitko(lambda: concerts_add(p.get("name", ""), p.get("exact") == "1")),
         "lastfm_check": lambda: _tlacitko(lastfm_check),
         "tmdb_check": lambda: _tlacitko(tmdb_check),
         "mycat_edit": lambda: _tlacitko(lambda: mycat_edit(p.get("id", ""))),
@@ -7933,6 +7988,8 @@ def router(query):
             list_mycat(apis, p.get("type", "movie"), p.get("id", ""), int(p.get("page") or 1))
         elif action in ("concerts_artist", "mycat_artist"):   # `mycat_artist` = starý odkaz z bety 1
             list_concerts_artist(p.get("a", ""))
+        elif action == "concerts_find":
+            list_concerts_find(p.get("q", ""))
         elif action == "concerts":
             list_concerts()
         elif action == "concerts_recent":
@@ -8051,7 +8108,7 @@ MARKS_SKIP = frozenset((
     "luna_check", "luna_find", "os_check", "speedtest", "update_repos", "tmdbhelper_player", "sync_now",
     "sync_create", "sync_join", "sync_leave", "mycats", "mycat_artist", "lastfm_check", "tmdb_check", "mycat_new", "mycat_edit", "mycat_delete", "mycat_menu",
     "mycat_remote", "concerts", "concerts_recent", "concerts_tags", "concerts_tag", "concerts_letters",
-    "concerts_letter", "concerts_artist", "concerts_setup",
+    "concerts_letter", "concerts_artist", "concerts_setup", "concerts_find", "concerts_add",
     "watch_series", "want", "watch_episode", "watch_flag", "watch_seen", "watch_check", "watch_check_now",
     "whats_new", "ha_files", "settings", "transfer_send", "transfer_receive",
     "transfer_file_save", "transfer_file_load",

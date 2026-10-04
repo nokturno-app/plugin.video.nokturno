@@ -3416,3 +3416,23 @@ msgstr "Koncertek keresése…"
 msgctxt "#31039"
 msgid "Artist"
 msgstr "Előadó"
+
+msgctxt "#31040"
+msgid "Search again"
+msgstr "Újrakeresés"
+
+msgctxt "#31041"
+msgid "Last searched %s"
+msgstr "Utoljára keresve: %s"
+
+msgctxt "#31042"
+msgid "%s listeners on Last.fm"
+msgstr "%s hallgató a Last.fm-en"
+
+msgctxt "#31043"
+msgid "Not searched yet"
+msgstr "Még nem keresve"
+
+msgctxt "#31044"
+msgid "nothing found"
+msgstr "nincs találat"

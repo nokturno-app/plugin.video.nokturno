@@ -44,6 +44,7 @@ LINK_CHECKS = 10        # neviděných souborů na interpreta a kontrolu, které
 MAX_FILES = 30         # souborů na interpreta (nejlepší podle velikosti)
 SHOWS = ("pool", "found", "name")
 WS_LIMIT, HS_LIMIT, HS_PAGES, FS_LIMIT = 100, 40, 2, 100
+RENAME_BATCH = 5        # ručně přidaných interpretů, kterým se v jedné dávce dohledá jméno z Last.fm
 KEY_REJECTED = (4, 10, 26)   # chybové kódy Last.fm: špatný, neplatný nebo zablokovaný klíč
 
 
@@ -55,10 +56,9 @@ class ConcertError(Exception):
 
 # --- Last.fm ---------------------------------------------------------------------------
 
-def lastfm_top(key, tag, limit=PER_TAG, opener=urllib.request.urlopen, page=1):
-    """Jména interpretů štítku (`tag.gettopartists`). Klíč se nikdy nedostane do výjimky ani do logu."""
-    query = urllib.parse.urlencode({"method": "tag.gettopartists", "tag": tag, "limit": limit,
-                                    "page": page, "api_key": key, "format": "json"})
+def _lastfm(key, params, opener=urllib.request.urlopen):
+    """Dotaz na Last.fm (JSON). Klíč se nikdy nedostane do výjimky ani do logu."""
+    query = urllib.parse.urlencode(dict(params, api_key=key, format="json"))
     req = urllib.request.Request(f"{LASTFM_URL}?{query}", headers={"User-Agent": "Nokturno"})
     try:
         with opener(req, timeout=20) as resp:
@@ -74,8 +74,61 @@ def lastfm_top(key, tag, limit=PER_TAG, opener=urllib.request.urlopen, page=1):
         raise ConcertError("Last.fm: neočekávaná odpověď")
     if data.get("error"):
         raise ConcertError(str(data.get("message") or "Last.fm: chyba")[:120], int(data["error"]))
+    return data
+
+
+def lastfm_top(key, tag, limit=PER_TAG, opener=urllib.request.urlopen, page=1):
+    """Jména interpretů štítku (`tag.gettopartists`)."""
+    data = _lastfm(key, {"method": "tag.gettopartists", "tag": tag, "limit": limit, "page": page}, opener)
     artists = (data.get("topartists") or {}).get("artist") or []
     return [str(a["name"]) for a in artists if isinstance(a, dict) and a.get("name")]
+
+
+def lastfm_name(key, name, opener=urllib.request.urlopen):
+    """Jméno interpreta, jak ho vede Last.fm (`artist.getInfo` s opravou překlepů: „arakain“ → „Arakain“).
+    None bez klíče, při neznámém interpretovi a výpadku – ruční přidání pak jede s tím, co uživatel napsal."""
+    if not key:
+        return None
+    try:
+        data = _lastfm(key, {"method": "artist.getinfo", "artist": name, "autocorrect": 1}, opener)
+    except ConcertError as err:
+        _LOGGER.debug("Last.fm jméno „%s“: %s", name, err)
+        return None
+    found = str((data.get("artist") or {}).get("name") or "").strip()
+    return found or None
+
+
+def lastfm_search(key, text, limit=10, opener=urllib.request.urlopen):
+    """Kandidáti z Last.fm pro ruční hledání (`artist.search`): `[{"name", "listeners"}]` v pořadí Last.fm,
+    bez duplicit podle `_key`. Bez klíče a při výpadku prázdné – hledání pak jede s tím, co uživatel napsal."""
+    if not key or len(_key(text or "")) < 2:
+        return []
+    try:
+        data = _lastfm(key, {"method": "artist.search", "artist": text, "limit": limit}, opener)
+    except ConcertError as err:
+        _LOGGER.debug("Last.fm hledání „%s“: %s", text, err)
+        return []
+    found = ((data.get("results") or {}).get("artistmatches") or {}).get("artist") or []
+    out, seen = [], set()
+    for a in found if isinstance(found, list) else []:
+        name = str((a or {}).get("name") or "").strip() if isinstance(a, dict) else ""
+        k = _key(name)
+        if len(k) < 2 or k in seen:
+            continue
+        seen.add(k)
+        try:
+            listeners = int(a.get("listeners") or 0)
+        except (TypeError, ValueError):
+            listeners = 0
+        out.append({"name": name, "listeners": listeners})
+    return out[:limit]
+
+
+def _nice(name):
+    """Jméno psané celé malými (bez Last.fm) aspoň s velkým písmenem na začátku slov."""
+    if name != name.lower():
+        return name
+    return " ".join(w[:1].upper() + w[1:] for w in name.split(" "))
 
 
 def check_key(key, opener=urllib.request.urlopen):
@@ -353,6 +406,8 @@ def _add(index, metas):
         entry = items.get(mid)
         if entry is not None:
             old = entry.setdefault("meta", dict(meta))
+            if old.get("manual") and meta.get("name"):   # ručně zadané jméno nahradí to z Last.fm
+                old["name"] = meta["name"]
             old["tags"] = list(old.get("tags") or []) + [t for t in meta.get("tags") or [] if t not in (old.get("tags") or [])]
             entry["genres"] = list(old["tags"])
             continue
@@ -440,9 +495,20 @@ def refresh(engine, store, size=1, should_stop=None):
             fresh = pool(key, tags, page=page)
         except ConcertError:
             fresh = None
+    renames = {}   # ručně přidaní z doby před 10.3.1 („arakain“): jméno jednou z Last.fm
+    for mid, e in (index.get("items") or {}).items():
+        meta = e.get("meta") or {}
+        if len(renames) >= RENAME_BATCH or not retry_ok:
+            break
+        if meta.get("manual") and not meta.get("lf") and meta.get("name"):
+            renames[mid] = lastfm_name(key, meta["name"]) or _nice(meta["name"])
     with store.updating(INDEX, {}) as index:
         if index.get("sig") != csig:
             retag(index, tags)
+        for mid, name in renames.items():
+            meta = ((index.get("items") or {}).get(mid) or {}).get("meta")
+            if meta is not None:
+                meta["name"], meta["lf"] = name, 1
         if page and retry_ok:
             index["pool_try"] = now
         if fresh is not None:
@@ -483,6 +549,7 @@ def refresh(engine, store, size=1, should_stop=None):
             if index.get("sig") == csig and entry is not None:
                 record(index, mid, None if files is None else bool(files), _now())
                 if files is not None:
+                    entry["st"] = _now()
                     entry["misses"] = 0 if files else int(entry.get("misses") or 0) + 1
                     if files:
                         entry["files"] = files
@@ -562,10 +629,31 @@ def find(index, text):
     return sorted(rows, key=lambda a: a["name"].casefold())[:50]
 
 
-def add_artist(engine, store, name, should_stop=None):
-    """Ruční přidání interpreta: prohledá zdroje zařízení a uloží nálezy (nezávisle na žánrech a klíči Last.fm).
+def status(index, text):
+    """Stav jmen pro výpis hledání: `{_key(jméno): {"id", "name", "count", "searched"}}` pro interprety v indexu
+    (i bez nálezu). `count` = počet koncertů ze zdrojů zařízení, `searched` = čas posledního prohledání (0 = nikdy)."""
+    q = normalize_title(text or "")
+    on = set(filter(None, str(index.get("src") or "").split(",")))
+    out = {}
+    for mid, e in (index.get("items") or {}).items():
+        name = (e.get("meta") or {}).get("name") or ""
+        if not name:
+            continue
+        files = [f for f in e.get("files") or [] if not on or f.get("source") in on]
+        out[_key(name)] = {"id": mid, "name": name, "count": len(group(files, name)) if files else 0,
+                           "searched": int(e.get("st") or (e.get("ts") if e.get("ok") is not None else 0) or 0), "match": bool(q) and q in normalize_title(name)}
+    return out
+
+
+def add_artist(engine, store, name, should_stop=None, exact=False):
+    """Ruční přidání (nebo nové prohledání) interpreta: prohledá zdroje zařízení a uloží nálezy (nezávisle
+    na žánrech). `exact` = jméno je už vybrané z Last.fm (`lastfm_search`), neopravuje se.
     Vrací id interpreta, nebo None při krátkém jménu a výpadku všech zdrojů."""
     name = (name or "").strip()
+    if len(_key(name)) < 2:
+        return None
+    if not exact:
+        name = lastfm_name(str(engine._opt("lastfm_key") or "").strip(), name) or _nice(name)
     key = _key(name)
     if len(key) < 2:
         return None
@@ -579,7 +667,10 @@ def add_artist(engine, store, name, should_stop=None):
         if entry is None:
             entry = items[mid] = {"ok": None, "ts": 0, "rank": NO_RANK, "genres": [],
                                   "meta": {"id": mid, "name": name, "tags": []}}
-        entry.setdefault("meta", {"id": mid, "name": name, "tags": []})["manual"] = True
+        meta = entry.setdefault("meta", {"id": mid, "name": name, "tags": []})
+        if meta.get("manual") or not meta.get("name"):   # jméno z poolu Last.fm má přednost
+            meta["name"] = name
+        meta["manual"], meta["lf"] = True, 1
         index["src"] = src_of(engine)
         old = list(entry.get("files") or [])
         names = [(e.get("meta") or {}).get("name") or "" for e in items.values()]
@@ -593,6 +684,7 @@ def add_artist(engine, store, name, should_stop=None):
         entry = (index.get("items") or {}).get(mid)
         if entry is not None:
             record(index, mid, bool(files), _now())
+            entry["st"] = _now()
             entry["misses"] = 0 if files else int(entry.get("misses") or 0) + 1
             if files:
                 entry["files"] = files
@@ -681,7 +773,10 @@ def apply(store, changes, stamp=0):
             elif ts <= int(entry.get("ts") or 0):
                 continue
             elif manual:
-                entry.setdefault("meta", {"id": mid, "name": str(meta["name"]), "tags": mtags})["manual"] = True
+                m = entry.setdefault("meta", {"id": mid, "name": str(meta["name"]), "tags": mtags})
+                if m.get("manual"):   # opravené jméno (Last.fm) z jiného zařízení
+                    m["name"] = str(meta["name"])
+                m["manual"] = True
             merged = {f["ref"]: f for f in _foreign_files(rec)}
             merged.update({f["ref"]: f for f in entry.get("files") or []})
             files = sorted(merged.values(), key=lambda f: -int(f.get("size") or 0))[:MAX_FILES]
@@ -689,6 +784,7 @@ def apply(store, changes, stamp=0):
                 entry["files"] = files
             if rec.get("src") and rec.get("src") == index.get("src"):
                 entry["ok"], entry["ts"], entry["misses"] = bool(rec.get("ok")), ts, int(rec.get("misses") or 0)
+                entry["st"] = ts
                 if not entry["ok"]:
                     entry.pop("files", None)
             if stamp:
