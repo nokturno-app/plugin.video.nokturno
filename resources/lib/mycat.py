@@ -39,7 +39,7 @@ POOL_PAGES = 10
 POOL_EVERY = 6 * 3600
 ALPHA = "title.asc"          # řazení podle abecedy: kandidáti podle oblíbenosti, seřazení až u klienta
 FOREIGN_FRESH = 2 * 3600     # cizí výsledky mladší než tohle = ověřuje jiné zařízení (HA)
-COUNTRIES = ("CZ", "SK", "US", "GB", "FR", "DE", "IT", "ES", "PL", "HU", "KR", "JP", "DK", "SE", "NO")
+COUNTRIES = ("CZ", "SK", "XC", "US", "GB", "FR", "DE", "IT", "ES", "PL", "HU", "KR", "JP", "DK", "SE", "NO")
 MAX_COUNTRIES = 5
 # ikony ze standardní sady skinu (jen názvy, obrázky patří skinu; Kodi k nim doplní popisky)
 ICONS = ("DefaultMovies.png", "DefaultTVShows.png", "DefaultVideoPlaylists.png", "DefaultFavourites.png",

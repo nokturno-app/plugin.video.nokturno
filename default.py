@@ -5141,7 +5141,8 @@ MYCAT_TRACK_LABELS = (("", 30762, "Libovolné"), ("CZ", 30112, "Čeština"), ("S
 MYCAT_SHOW_LABELS = (("found", 30765, "Nově nalezené"), ("pool", 30764, "Stejně jako výběr"),
                      ("released", 30766, "Nejnovější vydání"))
 # země původu (`mycat.COUNTRIES`, filtr TMDB `with_origin_country`) – jiná věc než jazyk dabingu
-MYCAT_COUNTRIES = (("CZ", 30262, "Česko"), ("SK", 30263, "Slovensko"), ("US", 30264, "USA"),
+MYCAT_COUNTRIES = (("CZ", 30262, "Česko"), ("SK", 30263, "Slovensko"), ("XC", 31048, "Československo"),
+                   ("US", 30264, "USA"),
                    ("GB", 30265, "Velká Británie"), ("FR", 30266, "Francie"), ("DE", 30267, "Německo"),
                    ("IT", 30268, "Itálie"), ("ES", 30269, "Španělsko"), ("PL", 30270, "Polsko"),
                    ("HU", 30271, "Maďarsko"), ("KR", 30272, "Jižní Korea"), ("JP", 30273, "Japonsko"),

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.4.1" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.5.0" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.4.1 – Průvodce prvním nastavením začíná vlastním úložištěm. Úložiště třetích stran jsou u nové instalace vypnutá, stávající nastavení zůstává.
+    <news>10.5.0 – V zemi původu vlastního katalogu jde vybrat i Československo – starší české a slovenské filmy a seriály.
+10.4.1 – Průvodce prvním nastavením začíná vlastním úložištěm. Úložiště třetích stran jsou u nové instalace vypnutá, stávající nastavení zůstává.
 10.4.0 – Koncerty hledají ve tvém vlastním úložišti a skládají z nich katalog, volitelně i v úložištích třetích stran, která máš povolená a nastavená.
 10.3.4 – Hledání interpreta ukazuje průběh a výsledky naskočí hned.
 10.3.3 – Koncerty interpreta mají v názvu i jeho jméno (Kabát – Koncert v Aréně).

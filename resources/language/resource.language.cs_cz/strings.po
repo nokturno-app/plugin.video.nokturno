@@ -3450,3 +3450,7 @@ msgstr "Úložiště třetích stran jsou volitelná. V dalších krocích zapne
 msgctxt "#31047"
 msgid "Optional third-party storages"
 msgstr "Volitelná úložiště třetích stran"
+
+msgctxt "#31048"
+msgid "Czechoslovakia"
+msgstr "Československo"

@@ -3450,3 +3450,7 @@ msgstr ""
 msgctxt "#31047"
 msgid "Optional third-party storages"
 msgstr ""
+
+msgctxt "#31048"
+msgid "Czechoslovakia"
+msgstr ""
