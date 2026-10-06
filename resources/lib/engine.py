@@ -190,6 +190,13 @@ RUNTIME_RE = re.compile(r"(?:(\d+)\s*h)?\s*(?:(\d+)\s*min)?", re.I)
 DEFAULT_RUNTIME_S = 7200    # dvouhodinový film — odhad stopáže, jen když ji titul sám neřekne
 
 
+def _parse_day(text):
+    """„2026-10-05“ → datetime, jinak ValueError. Ne `datetime.strptime`: v Kodi od druhého
+    spuštění doplňku padá na TypeError 'NoneType' object is not callable (vestavěný Python
+    znovu nenačte `_strptime`), `time.strptime` ne."""
+    return datetime(*time.strptime(text, "%Y-%m-%d")[:3])
+
+
 def runtime_minutes(text):
     """Stopáž v minutách. Luna/Cinemeta posílají „2h42min", epizody bývají
     holé číslo („42") — bez rozlišení formátu by prosté vytažení číslic
@@ -332,7 +339,7 @@ def _episode_name_match(video, series_words):
         words = []
     dates = []
     try:
-        aired = datetime.strptime(video.get("released") or "", "%Y-%m-%d")
+        aired = _parse_day(video.get("released") or "")
     except ValueError:
         aired = None
     if aired:
@@ -2283,7 +2290,7 @@ class Engine:
         s premiérou 18. 12. 2026, soubory 1:07 h). Vlastní úložiště zůstává. Bez data premiéry
         se nezahazuje nic."""
         try:
-            released = datetime.strptime(str((meta or {}).get("released") or "")[:10], "%Y-%m-%d")
+            released = _parse_day(str((meta or {}).get("released") or "")[:10])
         except ValueError:
             return streams
         if released - datetime.now() <= timedelta(days=self.UNRELEASED_GRACE_DAYS):

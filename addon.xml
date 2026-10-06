@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.7.3" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.7.4" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.7.3 – Upozornění „přibyly streamy“ jen u titulu s příznakem Kontrolovat dál. Film pod 60 % stopáže a před premiérou se vyřadí, délka streamu se ukazuje skutečná.
+    <news>10.7.4 – Hledání a přehrání streamů znovu funguje, v 10.7.3 u některých titulů nenašlo nic.
+10.7.3 – Upozornění „přibyly streamy“ jen u titulu s příznakem Kontrolovat dál. Film pod 60 % stopáže a před premiérou se vyřadí, délka streamu se ukazuje skutečná.
 10.7.1~beta1 – Drobné opravy.
 10.7.0 – Položky hlavního menu jde řadit a skrývat: místní nabídka položky (Posunout nahoru / dolů, Skrýt z menu), skryté vrátíš v Nastavení → Pokročilé → Upravit hlavní menu. Díl seriálu se najde i v souboru bez čísla dílu, podle názvu dílu nebo data vysílání. Stream, který se nerozjede, nabídne výběr jiného.
 10.5.0 – V zemi původu vlastního katalogu jde vybrat i Československo – starší české a slovenské filmy a seriály.
