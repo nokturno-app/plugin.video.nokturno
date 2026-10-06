@@ -233,6 +233,19 @@ def length_basis(meta, video):
     return dict(video, runtime=meta["runtime"])
 
 
+AVI_NAME_RE = re.compile(r"\.avi$", re.I)
+
+
+def known_length(stream):
+    """Délka streamu, které se dá věřit: od zdroje (`duration`), jinak z hlavičky (`_duration`)
+    kromě AVI – `dwTotalFrames` v `avih` po přebalení lže (90min film „má“ 14 min)."""
+    if stream.get("duration"):
+        return stream["duration"]
+    if stream.get("_duration_avi"):
+        return 0
+    return stream.get("_duration") or 0
+
+
 SUBTITLE_NAME_RE = {
     "CZ": re.compile(r"(^|[^a-z])(cz|cze|ces|czech|cesky|cestina|cs)([^a-z]|$)"),
     "SK": re.compile(r"(^|[^a-z])(sk|slo|slk|slovak|slovensky|slovencina)([^a-z]|$)"),
@@ -2166,6 +2179,8 @@ class Engine:
             # z hlavičky je i skutečná délka streamu — přesnější základ pro
             # datový tok v `_ensure_bitrate()` než odhad ze stopáže titulu
             stream["_duration"] = info["duration"]
+            if info.get("avi") or AVI_NAME_RE.search(stream.get("_ws_name") or stream.get("label") or ""):
+                stream["_duration_avi"] = True
         # parse_stream je idempotentní podle `quality_rank`; po změně popisku
         # se musí přepočítat, jinak by jazyky a kanály zůstaly prázdné
         stream.pop("quality_rank", None)
@@ -2223,7 +2238,9 @@ class Engine:
 
     JUNK_NAME_RE = re.compile(r"(?<![a-z0-9])(trailer|teaser|tlr|trl|tsr|youtube)(?![a-z0-9])", re.I)
     SHORT_MOVIE_MIN_S = 20 * 60   # kratší soubor za celý film nepovažujeme…
-    SHORT_MOVIE_RATIO = 0.4       # …a u delších filmů ani pod 40 % oficiální stopáže
+    SHORT_MOVIE_RATIO = 0.6       # …a u delších filmů ani pod 60 % oficiální stopáže
+    # díl rozděleného filmu (CD1, part2…) je kratší právem
+    SPLIT_NAME_RE = re.compile(r"(?<![a-z0-9])(cd|part|pt|disc|disk)[ ._-]?[1-9](?![0-9])", re.I)
 
     def _drop_junk(self, streams, meta):
         """Ukázky a videa z YouTube místo filmu: `trailer`, `teaser`, `tlr`, `trl`, `tsr`
@@ -2243,7 +2260,7 @@ class Engine:
         return kept
 
     def _drop_short(self, streams, meta):
-        """Film: vyřadí soubory se známou délkou kratší než 40 % oficiální stopáže, nejméně
+        """Film: vyřadí soubory se známou délkou kratší než 60 % oficiální stopáže, nejméně
         20 minut — dvouminutové ukázky a klipy pod názvem filmu. Délku zdroj posílá při
         hledání (HellSpy, Přehraj.to…) nebo ji dá hlavička souboru (`_fill_audio`);
         neznámá délka nevadí. Bez stopáže titulu se nezahazuje nic."""
@@ -2251,9 +2268,29 @@ class Engine:
         if not minutes:
             return streams
         limit = max(self.SHORT_MOVIE_MIN_S, minutes * 60 * self.SHORT_MOVIE_RATIO)
-        kept = [s for s in streams if not 0 < (s.get("duration") or s.get("_duration") or 0) < limit]
+        kept = [s for s in streams
+                if not (0 < known_length(s) < limit
+                        and not self.SPLIT_NAME_RE.search(s.get("_ws_name") or s.get("label") or ""))]
         if len(kept) != len(streams):
             self.last_timings["krátké"] = self.last_timings.get("krátké", 0) + len(streams) - len(kept)
+        return kept
+
+    UNRELEASED_GRACE_DAYS = 14   # premiéra jinde dřív (festival, jiná země) – TMDB má datum první premiéry
+
+    def _drop_unreleased(self, streams, meta):
+        """Film, jehož premiéra je víc než 14 dní v budoucnu, ještě nikde celý není – každý soubor
+        pod jeho názvem je sestřih ukázek nebo jiný film (stremio.cz 2026-10-05: „Avengers: Doomsday“
+        s premiérou 18. 12. 2026, soubory 1:07 h). Vlastní úložiště zůstává. Bez data premiéry
+        se nezahazuje nic."""
+        try:
+            released = datetime.strptime(str((meta or {}).get("released") or "")[:10], "%Y-%m-%d")
+        except ValueError:
+            return streams
+        if released - datetime.now() <= timedelta(days=self.UNRELEASED_GRACE_DAYS):
+            return streams
+        kept = [s for s in streams if s.get("source") == "dav"]
+        if len(kept) != len(streams):
+            self.last_timings["před premiérou"] = len(streams) - len(kept)
         return kept
 
     def _drop_dead(self, streams):
@@ -2278,18 +2315,15 @@ class Engine:
         vlnovkou stejně jako ostatní odhadnuté věci v popisku.
 
         AVI hlavičky lžou často — `dwTotalFrames` v `avih` je jeden z nejčastěji
-        poškozených nebo neaktualizovaných údajů po přebalení souboru. Soubor
-        pak tvrdí, že devadesátiminutový film má 14 minut, a datový tok vyjde
-        několikanásobně nadsazený. Když je titul znám, přečtená délka ze
-        souboru se proto porovná s jeho stopáží; liší-li se o víc než
-        polovinu, nedůvěřuje se jí a použije se odhad ze stopáže titulu.
+        poškozených nebo neaktualizovaných údajů po přebalení souboru. AVI
+        hlavičce se proto nevěří vůbec (odhad ze stopáže s vlnovkou); ostatní
+        délka se ukáže taková, jaká je, i když je výrazně kratší než film –
+        právě to uživatele varuje.
         """
         minutes = runtime_minutes((meta_or_video or {}).get("runtime"))
         fallback_s = minutes * 60 if minutes else DEFAULT_RUNTIME_S
         for stream in streams:
-            duration = stream.get("duration") or stream.get("_duration") or 0
-            if duration and minutes and not (0.5 <= duration / fallback_s <= 2.0):
-                duration = 0
+            duration = known_length(stream)
             length = duration or fallback_s
             stream["_length_s"] = length
             stream["_length_est"] = not duration
@@ -3420,6 +3454,7 @@ class Engine:
         if strict:
             found = self._drop_junk(found, meta)
             if not video:
+                found = self._drop_unreleased(found, meta)
                 found = self._drop_short(found, meta)
         ranked = sort(found)
         if self._opt("merge_streams", False):

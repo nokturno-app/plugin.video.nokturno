@@ -463,10 +463,12 @@ def probe(url, opener=None):
         return dict(empty, unreachable=True)
     if not head:
         return dict(empty, unreachable=True)
+    is_avi = False
     try:
         if head[:4] == b"\x1a\x45\xdf\xa3":
             tracks, duration = _from_mkv(head)
         elif head[:4] == b"RIFF":
+            is_avi = True
             tracks, duration = _from_avi(head)
         elif head[4:8] == b"ftyp":
             tracks, duration = _from_mp4(head)
@@ -496,6 +498,8 @@ def probe(url, opener=None):
         out["vcodec"] = vcodec
     if any(t.get("stereo") for t in video):
         out["stereo3d"] = True
+    if is_avi:
+        out["avi"] = True
     return out
 
 

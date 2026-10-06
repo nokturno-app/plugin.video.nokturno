@@ -493,12 +493,17 @@ def pending_notices(store, now=None):
                         "season": new.get("season"), "episode": new.get("episode"),
                         "episode_id": new.get("id"),
                         "episode_title": new.get("title") or ""})
+    flagged = flags(store)
     for wid, rec in results(store).items():
         gained = rec.get("gained")
         if not isinstance(gained, dict):
             continue
         key = "w:" + wid
         marks[key] = mark = str(gained.get("ts"))
+        # nárůst u titulu, který už streamy měl, zajímá jen s příznakem „kontrolovat dál“;
+        # jinak je to šum (2026-10-06, Cizinka 2x03: 16 → 22 streamů bez příznaku)
+        if gained.get("prev") and wid not in flagged:
+            continue
         if notified.get(key) != mark and now - _ts(gained) <= NOTICE_MAX_AGE:
             out.append({"kind": "more" if gained.get("prev") else "available", "id": wid,
                         "title": rec.get("title") or wid, "year": rec.get("year"),
