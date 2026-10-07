@@ -18,7 +18,7 @@ se nikdy necachuje — výjimka projde i `Store.cached_if()` dřív, než zapí�
 """
 import threading
 import time
-from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 
 STOP_POLL = 1.0   # s – jak často se při čekání na vlákna ptát should_stop()
 
@@ -44,11 +44,29 @@ class BackgroundPool(ThreadPoolExecutor):
             check(_HOST_STOP[0])
             return fn(*args, **kwargs)
 
-        future = super().submit(run)
+        try:
+            future = super().submit(run)
+        except RuntimeError:
+            # „can't start new thread" (Android, Kodi 10.7.4, náhodný titul): fond nemá ani
+            # jedno vlákno, úloha by ve frontě visela navždy – udělá se hned, jen pomaleji
+            future = Future()
+            try:
+                future.set_result(run())
+            except BaseException as e:  # noqa: BLE001 – jako ve vlákně: chyba patří do future
+                future.set_exception(e)
+            return future
         with _LOCK:
             _PENDING.add(future)
         future.add_done_callback(_forget)
         return future
+
+    def _adjust_thread_count(self):
+        try:
+            super()._adjust_thread_count()
+        except RuntimeError:
+            # nové vlákno nejde založit; úlohu ve frontě zpracuje některé z existujících
+            if not self._threads:
+                raise
 
 
 _LOCK = threading.Lock()
