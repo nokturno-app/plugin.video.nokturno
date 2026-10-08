@@ -787,16 +787,28 @@ def _foreign_files(rec):
     return out
 
 
+def _wanted(items, mid, ts, manual, mtags, tags):
+    """Přijme se záznam? Nový interpret jen s vybraným žánrem (nebo ruční), známý jen s novějším `ts`, než má
+    vlastní kontrola i poslední přijatý cizí záznam (`fts` – od zařízení s jinými zdroji se `ts` nepřebírá,
+    takže bez něj by týž záznam vypadal jako nový v každém kole)."""
+    entry = items.get(mid)
+    if entry is None:
+        return manual or bool(set(mtags) & set(tags))
+    return ts > max(int(entry.get("ts") or 0), int(entry.get("fts") or 0))
+
+
 def apply(store, changes, stamp=0):
     """Slije cizí nálezy; vrací počet přijatých záznamů. Soubory se sjednotí vždy, plán kontrol (`ok`, `ts`,
-    `misses`) se převezme jen od zařízení se stejnými zdroji – jinak si interpreta zařízení prohledá samo."""
+    `misses`) se převezme jen od zařízení se stejnými zdroji – jinak si interpreta zařízení prohledá samo.
+
+    Cizí zařízení posílá při každé změně celý svůj stav, takže většina záznamů je známá a stará. Index se proto
+    čte a zapisuje jednou za celé kolo a jen když je opravdu co přijmout – zápis po každém interpretovi
+    (stovky přepisů celého souboru) držel na HA minutu plné jádro každých 5 minut."""
     if not isinstance(changes, dict) or not changes:
         return 0
-    applied = 0
+    applied = apply_config(store, changes["c"], stamp) if "c" in changes else 0
+    recs = []
     for key, rec in changes.items():
-        if key == "c":
-            applied += apply_config(store, rec, stamp)
-            continue
         kind, _, k = str(key).partition(":")
         meta = rec.get("meta") if isinstance(rec, dict) else None
         if kind != "a" or not k or not isinstance(meta, dict) or not meta.get("name") or not rec.get("ts"):
@@ -805,25 +817,32 @@ def apply(store, changes, stamp=0):
             ts = int(rec["ts"])
         except (TypeError, ValueError):
             continue
-        rec = dict(rec, ts=ts)
-        mid, tags = "a:" + k, config(store)["tags"]
-        csig = sig(tags)
-        mtags = [t for t in TAGS if t in set(meta.get("tags") or ())]
-        manual = bool(meta.get("manual"))
-        with store.updating(INDEX, {}) as index:
-            if index.get("sig") != csig:
-                retag(index, tags)
-            items = index.setdefault("items", {})
+        recs.append(("a:" + k, dict(rec, ts=ts), meta,
+                     [t for t in TAGS if t in set(meta.get("tags") or ())], bool(meta.get("manual"))))
+    if not recs:
+        return applied
+    tags = config(store)["tags"]
+    csig = sig(tags)
+    current = store.load(INDEX, {})
+    if isinstance(current, dict) and current.get("sig") == csig:
+        items = current.get("items") or {}
+        recs = [r for r in recs if _wanted(items, r[0], r[1]["ts"], r[4], r[3], tags)]
+        if not recs:
+            return applied
+    with store.updating(INDEX, {}) as index:
+        if index.get("sig") != csig:
+            retag(index, tags)
+        items = index.setdefault("items", {})
+        for mid, rec, meta, mtags, manual in recs:
+            ts = rec["ts"]
+            if not _wanted(items, mid, ts, manual, mtags, tags):
+                continue
             entry = items.get(mid)
             if entry is None:
-                if not manual and not set(mtags) & set(tags):
-                    continue
                 m = {"id": mid, "name": str(meta["name"]), "tags": mtags}
                 if manual:
                     m["manual"] = True
                 entry = items[mid] = {"ok": None, "ts": 0, "rank": NO_RANK, "genres": list(mtags), "meta": m}
-            elif ts <= int(entry.get("ts") or 0):
-                continue
             elif manual:
                 m = entry.setdefault("meta", {"id": mid, "name": str(meta["name"]), "tags": mtags})
                 if m.get("manual"):   # opravené jméno (Last.fm) z jiného zařízení
@@ -840,6 +859,7 @@ def apply(store, changes, stamp=0):
                 entry["st"] = ts
                 if not entry["ok"]:
                     entry.pop("files", None)
+            entry["fts"] = ts
             if stamp:
                 entry["rts"] = stamp
             applied += 1

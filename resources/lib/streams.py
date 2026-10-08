@@ -249,14 +249,25 @@ def is_surround(s, pref_lang=""):
 
 
 HDR_RE = re.compile(r"(?<![A-Za-z0-9])(HDR10\+?|HDR|DV|DoVi|Dolby[ ._-]?Vision)(?![A-Za-z0-9])", re.IGNORECASE)
+DV_RE = re.compile(r"(?<![A-Za-z0-9])(DV|DoVi|Dolby[ ._-]?Vision)(?![A-Za-z0-9])", re.IGNORECASE)
 MERGE_SIZE_TOLERANCE = 0.10   # verze do ±10 % velikosti jsou pro výběr totéž (přání uživatele 2026-09-18)
 
 
 def stream_hdr(s):
     """HDR / Dolby Vision podle popisku nebo názvu souboru — na televizi jiný obraz,
-    na starší i chyba přehrání, takže se takové verze se SDR neslučují."""
+    na starší i chyba přehrání, takže se takové verze se SDR neslučují.
+
+    Zahrnuje i Dolby Vision (`stream_dv`) — pro slučování i pro filtr „nevyhledávat
+    HDR streamy“ (přání uživatele spacik, Discord 2026-10-05) je DV jen jeho varianta."""
     text = " ".join(str(s.get(k) or "") for k in ("label", "_ws_name", "name"))
     return bool(HDR_RE.search(text))
+
+
+def stream_dv(s):
+    """Jen Dolby Vision, bez obyčejného HDR10 — pro uživatele, kterému na starší
+    televizi dělá DV divné barvy, ale HDR jinak chce (GremliNN, Discord 2026-10-05)."""
+    text = " ".join(str(s.get(k) or "") for k in ("label", "_ws_name", "name"))
+    return bool(DV_RE.search(text))
 
 
 STEREO_3D_RE = re.compile(r"(?<![A-Za-z0-9])(3D|HSBS|H-SBS|H-?OU|Half[ ._-]?(?:SBS|OU|TAB)|MVC)(?![A-Za-z0-9])",
@@ -336,7 +347,8 @@ def expand_groups(streams):
 
 
 def arrange(streams, pref_lang="", hide_sd=False, max_size_gb=0.0, order="source", pref_surround=False,
-            hide_3d=False, max_bitrate=0.0, keep_smallest=False, hide_lowq=False):
+            hide_3d=False, max_bitrate=0.0, keep_smallest=False, hide_lowq=False, hide_dv=False,
+            hide_hdr=False):
     """Vyfiltruje a seřadí streamy; když by filtr nic nenechal, vrátí původní pořadí.
 
     Strop datového toku: známý tok streamu (`bitrate`) rozhoduje, velikost proti
@@ -345,7 +357,10 @@ def arrange(streams, pref_lang="", hide_sd=False, max_size_gb=0.0, order="source
     nejmenší soubor, ne všechno (přání uživatele 2026-09-26).
 
     order: source (jak přišly) | quality (nejlepší první) | size_desc | size_asc
-    """
+
+    `hide_dv`/`hide_hdr`: podle popisku nebo názvu souboru, stejně nespolehlivě jako
+    `hide_3d` níž — bez značky v názvu se DV/HDR/3D stream nepozná a filtr ho nechytí
+    (Discord 2026-10-05, GremliNN narazil na neoznačený 3D soubor i se zapnutým `hide_3d`)."""
     for s in streams:
         parse_stream(s)
     if hide_3d:
@@ -355,6 +370,19 @@ def arrange(streams, pref_lang="", hide_sd=False, max_size_gb=0.0, order="source
         for s in streams:
             if s.get("_alts"):
                 s["_alts"] = [a for a in s["_alts"] if not stream_3d(a)]
+    if hide_dv:
+        # stejná filosofie jako hide_3d — kdo DV nechce, nemá ho vidět ani jako sloučenou verzi
+        streams = [s for s in streams if not stream_dv(s)]
+        for s in streams:
+            if s.get("_alts"):
+                s["_alts"] = [a for a in s["_alts"] if not stream_dv(a)]
+    if hide_hdr:
+        # širší než hide_dv — zahrnuje i DV (stream_hdr), pro uživatele, kterému HDR obraz
+        # ztmavuje i bez Dolby Vision (spacik, Discord 2026-10-05)
+        streams = [s for s in streams if not stream_hdr(s)]
+        for s in streams:
+            if s.get("_alts"):
+                s["_alts"] = [a for a in s["_alts"] if not stream_hdr(a)]
     if hide_lowq:
         # nahrávky z kina/obrazovky se schovají, ale když by nezbylo nic (nový film jen v CAMu), zůstanou
         cisté = [s for s in streams if not stream_lowq(s)]

@@ -3539,6 +3539,8 @@ class Engine:
                 order=order if order in SORT_ORDERS else DEFAULT_SORT,
                 pref_surround=bool(self.options.get("pref_surround")),
                 hide_3d=bool(self.options.get("hide_3d")),
+                hide_dv=bool(self.options.get("hide_dv")),
+                hide_hdr=bool(self.options.get("hide_hdr")),
                 hide_lowq=self.options.get("hide_lowq", True) not in (False, "0", 0, "false"),
                 max_bitrate=self._max_bitrate(),
                 keep_smallest=final,

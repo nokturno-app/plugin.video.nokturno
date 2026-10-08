@@ -31,6 +31,9 @@ CONF_CZ_ENABLED = "cz_enabled"   # CZtor — přepínač; účet se páruje PINe
 CONF_PREF_LANG = "pref_lang"
 CONF_PREF_SURROUND = "pref_surround"
 CONF_HIDE_SD = "hide_sd"
+CONF_HIDE_3D = "hide_3d"
+CONF_HIDE_DV = "hide_dv"
+CONF_HIDE_HDR = "hide_hdr"
 CONF_MAX_BITRATE = "max_bitrate_mbps"
 CONF_SORT = "sort_streams"
 
