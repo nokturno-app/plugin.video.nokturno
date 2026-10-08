@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.8.0" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.9.1" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.8.0 – V nastavení jde vypnout vyhledávání Dolby Vision, HDR i 3D streamů.
+    <news>10.9.1 – Skrýt 3D streamy pozná víc označení 3D v názvu souboru (SBS, Full SBS, OU). Drobné opravy.
+10.8.0 – V nastavení jde vypnout vyhledávání Dolby Vision, HDR i 3D streamů.
 10.7.5 – Hledání streamů nespadne na zařízení, které už nezvládne další vlákno (Náhodný film na Androidu).
 10.7.4 – Hledání a přehrání streamů znovu funguje, v 10.7.3 u některých titulů nenašlo nic.
 10.7.3 – Upozornění „přibyly streamy“ jen u titulu s příznakem Kontrolovat dál. Film pod 60 % stopáže a před premiérou se vyřadí, délka streamu se ukazuje skutečná.
