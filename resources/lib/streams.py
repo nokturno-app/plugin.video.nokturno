@@ -270,8 +270,10 @@ def stream_dv(s):
     return bool(DV_RE.search(text))
 
 
-STEREO_3D_RE = re.compile(r"(?<![A-Za-z0-9])(3D|HSBS|H-SBS|H-?OU|Half[ ._-]?(?:SBS|OU|TAB)|MVC)(?![A-Za-z0-9])",
-                          re.IGNORECASE)
+STEREO_3D_RE = re.compile(r"(?<![A-Za-z0-9])(3D(?:[ ._-]?H?SBS|[ ._-]?H?OU)?|H?SBS|H-SBS|H-?OU|"
+                          r"(?:Half|Full)[ ._-]?(?:SBS|OU|TAB)|MVC)(?![A-Za-z0-9])", re.IGNORECASE)
+# holé OU/TAB jen velkými písmeny: malými jsou to běžná slova v názvech (francouzské „ou“, „tab“)
+STEREO_3D_SHORT_RE = re.compile(r"(?<![A-Za-z0-9])(?:OU|TAB|FSBS)(?![A-Za-z0-9])")
 
 
 def stream_3d(s):
@@ -280,7 +282,7 @@ def stream_3d(s):
     if (s.get("_media") or {}).get("stereo3d"):
         return True
     text = " ".join(str(s.get(k) or "") for k in ("label", "_ws_name", "name"))
-    return bool(STEREO_3D_RE.search(text))
+    return bool(STEREO_3D_RE.search(text) or STEREO_3D_SHORT_RE.search(text))
 
 
 # nahrávky z kina: screener a R5 jsou uniklé předverze v dobré kvalitě, proto je filtr nechytá;
