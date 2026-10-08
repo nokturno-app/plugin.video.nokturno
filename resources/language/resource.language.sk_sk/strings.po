@@ -3494,3 +3494,19 @@ msgstr "Predvolené hlavné menu"
 msgctxt "#31058"
 msgid "Choose which items the main menu shows. Change the order in the context menu of an item (Move up / Move down)."
 msgstr "Vyber, ktoré položky hlavné menu ukazuje. Poradie zmeníš v miestnej ponuke položky (Posunúť nahor / nadol)."
+
+msgctxt "#31059"
+msgid "Hide Dolby Vision streams"
+msgstr "Skryť Dolby Vision streamy"
+
+msgctxt "#31060"
+msgid "Dolby Vision files (by name: DV, DoVi, Dolby Vision) are never shown, not even when there is no other stream."
+msgstr "Súbory Dolby Vision (podľa názvu: DV, DoVi, Dolby Vision) sa nezobrazia nikdy, ani keď iný stream nie je."
+
+msgctxt "#31061"
+msgid "Hide HDR streams"
+msgstr "Skryť HDR streamy"
+
+msgctxt "#31062"
+msgid "HDR files, including Dolby Vision (by name: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision), are never shown, not even when there is no other stream."
+msgstr "Súbory HDR, vrátane Dolby Vision (podľa názvu: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision), sa nezobrazia nikdy, ani keď iný stream nie je."

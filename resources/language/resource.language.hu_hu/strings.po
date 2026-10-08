@@ -3492,3 +3492,19 @@ msgstr "Főmenü visszaállítása"
 msgctxt "#31058"
 msgid "Choose which items the main menu shows. Change the order in the context menu of an item (Move up / Move down)."
 msgstr "Válaszd ki, mely elemeket mutassa a főmenü. A sorrendet az elem helyi menüjében módosíthatod (Mozgatás feljebb / lejjebb)."
+
+msgctxt "#31059"
+msgid "Hide Dolby Vision streams"
+msgstr "Dolby Vision streamek elrejtése"
+
+msgctxt "#31060"
+msgid "Dolby Vision files (by name: DV, DoVi, Dolby Vision) are never shown, not even when there is no other stream."
+msgstr "A Dolby Vision fájlok (név alapján: DV, DoVi, Dolby Vision) soha nem jelennek meg, akkor sem, ha nincs más stream."
+
+msgctxt "#31061"
+msgid "Hide HDR streams"
+msgstr "HDR streamek elrejtése"
+
+msgctxt "#31062"
+msgid "HDR files, including Dolby Vision (by name: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision), are never shown, not even when there is no other stream."
+msgstr "A HDR fájlok, beleértve a Dolby Vision-t is (név alapján: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision), soha nem jelennek meg, akkor sem, ha nincs más stream."

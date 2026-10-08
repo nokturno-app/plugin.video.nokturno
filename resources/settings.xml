@@ -927,6 +927,16 @@
           <default>false</default>
           <control type="toggle"/>
         </setting>
+        <setting id="hide_dv" type="boolean" label="31059" help="31060">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="hide_hdr" type="boolean" label="31061" help="31062">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
         <setting id="hide_lowq" type="boolean" label="30991" help="30992">
           <level>0</level>
           <default>true</default>
