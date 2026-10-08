@@ -53,8 +53,12 @@ class SealError(Exception):
 
 
 def new_code(length):
-    """Nový kód. Náhoda jde z `os.urandom`, ne z `random`."""
-    return format_code("".join(ALPHABET[b % len(ALPHABET)] for b in os.urandom(length)))
+    """Nový kód. Náhoda jde z `os.urandom`, ne z `random`. Kód začínající „NKT“ se zahodí:
+    `normalize_code` by ho vzal za prefix, ustřihl a kód by byl kratší (zhruba 1 z 33 000)."""
+    while True:
+        raw = "".join(ALPHABET[b % len(ALPHABET)] for b in os.urandom(length))
+        if not raw.startswith(PREFIX):
+            return format_code(raw)
 
 
 def format_code(raw):
