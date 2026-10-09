@@ -322,7 +322,7 @@ class Player(xbmc.Player):
     def remember_tracks(self):
         """Zapamatuje zvuk a titulky, které právě hrají – při dalším puštění téhož streamu se vrátí
         (`restore_tracks`) místo předvolby z nastavení. Volá se se zápisem pozice, tedy za běhu."""
-        url = (self.item or {}).get("stream_url")
+        url = track_ref(self.item)
         player_id = self._video_player() if url else None
         if player_id is None:
             return
@@ -355,7 +355,7 @@ class Player(xbmc.Player):
         """Změnu stop (zvuk, titulky, nově přidaná ruční stopa) zapamatuje hned, ne až s dalším zápisem pozice
         (`SAVE_EVERY`): kdo po stažení titulků film do 30 s zastaví, by o ně jinak přišel (Discord spacik78
         2026-10-09). První měření jen zapíše základ, aby se nepřepsal záznam z minula před `restore_tracks`."""
-        player_id = self._video_player() if (self.item or {}).get("stream_url") else None
+        player_id = self._video_player() if track_ref(self.item) else None
         if player_id is None:
             return
         props = rpc("Player.GetProperties", playerid=player_id, properties=[
@@ -399,7 +399,7 @@ class Player(xbmc.Player):
         """Stopy z minulého sledování téhož streamu (týž soubor = tatáž čísla stop). True = obnoveno,
         předvolba z nastavení se pak nepoužije. Nesedí-li jazyk stopy (jiný soubor), rozhodne předvolba."""
         rec = (self.store.load(LAST_TRACKS, {}) or {}).get(str(item.get("id")))
-        if not rec or not item.get("stream_url") or rec.get("url") != item["stream_url"]:
+        if not rec or not track_ref(item) or rec.get("url") != track_ref(item):
             return False
         player_id = self._video_player()
         if player_id is None:
@@ -1275,6 +1275,17 @@ def drop_subtitle_file(path):
             os.remove(path)
     except OSError:
         pass
+
+
+def track_ref(item):
+    """Čím se pozná tentýž soubor při znovupuštění: vybraný stream titulu (`stream_url`), u souborů puštěných
+    napřímo (WebShare, HellSpy, WebDAV z procházení) jejich vlastní id `ws:…`/`hs:…`/`dav:…` – ty `stream_url`
+    nemají (Discord spacik78 2026-10-09: stopy ani ruční titulky se u nich nepamatovaly vůbec)."""
+    item = item or {}
+    ref = item.get("stream_url")
+    if not ref and str(item.get("id") or "").startswith(("ws:", "hs:", "dav:")):
+        ref = item["id"]
+    return ref or ""
 
 
 def find_subtitle_file(since):

@@ -2473,6 +2473,21 @@ class TestTitulkyAZvuk(unittest.TestCase):
             player.watch_tracks()
             self.assertEqual(default.STORE.load(service.LAST_TRACKS, {})["tt9"]["s"], 0)
 
+    def test_primo_pustene_soubory_si_pamatuji_stopy_podle_id(self):
+        """Discord (spacik78) 2026-10-09: `play_ws` nemá `stream_url`, stopy se u něj nepamatovaly vůbec."""
+        self.assertEqual(service.track_ref({"id": "ws:abc"}), "ws:abc")
+        self.assertEqual(service.track_ref({"id": "tt1", "stream_url": "x"}), "x")
+        self.assertEqual(service.track_ref({"id": "tt1"}), "")
+        default.STORE.save(service.LAST_TRACKS, {})
+        props = {"currentaudiostream": {"index": 0, "language": "eng"}, "subtitles": [], "currentsubtitle": {},
+                 "subtitleenabled": False}
+        player = service.Player(store=default.STORE, stats=None)
+        player.item = {"id": "ws:abc"}
+        with mock.patch.object(service, "rpc", side_effect=lambda m, **p: [{"playerid": 1, "type": "video"}]
+                               if m == "Player.GetActivePlayers" else props):
+            player.remember_tracks()
+        self.assertEqual(default.STORE.load(service.LAST_TRACKS, {})["ws:abc"]["url"], "ws:abc")
+
     def test_vypnute_titulky_se_pamatuji(self):
         default.STORE.save(service.LAST_TRACKS, {"tt1": {"url": "ws:abc", "a": 0, "al": "eng", "s": -1, "sl": ""}})
         props = {"audiostreams": [{"index": 0, "language": "eng"}],
