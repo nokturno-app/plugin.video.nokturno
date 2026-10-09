@@ -2198,6 +2198,7 @@ def choose_stream(streams, preferred=None, relax=False, expand=None, refresh=Non
         if relax:
             tail.append(FULLTEXT)
             rows.append(xbmcgui.ListItem(label=L(30335, "Hledat volněji podle názvu souboru")))
+        shown, tail = list(shown), list(tail)   # dočítání na pozadí nesmí za běhu dialogu změnit, co se počítá z idx
         focus = next((i for i, st in enumerate(shown) if st is preferred), None)
         close_bar = reading_progress(lambda: refresh(streams, apply=False), wait_total) if waiting else None
         try:
@@ -2209,7 +2210,10 @@ def choose_stream(streams, preferred=None, relax=False, expand=None, refresh=Non
         if idx < 0:
             return None
         if idx >= len(entries) + len(shown):
-            if tail[idx - len(entries) - len(shown)] == FULLTEXT:
+            pos = idx - len(entries) - len(shown)
+            if not 0 <= pos < len(tail):   # idx mimo řádky (10.11.0, IndexError) – otevřít dialog znovu
+                continue
+            if tail[pos] == FULLTEXT:
                 return FULLTEXT
             streams = expand()
             continue
