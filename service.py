@@ -229,6 +229,7 @@ class Player(xbmc.Player):
 
     def reset(self):
         self.item = None
+        self.tracks_sig = None  # poslední viděná sestava stop (`watch_tracks`); None = ještě nezměřená
         self.base_subs = None   # kolik titulkových stop bylo při startu videa; ruční (z dialogu Kodi) přibudou za nimi
         self.position = 0.0
         self.total = 0.0
@@ -271,6 +272,7 @@ class Player(xbmc.Player):
         úplně, i vynucené. Rozhoduje `tracks.pick_audio`/`pick_subtitle`
         v jádru; co si pak uživatel přepne sám, už se nepřepisuje."""
         self.base_subs = None
+        self.tracks_sig = None
         time.sleep(TRACKS_DELAY)
         if self.item is not item or not self.isPlayingVideo():
             return
@@ -349,6 +351,21 @@ class Player(xbmc.Player):
             if prev.get("sf") and prev.get("sf") != rec.get("sf"):
                 drop_subtitle_file(prev["sf"])   # uživatel zvolil jiné titulky nebo je vypnul
 
+    def watch_tracks(self):
+        """Změnu stop (zvuk, titulky, nově přidaná ruční stopa) zapamatuje hned, ne až s dalším zápisem pozice
+        (`SAVE_EVERY`): kdo po stažení titulků film do 30 s zastaví, by o ně jinak přišel (Discord spacik78
+        2026-10-09). První měření jen zapíše základ, aby se nepřepsal záznam z minula před `restore_tracks`."""
+        player_id = self._video_player() if (self.item or {}).get("stream_url") else None
+        if player_id is None:
+            return
+        props = rpc("Player.GetProperties", playerid=player_id, properties=[
+            "currentaudiostream", "currentsubtitle", "subtitleenabled", "subtitles"]) or {}
+        sig = ((props.get("currentaudiostream") or {}).get("index"), (props.get("currentsubtitle") or {}).get("index"),
+               props.get("subtitleenabled"), len(props.get("subtitles") or []))
+        last, self.tracks_sig = self.tracks_sig, sig
+        if last is not None and sig != last:
+            self.remember_tracks()
+
     def keep_subtitle_file(self, key, sub, prev):
         """Titulky, které si uživatel stáhl ručně dialogem Kodi (ikonka CC → OpenSubtitles/Titulky.com),
         Kodi při dalším puštění samo nenabídne; soubor leží v dočasné složce a časem zmizí.
@@ -361,6 +378,7 @@ class Player(xbmc.Player):
         old = prev.get("sf") if prev.get("sf") and os.path.isfile(prev["sf"]) else ""
         src = find_subtitle_file(self.started)
         if not src:
+            log(f"titulky {name}: soubor od startu videa nenalezen (temp, subtitles)", xbmc.LOGWARNING)
             return old, name   # Kodi dočasný soubor mezitím smazalo, platí dřívější kopie
         dest_dir = os.path.join(PROFILE, "rucni_titulky")
         os.makedirs(dest_dir, exist_ok=True)
@@ -414,6 +432,7 @@ class Player(xbmc.Player):
             self.total = self.getTotalTime()
         except RuntimeError:
             return
+        self.watch_tracks()
         self.checkpoint()
 
     def progress(self):

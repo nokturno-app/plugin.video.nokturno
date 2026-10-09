@@ -2458,6 +2458,21 @@ class TestTitulkyAZvuk(unittest.TestCase):
             self.assertFalse(os.path.exists(rec["sf"]))
             self.assertNotIn("sf", default.STORE.load(service.LAST_TRACKS, {})["tt1"])
 
+    def test_zmena_stop_se_zapamatuje_hned_bez_checkpointu(self):
+        """Discord (spacik78) 2026-10-09: titulky stažené těsně před zastavením (< SAVE_EVERY) se nezapamatovaly."""
+        default.STORE.save(service.LAST_TRACKS, {})
+        props = {"currentaudiostream": {"index": 0, "language": "eng"}, "subtitles": [{"index": 0, "language": "eng"}],
+                 "currentsubtitle": {}, "subtitleenabled": False}
+        player = service.Player(store=default.STORE, stats=None)
+        player.item = {"id": "tt9", "stream_url": "ws:abc"}
+        rpc_mock = lambda m, **p: [{"playerid": 1, "type": "video"}] if m == "Player.GetActivePlayers" else props
+        with mock.patch.object(service, "rpc", side_effect=rpc_mock):
+            player.watch_tracks()   # základ, nic se nezapisuje
+            self.assertNotIn("tt9", default.STORE.load(service.LAST_TRACKS, {}))
+            props = dict(props, currentsubtitle={"index": 0, "language": "eng"}, subtitleenabled=True)
+            player.watch_tracks()
+            self.assertEqual(default.STORE.load(service.LAST_TRACKS, {})["tt9"]["s"], 0)
+
     def test_vypnute_titulky_se_pamatuji(self):
         default.STORE.save(service.LAST_TRACKS, {"tt1": {"url": "ws:abc", "a": 0, "al": "eng", "s": -1, "sl": ""}})
         props = {"audiostreams": [{"index": 0, "language": "eng"}],

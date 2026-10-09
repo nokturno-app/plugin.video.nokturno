@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.10.0" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.10.1" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.10.0 – Titulky, které si stáhneš ručně (ikonka CC, OpenSubtitles nebo Titulky.com), se při pokračování stejného streamu znovu přiloží.
+    <news>10.10.1 – Ručně stažené titulky se zapamatují hned, i když film zastavíš krátce po jejich stažení. Drobné opravy.
+10.10.0 – Titulky, které si stáhneš ručně (ikonka CC, OpenSubtitles nebo Titulky.com), se při pokračování stejného streamu znovu přiloží.
 10.9.1 – Skrýt 3D streamy pozná víc označení 3D v názvu souboru (SBS, Full SBS, OU). Drobné opravy.
 10.8.0 – V nastavení jde vypnout vyhledávání Dolby Vision, HDR i 3D streamů.
 10.7.5 – Hledání streamů nespadne na zařízení, které už nezvládne další vlákno (Náhodný film na Androidu).
