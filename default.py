@@ -5741,6 +5741,7 @@ def list_mycat(apis, ctype, cat_id, page=1):
         metas, pages = (None, 1) if pool is None else (pool[(page - 1) * 20:page * 20], max(1, -(-len(pool) // 20)))
     else:
         metas, pages = dash.discover(ctype, mycat_params(cat), page=page)
+        metas = None if metas is None else mycat.released(metas)
     if metas is None:
         notify(L(30959, "Katalog se nepodařilo načíst. Zkus to později."), xbmcgui.NOTIFICATION_WARNING)
         metas = []

@@ -7018,7 +7018,7 @@ class TestVlastniKatalogy(unittest.TestCase):
         self.assertEqual(cat["name"], default.mycat_auto_name(cat))
         self.assertTrue(cat["name_auto"])
         self.assertIn("Container.Refresh", xbmc.builtins)
-        self.assertEqual(default.mycat_params(cat), {"with_genres": "35,10751", "with_origin_country": "CZ",
+        self.assertEqual(default.mycat_params(cat), {"with_genres": "35,10751", "with_origin_country": "CZ", "with_original_language": "cs",
                                                      "sort_by": "vote_average.desc", "year_from": 1990})
 
     def test_rezim_se_streamem_se_pta_na_dabing_a_spusti_prvni_davku(self):
