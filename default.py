@@ -2123,7 +2123,12 @@ def reading_progress(count, total):
             if stop.wait(0.5):
                 return
     worker = threading.Thread(target=run, name="nokturno-reading", daemon=True)
-    worker.start()
+    try:
+        worker.start()
+    except RuntimeError:
+        # „can't start new thread" (Android, 10.10.2): ukazatel je jen kosmetika, výběr jede bez něj
+        close_bar()
+        return lambda: None
 
     def close():
         stop.set()

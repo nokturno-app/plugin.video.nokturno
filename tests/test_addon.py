@@ -4449,6 +4449,16 @@ class TestSloucenéVerze(unittest.TestCase):
         self.assertTrue(oznameni.call_args[0][0].startswith("Údaje dočteny"))
         bar.close.assert_called_once_with()
 
+    def test_ukazatel_bez_vlakna_nespadne(self):
+        # Android nedovolí další vlákno – výběr streamu musí jet dál bez ukazatele
+        bar = mock.MagicMock()
+        with mock.patch.object(xbmcgui, "DialogProgressBG", return_value=bar), \
+                mock.patch.object(default.threading.Thread, "start",
+                                  side_effect=RuntimeError("can't start new thread")):
+            zavrit = default.reading_progress(lambda: 1, 3)
+        bar.close.assert_called_once_with()
+        zavrit()
+
     def test_fulltext_zustava_posledni_volbou(self):
         with mock.patch.object(xbmcgui.Dialog, "select", return_value=2):
             self.assertIs(default.choose_stream([self.rep], relax=True, expand=lambda: []), default.FULLTEXT)
