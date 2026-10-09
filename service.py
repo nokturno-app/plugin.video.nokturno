@@ -116,6 +116,7 @@ FORYOU_SEEN_DAYS = 14                # a stejná lhůta jako v default.py
 QUIT_PROP = "nokturno.quitting"   # stejný literál jako v default.py — Kodi končí, viz ServiceMonitor
 CHUNK = 1024 * 1024
 PREF_LANGS = ("", "CZ", "SK", "EN", "HU")   # pořadí voleb `pref_lang` v settings.xml, stejné jako v default.py
+TRACKS_SETTLE = 10   # s po obnovení stop, než se smí zapsat nový stav (Kodi přidává externí titulky se zpožděním)
 TRACKS_DELAY = 1.0   # s po onAVStarted — externí titulky Kodi přidává až po otevření videa
 LAST_TRACKS = "lasttracks"   # lasttracks.json: zvuk a titulky naposledy zvolené u titulu (jen pro týž stream)
 LAST_TRACKS_MAX = 300
@@ -229,6 +230,7 @@ class Player(xbmc.Player):
 
     def reset(self):
         self.item = None
+        self.tracks_from = 0.0  # od kdy smí `remember_tracks` zapisovat; po startu videa čeká na `apply_tracks`
         self.tracks_sig = None  # poslední viděná sestava stop (`watch_tracks`); None = ještě nezměřená
         self.base_subs = None   # kolik titulkových stop bylo při startu videa; ruční (z dialogu Kodi) přibudou za nimi
         self.position = 0.0
@@ -252,6 +254,7 @@ class Player(xbmc.Player):
             return
         xbmcgui.Window(10000).clearProperty(PROP)
         self.item, self.started = item, time.time()
+        self.tracks_from = float("inf")
         try:
             total = self.getTotalTime()
         except RuntimeError:
@@ -273,6 +276,13 @@ class Player(xbmc.Player):
         v jádru; co si pak uživatel přepne sám, už se nepřepisuje."""
         self.base_subs = None
         self.tracks_sig = None
+        try:
+            self._apply_tracks(item)
+        finally:
+            if self.item is item:
+                self.tracks_from = time.time() + TRACKS_SETTLE
+
+    def _apply_tracks(self, item):
         time.sleep(TRACKS_DELAY)
         if self.item is not item or not self.isPlayingVideo():
             return
@@ -323,6 +333,8 @@ class Player(xbmc.Player):
         """Zapamatuje zvuk a titulky, které právě hrají – při dalším puštění téhož streamu se vrátí
         (`restore_tracks`) místo předvolby z nastavení. Volá se se zápisem pozice, tedy za běhu."""
         url = track_ref(self.item)
+        if time.time() < self.tracks_from:
+            return   # stopy z minula se ještě obnovují: zápis by je přepsal prázdným stavem a smazal kopii titulků
         player_id = self._video_player() if url else None
         if player_id is None:
             return

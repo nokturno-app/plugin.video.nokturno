@@ -2427,6 +2427,7 @@ class TestTitulkyAZvuk(unittest.TestCase):
         with mock.patch.object(service, "rpc", side_effect=rpc_mock), \
              mock.patch.object(service, "PROFILE", tmp), \
              mock.patch.object(service, "TRACKS_DELAY", 0), \
+             mock.patch.object(service, "TRACKS_SETTLE", 0), \
              mock.patch.object(service.Player, "isPlayingVideo", return_value=True), \
              mock.patch.object(service.xbmcvfs, "translatePath",
                                side_effect=lambda x: kodi_tmp if x == "special://temp/" else ""):
@@ -2487,6 +2488,21 @@ class TestTitulkyAZvuk(unittest.TestCase):
                                if m == "Player.GetActivePlayers" else props):
             player.remember_tracks()
         self.assertEqual(default.STORE.load(service.LAST_TRACKS, {})["ws:abc"]["url"], "ws:abc")
+
+    def test_zapis_stop_pocka_na_obnoveni_z_minula(self):
+        """Discord (spacik78) 2026-10-09: po studeném startu `checkpoint` zapsal prázdný stav dřív, než
+        `restore_tracks` titulky obnovil, a smazal jejich kopii."""
+        default.STORE.save(service.LAST_TRACKS, {"ws:abc": {"url": "ws:abc", "a": 0, "al": "und", "s": 0, "sl": "cze",
+                                                            "ts": 1, "sf": "/nic/neexistuje.srt"}})
+        props = {"currentaudiostream": {"index": 0, "language": "und"}, "subtitles": [], "currentsubtitle": {},
+                 "subtitleenabled": False}
+        player = service.Player(store=default.STORE, stats=None)
+        player.item = {"id": "ws:abc"}
+        player.tracks_from = float("inf")   # nastaví `onAVStarted`, uvolní až konec `apply_tracks`
+        with mock.patch.object(service, "rpc", side_effect=lambda m, **p: [{"playerid": 1, "type": "video"}]
+                               if m == "Player.GetActivePlayers" else props):
+            player.remember_tracks()
+        self.assertEqual(default.STORE.load(service.LAST_TRACKS, {})["ws:abc"]["s"], 0)
 
     def test_vypnute_titulky_se_pamatuji(self):
         default.STORE.save(service.LAST_TRACKS, {"tt1": {"url": "ws:abc", "a": 0, "al": "eng", "s": -1, "sl": ""}})
