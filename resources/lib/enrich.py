@@ -283,19 +283,24 @@ def _imdb_of(meta):
 
 
 def _other_ratings(store, ctype, imdb, source, tmdb):
-    """Hodnocení z IMDb a TMDB, která titul ještě nemá (`source` = to, které už nese)."""
-    out = {}
+    """(hodnocení z IMDb a TMDB, která titul ještě nemá, obsazení) – `source` = hodnocení, které už nese.
+    Obsazení (3 jména) jede zadarmo s odpovědí Cinemety, kterou se stejně stahuje hodnocení z IMDb:
+    `/discover` herce nenese a dialog Informace v Kodi byl bez obsazení (Discord 2026-10-09)."""
+    out, cast = {}, []
     if source != "imdb":
         def load():
             try:
-                r = _cinemeta(ctype, imdb).get("imdbRating")
-                return {"r": float(r) if r else None}
+                meta = _cinemeta(ctype, imdb)
+                r = meta.get("imdbRating")
+                return {"r": float(r) if r else None, "c": [str(n) for n in meta.get("cast") or [] if n][:10]}
             except Exception:  # noqa: BLE001 – Cinemeta nedostupná, zkusí se příště
                 return None
-        got = (store.cached_if(f"imdbr:{ctype}:{imdb}", TTL, load, ok=lambda d: d is not None)
+        # `imdbr2:` – záznamy `imdbr:` obsazení nenesou
+        got = (store.cached_if(f"imdbr2:{ctype}:{imdb}", TTL, load, ok=lambda d: d is not None)
                if store else load()) or {}
         if got.get("r"):
             out["imdb"] = got["r"]
+        cast = got.get("c") or []
     if tmdb and source != "tmdb":
         try:
             r = (tmdb.brief(ctype, imdb) or {}).get("imdbRating")
@@ -303,13 +308,14 @@ def _other_ratings(store, ctype, imdb, source, tmdb):
             r = None
         if r:
             out["tmdb"] = float(r)
-    return out
+    return out, cast
 
 
 def add_ratings(metas, store=None, ctype="movie", tmdb=None, deadline=RATINGS_DEADLINE):
     """Doplní ke hlavnímu hodnocení i to druhé – `meta["ratings"] = {"imdb": 7.1, "tmdb": 6.8}`
     (in-place). IMDb z Cinemety (zdarma, bez klíče), TMDB jen s klíčem. Co nestihne `deadline`,
-    doběhne na pozadí do cache a ukáže se při dalším otevření (Discord 2026-09-28)."""
+    doběhne na pozadí do cache a ukáže se při dalším otevření (Discord 2026-09-28).
+    Titulu bez obsazení doplní i `cast` (jména z téže odpovědi Cinemety, viz `_other_ratings`)."""
     by_future = {}
     for m in metas:
         imdb = _imdb_of(m)
@@ -320,11 +326,14 @@ def add_ratings(metas, store=None, ctype="movie", tmdb=None, deadline=RATINGS_DE
     try:
         for fut in as_completed(list(by_future), timeout=deadline):
             try:
-                got = fut.result()
+                got, cast = fut.result()
             except Exception:  # noqa: BLE001
                 continue
+            m = by_future[fut]
             if got:
-                by_future[fut]["ratings"] = got
+                m["ratings"] = got
+            if cast and not m.get("cast"):
+                m["cast"] = cast
     except FuturesTimeoutError:
         pass
     return metas
