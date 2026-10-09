@@ -5246,6 +5246,7 @@ MYCAT_KEYWORDS = tuple((key, ids) + MYCAT_KEYWORD_LABELS[key] for key, ids in my
 MYCAT_SORTS = (("popularity.desc", 30954, "Oblíbenosti – co se teď na TMDB nejvíc sleduje"),
                ("vote_average.desc", 30955, "Hodnocení na TMDB – jen tituly s dost hlasy (obvykle aspoň 100)"),
                ("primary_release_date.desc", 30956, "Data vydání – nejnovější první"),
+               ("primary_release_date.asc", 31063, "Data vydání – nejstarší první"),
                (mycat.ALPHA, 30288, "Abecedy – oblíbené tituly podle názvu"))
 MYCAT_QUALITY_LABELS = ((0, 30885, "Libovolná"), (3, 0, "Full HD"), (3.5, 0, "2K"), (4, 0, "4K"))   # 0 = bez překladu
 MYCAT_TRACK_LABELS = (("", 30762, "Libovolné"), ("CZ", 30112, "Čeština"), ("SK", 30113, "Slovenština"),

@@ -3510,3 +3510,7 @@ msgstr ""
 msgctxt "#31062"
 msgid "HDR files, including Dolby Vision (by name: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision), are never shown, not even when there is no other stream."
 msgstr ""
+
+msgctxt "#31063"
+msgid "Release date – oldest first"
+msgstr ""

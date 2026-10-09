@@ -3510,3 +3510,7 @@ msgstr "Skrýt HDR streamy"
 msgctxt "#31062"
 msgid "HDR files, including Dolby Vision (by name: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision), are never shown, not even when there is no other stream."
 msgstr "Soubory HDR, včetně Dolby Vision (podle názvu: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision), se nezobrazí nikdy, ani když jiný stream není."
+
+msgctxt "#31063"
+msgid "Release date – oldest first"
+msgstr "Data vydání – nejstarší první"

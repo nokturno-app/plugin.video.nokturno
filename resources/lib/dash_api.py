@@ -57,7 +57,7 @@ DISCOVER_PARAMS = {
     "with_origin_country": re.compile(r"^[A-Z]{2}(\|[A-Z]{2}){0,4}$"),
     "year_from": re.compile(r"^(19|20)[0-9]{2}$"),
     "year_to": re.compile(r"^(19|20)[0-9]{2}$"),
-    "sort_by": re.compile(r"^(popularity|vote_average|primary_release_date)\.desc$"),
+    "sort_by": re.compile(r"^((popularity|vote_average|primary_release_date)\.desc|primary_release_date\.asc)$"),
     "vote_average_gte": re.compile(r"^[0-9](\.[0-9])?$"),
     "vote_count_gte": re.compile(r"^[0-9]{1,5}$"),
 }
