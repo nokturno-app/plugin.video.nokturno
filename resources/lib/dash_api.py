@@ -154,7 +154,7 @@ class DashApi:
         except Exception as e:  # noqa: BLE001 – síť, DNS, výpadek dashboardu
             raise DashApiError(str(e)[:120]) from e
 
-    def _load(self, key, ttl, fetch, down_key=DOWN_KEY):
+    def _load(self, key, ttl, fetch, down_key=DOWN_KEY, stale_ttl=STALE_TTL):
         """Čerstvá cache → síť → při chybě poslední známá data (až `STALE_TTL`).
         `fetch` vrací data k uložení, nebo None (nic neukládat, nic není).
 
@@ -171,7 +171,7 @@ class DashApi:
         fresh = self.cache.peek_cached(key, ttl)
         if fresh is not None:
             return fresh
-        stale = self.cache.peek_cached(key, STALE_TTL)
+        stale = self.cache.peek_cached(key, stale_ttl)
         if stale is None or self.cache.peek_cached(down_key, DOWN_TTL) is None:
             try:
                 return self.cache.cached_if(key, ttl, fetch, ok=lambda d: d is not None, fresh=True)
@@ -189,8 +189,11 @@ class DashApi:
             data = self._get("/catalogs")
             return data.get("catalogs") if isinstance(data, dict) and isinstance(data.get("catalogs"), list) else None
 
-        entries = [e for e in (_clean_entry(r) for r in (self._load("nokturno:dash:menu", min(MENU_TTL, since_midnight()), fetch) or []))
-                   if e]
+        # záloha při výpadku jen z dneška: katalogy „Film pro dnešní den“ platí jeden den,
+        # včerejší menu by ukázalo film z jiného dne (2026-10-09: Den Protivných holek ze 3. 10.)
+        today = since_midnight()
+        entries = [e for e in (_clean_entry(r) for r in (self._load("nokturno:dash:menu", min(MENU_TTL, today), fetch,
+                                                                    stale_ttl=today) or [])) if e]
         return [e for e in entries
                 if (placement is None or e["placement"] == placement) and (ctype is None or e["kind"] == ctype)]
 
