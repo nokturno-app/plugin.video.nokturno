@@ -15,6 +15,7 @@ import json
 import logging
 import os
 import re
+import shutil
 import sys
 import threading
 import time
@@ -118,6 +119,7 @@ PREF_LANGS = ("", "CZ", "SK", "EN", "HU")   # pořadí voleb `pref_lang` v setti
 TRACKS_DELAY = 1.0   # s po onAVStarted — externí titulky Kodi přidává až po otevření videa
 LAST_TRACKS = "lasttracks"   # lasttracks.json: zvuk a titulky naposledy zvolené u titulu (jen pro týž stream)
 LAST_TRACKS_MAX = 300
+SUB_EXTS = (".srt", ".sub", ".ass", ".ssa", ".smi", ".txt", ".vtt")   # titulky stažené dialogem Kodi (OpenSubtitles, Titulky.com)
 PROFILE = xbmcvfs.translatePath(ADDON.getAddonInfo("profile"))
 TMDBH_PLAYER = "special://profile/addon_data/plugin.video.themoviedb.helper/players/nokturno.json"
 _STARTED_AT = time.time()   # MESSAGE_DELAY se počítá odsud, ne od okamžiku, kdy dorazí FORCE_STATS_PROP
@@ -227,6 +229,7 @@ class Player(xbmc.Player):
 
     def reset(self):
         self.item = None
+        self.base_subs = None   # kolik titulkových stop bylo při startu videa; ruční (z dialogu Kodi) přibudou za nimi
         self.position = 0.0
         self.total = 0.0
         self.started = 0.0
@@ -267,6 +270,7 @@ class Player(xbmc.Player):
         (nebo vždy, podle nastavení), a když preferovaný jazyk hraje, vypnou se
         úplně, i vynucené. Rozhoduje `tracks.pick_audio`/`pick_subtitle`
         v jádru; co si pak uživatel přepne sám, už se nepřepisuje."""
+        self.base_subs = None
         time.sleep(TRACKS_DELAY)
         if self.item is not item or not self.isPlayingVideo():
             return
@@ -290,6 +294,7 @@ class Player(xbmc.Player):
         props = rpc("Player.GetProperties", playerid=player_id, properties=[
             "audiostreams", "currentaudiostream", "subtitles", "currentsubtitle", "subtitleenabled"]) or {}
         audio = props.get("audiostreams") or []
+        self.base_subs = len(props.get("subtitles") or [])
         index, audio_ok = pick_audio(audio, props.get("currentaudiostream"), pref, item.get("stream_langs"))
         if index is not None and not auto_audio:
             # zvuk nechat, ale titulky se musí rozhodovat podle toho, co doopravdy hraje
@@ -320,17 +325,57 @@ class Player(xbmc.Player):
         if player_id is None:
             return
         props = rpc("Player.GetProperties", playerid=player_id, properties=[
-            "currentaudiostream", "currentsubtitle", "subtitleenabled"]) or {}
+            "currentaudiostream", "currentsubtitle", "subtitleenabled", "subtitles"]) or {}
         audio = props.get("currentaudiostream") or {}
         sub = props.get("currentsubtitle") or {} if props.get("subtitleenabled") else {}
+        if props.get("subtitleenabled") and not sub and self.base_subs is not None:
+            # Kodi 21 u právě přidané externí stopy (dialog CC) hlásí `currentsubtitle` prázdné,
+            # i když titulky běží (Office 2026-10-09): bere se nejnovější stopa za původními
+            added = [x for x in props.get("subtitles") or [] if x.get("index", -1) >= self.base_subs]
+            sub = added[-1] if added else {}
         if "index" not in audio:
             return
         rec = {"url": url, "a": audio.get("index"), "al": audio.get("language") or "",
                "s": sub.get("index", -1), "sl": sub.get("language") or "", "ts": int(time.time())}
+        key = str(self.item.get("id"))
         with self.store.updating(LAST_TRACKS, {}) as data:
-            data[str(self.item.get("id"))] = rec
+            prev = data.get(key) or {}
+            file, name = self.keep_subtitle_file(key, sub, prev)
+            if file:
+                rec["sf"], rec["sn"] = file, name
+            data[key] = rec
             for old in sorted(data, key=lambda k: (data[k] or {}).get("ts") or 0)[:max(len(data) - LAST_TRACKS_MAX, 0)]:
-                del data[old]
+                drop_subtitle_file((data.pop(old) or {}).get("sf"))
+            if prev.get("sf") and prev.get("sf") != rec.get("sf"):
+                drop_subtitle_file(prev["sf"])   # uživatel zvolil jiné titulky nebo je vypnul
+
+    def keep_subtitle_file(self, key, sub, prev):
+        """Titulky, které si uživatel stáhl ručně dialogem Kodi (ikonka CC → OpenSubtitles/Titulky.com),
+        Kodi při dalším puštění samo nenabídne; soubor leží v dočasné složce a časem zmizí.
+        Zkopíruje se proto do profilu (`rucni_titulky/`) a `restore_tracks` ho znovu přiloží.
+        Ruční soubor = stopa, která při startu videa nebyla (index za stopami z kontejneru a z doplňku).
+        Vrací `(cesta, jméno stopy)`, nebo `("", "")` když to ruční soubor není."""
+        if self.base_subs is None or sub.get("index", -1) < self.base_subs:
+            return "", ""
+        name = sub.get("name") or ""
+        old = prev.get("sf") if prev.get("sf") and os.path.isfile(prev["sf"]) else ""
+        src = find_subtitle_file(self.started)
+        if not src:
+            return old, name   # Kodi dočasný soubor mezitím smazalo, platí dřívější kopie
+        dest_dir = os.path.join(PROFILE, "rucni_titulky")
+        os.makedirs(dest_dir, exist_ok=True)
+        stem, ext = os.path.splitext(os.path.basename(src))
+        lang = os.path.splitext(stem)[1]   # `.cs` z `TempSubtitle.cs.srt`: podle přípony pozná jazyk stopy Kodi
+        dest = os.path.join(dest_dir, re.sub(r"[^0-9A-Za-z_-]+", "_", key) + (lang if len(lang) <= 4 else "") + ext.lower())
+        if old == dest and os.path.getmtime(dest) + 2 >= os.path.getmtime(src):
+            return dest, name   # už zkopírováno, nekopírovat každých 30 s
+        try:
+            shutil.copyfile(src, dest)   # xbmcvfs.copy vrací na Androidu mlčky False a soubor nevznikne
+        except OSError as e:
+            log(f"titulky {name}: kopie selhala: {e}", xbmc.LOGWARNING)
+            return old, name
+        log(f"ruční titulky zapamatovány: {os.path.basename(src)}")
+        return dest, name
 
     def restore_tracks(self, item):
         """Stopy z minulého sledování téhož streamu (týž soubor = tatáž čísla stop). True = obnoveno,
@@ -342,6 +387,7 @@ class Player(xbmc.Player):
         if player_id is None:
             return False
         props = rpc("Player.GetProperties", playerid=player_id, properties=["audiostreams", "subtitles"]) or {}
+        self.base_subs = len(props.get("subtitles") or [])
 
         def find(streams, index, lang):
             return next((x for x in streams if x.get("index") == index and (x.get("language") or "") == lang), None)
@@ -349,6 +395,10 @@ class Player(xbmc.Player):
         if find(props.get("audiostreams") or [], rec.get("a"), rec.get("al") or "") is None:
             return False
         rpc("Player.SetAudioStream", playerid=player_id, stream=rec["a"])
+        if rec.get("sf") and os.path.isfile(rec["sf"]):
+            self.setSubtitles(rec["sf"])   # ručně stažené titulky; Kodi je přidá a zapne
+            log(f"stopy jako minule: zvuk {rec['a']}, ruční titulky {rec.get('sn')}")
+            return True
         if rec.get("s", -1) == -1:
             rpc("Player.SetSubtitle", playerid=player_id, subtitle="off")
         elif find(props.get("subtitles") or [], rec["s"], rec.get("sl") or "") is not None:
@@ -1198,6 +1248,35 @@ def foryou_warm_urls():
     base = "plugin://plugin.video.nokturno/?action=foryou&type={t}"
     return [base.format(t=t) for t in ("movie", "series")
             if ted - (seen.get(t) or 0) < FORYOU_SEEN_DAYS * 86400]
+
+
+def drop_subtitle_file(path):
+    try:
+        if path:
+            os.remove(path)
+    except OSError:
+        pass
+
+
+def find_subtitle_file(since):
+    """Nejnovější soubor s titulky, který Kodi uložil od `since` (čas startu videa): `special://temp/`, nebo
+    `special://subtitles/` když je nastavená vlastní složka. Dialog Kodi (CC → OpenSubtitles, Titulky.com)
+    u streamu z URL soubor jmenuje `TempSubtitle.<jazyk>.<přípona>`, jméno stopy v JSON-RPC se souborem
+    spolehlivě nesedí, proto se řídí časem. Prázdné, když nic nepřibylo."""
+    best, best_mtime = "", since
+    for d in ("special://temp/", "special://subtitles/"):
+        root = xbmcvfs.translatePath(d)
+        if not root or not os.path.isdir(root):
+            continue
+        for f in os.listdir(root):
+            path = os.path.join(root, f)
+            try:
+                mtime = os.path.getmtime(path)
+            except OSError:
+                continue
+            if os.path.splitext(f.lower())[1] in SUB_EXTS and mtime > best_mtime:
+                best, best_mtime = path, mtime
+    return best
 
 
 def rpc(method, **params):

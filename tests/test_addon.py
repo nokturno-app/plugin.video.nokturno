@@ -2409,6 +2409,55 @@ class TestTitulkyAZvuk(unittest.TestCase):
         self.assertNotIn(("Player.SetSubtitle", {"playerid": 1, "subtitle": 1, "enable": True}),
                          self.run_tracks(jine, item))
 
+    def test_rucne_stazene_titulky_se_prilozi_znovu(self):
+        """Discord (spacik78) 2026-10-05: titulky z dialogu Kodi (OpenSubtitles, Titulky.com) se při dalším puštění ztratily."""
+        import tempfile
+        default.STORE.save(service.LAST_TRACKS, {})
+        tmp = tempfile.mkdtemp()
+        kodi_tmp = os.path.join(tmp, "temp")
+        os.makedirs(kodi_tmp)
+        base = {"audiostreams": [{"index": 0, "language": "eng"}],
+                "currentaudiostream": {"index": 0, "language": "eng"},
+                "subtitles": [{"index": 0, "language": "eng", "name": "ENG"}],
+                "currentsubtitle": {}, "subtitleenabled": False}
+        player = service.Player(store=default.STORE, stats=None)
+        player.item = {"id": "tt1", "stream_url": "ws:abc"}
+        props = dict(base)
+        rpc_mock = lambda m, **p: [{"playerid": 1, "type": "video"}] if m == "Player.GetActivePlayers" else props
+        with mock.patch.object(service, "rpc", side_effect=rpc_mock), \
+             mock.patch.object(service, "PROFILE", tmp), \
+             mock.patch.object(service, "TRACKS_DELAY", 0), \
+             mock.patch.object(service.Player, "isPlayingVideo", return_value=True), \
+             mock.patch.object(service.xbmcvfs, "translatePath",
+                               side_effect=lambda x: kodi_tmp if x == "special://temp/" else ""):
+            player.apply_tracks(player.item)   # zapamatuje počet stop při startu (1)
+            self.assertEqual(player.base_subs, 1)
+            # uživatel stáhne titulky dialogem Kodi: soubor v temp, nová stopa za původními
+            with open(os.path.join(kodi_tmp, "TempSubtitle.cs.srt"), "w", encoding="utf-8") as f:
+                f.write("1\n00:00:01,000 --> 00:00:02,000\nAhoj\n")
+            props = dict(base, subtitles=base["subtitles"] + [{"index": 1, "language": "cze", "name": "TempSubtitle (Externí)"}],
+                         currentsubtitle={}, subtitleenabled=True)   # Kodi 21: currentsubtitle u přidané stopy prázdné
+            player.remember_tracks()
+            rec = default.STORE.load(service.LAST_TRACKS, {})["tt1"]
+            self.assertTrue(os.path.isfile(rec["sf"]))
+            os.remove(os.path.join(kodi_tmp, "TempSubtitle.cs.srt"))   # Kodi dočasný soubor smaže
+            player.remember_tracks()
+            self.assertEqual(default.STORE.load(service.LAST_TRACKS, {})["tt1"]["sf"], rec["sf"])
+            # další puštění: titulky se přiloží
+            props = dict(base)
+            attached = []
+            player2 = service.Player(store=default.STORE, stats=None)
+            player2.item = {"id": "tt1", "stream_url": "ws:abc"}
+            with mock.patch.object(service.Player, "setSubtitles", create=True,
+                                   side_effect=lambda path: attached.append(path)):
+                player2.apply_tracks(player2.item)
+            self.assertEqual(attached, [rec["sf"]])
+            # uživatel titulky vypne = kopie se smaže
+            props = dict(base, subtitles=base["subtitles"] + [{"index": 1, "language": "cze", "name": "x"}])
+            player.remember_tracks()
+            self.assertFalse(os.path.exists(rec["sf"]))
+            self.assertNotIn("sf", default.STORE.load(service.LAST_TRACKS, {})["tt1"])
+
     def test_vypnute_titulky_se_pamatuji(self):
         default.STORE.save(service.LAST_TRACKS, {"tt1": {"url": "ws:abc", "a": 0, "al": "eng", "s": -1, "sl": ""}})
         props = {"audiostreams": [{"index": 0, "language": "eng"}],
