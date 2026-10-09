@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.10.6" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.11.0" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.10.6 – Katalogy podle země původu ukazují jen filmy a seriály v jazyce té země – bez zahraničních filmů, které se u nás jen natáčely. Vlastní katalogy neukazují ohlášené filmy, které ještě nevyšly.
+    <news>10.11.0 – V informacích o filmu nebo seriálu z katalogu se ukazují hlavní herci.
+10.10.6 – Katalogy podle země původu ukazují jen filmy a seriály v jazyce té země – bez zahraničních filmů, které se u nás jen natáčely. Vlastní katalogy neukazují ohlášené filmy, které ještě nevyšly.
 10.10.5 – Ručně stažené titulky se po úplném vypnutí Kodi nebo restartu TV znovu přiloží i na pomalejších zařízeních. Drobné opravy.
 10.10.4 – Výběr streamu na některých zařízeních s Androidem už nespadne při dočítání údajů o streamech.
 10.10.3 – Zvuk a titulky, včetně ručně stažených, se pamatují i u souborů puštěných přímo z WebShare, HellSpy a WebDAV. Drobné opravy.
