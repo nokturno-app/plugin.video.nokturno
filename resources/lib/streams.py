@@ -303,10 +303,19 @@ def stream_av1(s):
     return bool(AV1_RE.search(text))
 
 
-STEREO_3D_RE = re.compile(r"(?<![A-Za-z0-9])(3D(?:[ ._-]?H?SBS|[ ._-]?H?OU)?|H?SBS|H-SBS|H-?OU|"
+STEREO_3D_RE = re.compile(r"(?<![A-Za-z0-9])(3D(?:[ ._-]?H?SBS|[ ._-]?H?OU)|H?SBS|H-SBS|H-?OU|"
                           r"(?:Half|Full)[ ._-]?(?:SBS|OU|TAB)|MVC)(?![A-Za-z0-9])", re.IGNORECASE)
 # holé OU/TAB jen velkými písmeny: malými jsou to běžná slova v názvech (francouzské „ou“, „tab“)
 STEREO_3D_SHORT_RE = re.compile(r"(?<![A-Za-z0-9])(?:OU|TAB|FSBS)(?![A-Za-z0-9])")
+# holé „3D“ bývá i součástí názvu filmu („Piranha 3D 2010“, „Šmoulové 3D“, jolian, Discord 2026-10-10):
+# technická značka stojí za rokem, takže platí jen za ním; bez roku v názvu se nedá rozlišit a platí jako dřív
+BARE_3D_RE = re.compile(r"(?<![A-Za-z0-9])3D(?![A-Za-z0-9])", re.IGNORECASE)
+YEAR_RE = re.compile(r"(?<![0-9])(?:19|20)[0-9]{2}(?![0-9])")
+
+
+def _bare_3d(text):
+    year = YEAR_RE.search(text)
+    return any(year is None or b.start() > year.start() for b in BARE_3D_RE.finditer(text))
 
 
 def stream_3d(s):
@@ -314,8 +323,9 @@ def stream_3d(s):
     názvu souboru — na běžné TV dva obrazy vedle sebe nebo nad sebou."""
     if (s.get("_media") or {}).get("stereo3d"):
         return True
-    text = " ".join(str(s.get(k) or "") for k in ("label", "_ws_name", "name"))
-    return bool(STEREO_3D_RE.search(text) or STEREO_3D_SHORT_RE.search(text))
+    texts = [str(s.get(k) or "") for k in ("label", "_ws_name", "name")]
+    text = " ".join(texts)
+    return bool(STEREO_3D_RE.search(text) or STEREO_3D_SHORT_RE.search(text) or any(_bare_3d(t) for t in texts))
 
 
 NAME_HDR_RE = re.compile(r"(?<![A-Za-z0-9])(HDR10(?:\+|Plus)|HDR10|HDR|HLG)(?![A-Za-z0-9])", re.IGNORECASE)
