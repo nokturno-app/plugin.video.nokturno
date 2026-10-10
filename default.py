@@ -1402,7 +1402,7 @@ RATING_TYPES = {"imdb": "imdb", "tmdb": "themoviedb", "sosac": "sosac"}
 
 def rate(metas, ctype):
     """Ke hlavnímu hodnocení i druhé (IMDb i TMDB naráz, Discord 2026-09-28), viz `add_ratings`."""
-    add_ratings(metas, STORE, "series" if ctype == "series" else "movie", tmdb=get_tmdb())
+    add_ratings(metas, STORE, "series" if ctype == "series" else "movie", tmdb=get_tmdb(), dash=get_dash())
 
 
 def set_rating(li, tag, rating, votes=None, source=None, others=None):

@@ -282,7 +282,7 @@ def _imdb_of(meta):
     return imdb if str(imdb).startswith("tt") else ""
 
 
-def _other_ratings(store, ctype, imdb, source, tmdb):
+def _other_ratings(store, ctype, imdb, source, tmdb, dash=None):
     """(hodnocení z IMDb a TMDB, která titul ještě nemá, obsazení) – `source` = hodnocení, které už nese.
     Obsazení (3 jména) jede zadarmo s odpovědí Cinemety, kterou se stejně stahuje hodnocení z IMDb:
     `/discover` herce nenese a dialog Informace v Kodi byl bez obsazení (Discord 2026-10-09)."""
@@ -308,15 +308,20 @@ def _other_ratings(store, ctype, imdb, source, tmdb):
             r = None
         if r:
             out["tmdb"] = float(r)
-    if tmdb:   # s klíčem TMDB plné obsazení s rolemi a fotkami místo 3 jmen z Cinemety (Discord 2026-10-10)
+    for api in (tmdb, dash):   # plné obsazení s rolemi a fotkami místo 3 jmen z Cinemety: TMDB s klíčem uživatele, jinak dashboard
+        if not api:
+            continue
         try:
-            cast = tmdb.cast(ctype, imdb) or cast
-        except Exception:  # noqa: BLE001 – zůstanou jména z Cinemety
-            pass
+            got_cast = api.cast(ctype, imdb)
+        except Exception:  # noqa: BLE001 – zkusí se další zdroj, nakonec zůstanou jména z Cinemety
+            continue
+        if got_cast:
+            cast = got_cast
+            break
     return out, cast
 
 
-def add_ratings(metas, store=None, ctype="movie", tmdb=None, deadline=RATINGS_DEADLINE):
+def add_ratings(metas, store=None, ctype="movie", tmdb=None, deadline=RATINGS_DEADLINE, dash=None):
     """Doplní ke hlavnímu hodnocení i to druhé – `meta["ratings"] = {"imdb": 7.1, "tmdb": 6.8}`
     (in-place). IMDb z Cinemety (zdarma, bez klíče), TMDB jen s klíčem. Co nestihne `deadline`,
     doběhne na pozadí do cache a ukáže se při dalším otevření (Discord 2026-09-28).
@@ -327,7 +332,7 @@ def add_ratings(metas, store=None, ctype="movie", tmdb=None, deadline=RATINGS_DE
         if not imdb or m.get("ratings"):
             continue
         source = m.get("ratingSource") if m.get("imdbRating") else ""
-        by_future[_pool().submit(_other_ratings, store, ctype, imdb, source, tmdb)] = m
+        by_future[_pool().submit(_other_ratings, store, ctype, imdb, source, tmdb, dash)] = m
     try:
         for fut in as_completed(list(by_future), timeout=deadline):
             try:

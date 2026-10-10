@@ -12,6 +12,7 @@ Tři veřejné endpointy, které server skládá sám z TMDB (klient nic nedohle
   ať server nemůže klientovi poslat nekonečné menu. Složku jde otevřít i jako obyčejný
   katalog — server pak vrátí slité položky jejích podkategorií.
 * `GET /similar?kind=&id=` — podobné tituly pro uživatele bez vlastního TMDB klíče.
+* `GET /cast?kind=&id=` — obsazení (jméno, role, fotka) pro uživatele bez vlastního TMDB klíče.
 * `GET /discover?kind=&page=&…` — stránka vlastního katalogu, který si uživatel poskládal
   v doplňku (žánry, původní jazyk, roky, řazení). Server dotaz pustí přes TMDB svým klíčem.
 * `GET /tv-program?date=&kind=&channel=` — filmy a seriály v české a slovenské TV,
@@ -47,6 +48,8 @@ TIMEOUT = 6
 MENU_TTL = 3600
 CATALOG_TTL = 6 * 3600
 SIMILAR_TTL = 7 * 86400
+CAST_TTL = 7 * 86400
+CAST_MAX = 10
 DISCOVER_TTL = 12 * 3600
 DISCOVER_MAX_PAGE = 10
 # parametry vlastního katalogu, které server přijme (bílá listina `tmdb_discover` na serveru je širší)
@@ -239,6 +242,23 @@ class DashApi:
             return data.get("items") if isinstance(data, dict) and isinstance(data.get("items"), list) else None
 
         return _clean_items(self._load(f"nokturno:dash:similar:{kind}:{imdb_id}", SIMILAR_TTL, fetch), ctype)
+
+    def cast(self, ctype, imdb_id):
+        """[{name, character, photo}] do `CAST_MAX`; prázdné při výpadku dashboardu i neznámém titulu."""
+        if not (isinstance(imdb_id, str) and IMDB_RE.match(imdb_id)):
+            return []
+        kind = "series" if ctype == "series" else "movie"
+
+        def fetch():
+            data = self._get("/cast", kind=kind, id=imdb_id)
+            return data.get("cast") if isinstance(data, dict) and isinstance(data.get("cast"), list) else None
+
+        rows = self._load(f"nokturno:dash:cast:{kind}:{imdb_id}", CAST_TTL, fetch)
+        if not isinstance(rows, list):
+            return []
+        return [{"name": _text(c.get("name"), 100), "character": _text(c.get("character"), 100),
+                 "photo": _text(c.get("photo"), 300) if str(c.get("photo") or "").startswith("https://") else ""}
+                for c in rows if isinstance(c, dict) and c.get("name")][:CAST_MAX]
 
     # --- vlastní katalogy -------------------------------------------------------------
 
