@@ -36,6 +36,7 @@ Tvar `catalogs()`/`catalog()` je stejný jako u ostatních katalogových klient�
 Bez závislostí na Kodi — jde testovat samostatně:
     python3 dash_api.py menu | similar movie tt0133093 | tv 2026-09-17
 """
+import datetime
 import json
 import re
 import time
@@ -276,7 +277,7 @@ class DashApi:
             return data if isinstance(data, dict) and isinstance(data.get("items"), list) else None
 
         data = self._tmdb_discover(kind, clean, page)
-        key = "nokturno:dash:discover:" + json.dumps([kind, page, sorted(clean.items())])
+        key = "nokturno:dash:discover:" + json.dumps([kind, page, sorted(clean.items()), datetime.date.today().isoformat()])
         data = data or self._load(key, DISCOVER_TTL, fetch)
         if data is None:
             return None, 1
@@ -289,7 +290,9 @@ class DashApi:
         (neplatný klíč, výpadek TMDB) = None a zeptá se server."""
         if self.tmdb is None or not getattr(self.tmdb, "key", ""):
             return None
-        key = "nokturno:tmdb:discover:" + json.dumps([kind, page, sorted(clean.items())])
+        # den v klíči: horní mez data vydání je „dnes“ a uložená odpověď nesmí přežít do dalšího dne
+        # ani přes aktualizaci, která dotaz změní (prázdný katalog z cache, Discord 2026-10-10)
+        key = "nokturno:tmdb:discover:" + json.dumps([kind, page, sorted(clean.items()), datetime.date.today().isoformat()])
         try:
             if self.cache is None:
                 return self.tmdb.discover(kind, clean, page)
