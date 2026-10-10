@@ -1,5 +1,10 @@
 name: testy
-on: [push, pull_request]
+# testy jen na tag vydání, PR a ručně (od 2026-10-10: týdenní rytmus vydání, šetří minuty Actions)
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
 jobs:
   testy:
     runs-on: ubuntu-latest
