@@ -5561,7 +5561,10 @@ def mycat_remote_schema(kind, new, name_auto=True):
     tracks = [(v, L(sid, fb)) for v, sid, fb in MYCAT_TRACK_LABELS]
     stream = ("verify", "1")
     fields = [{"id": "template", "type": "choice", "label": L(30246, "Šablona"),
-               "options": [("", L(30248, "Bez šablony"))] + [(t["key"], mycat_template_name(t))
+               # šablonu katalog neukládá, pole jen vybírá, co do formuláře načíst – u úpravy „Bez šablony“
+               # vypadalo jako ztracená šablona (Discord 2026-10-10)
+               "options": [("", L(30248, "Bez šablony") if new else L(31068, "Ponechat současné nastavení"))]
+                          + [(t["key"], mycat_template_name(t))
                                                            for t in mycat.templates(None if new else kind)]},
               {"type": "action", "action": "template", "label": L(30247, "Načíst šablonu"), "inputs": ["template"]}]
     if new:

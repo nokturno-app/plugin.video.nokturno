@@ -3528,3 +3528,7 @@ msgstr "AV1 elrejtése"
 msgctxt "#31067"
 msgid "For players that cannot play the AV1 codec (older Shield, Apple TV)."
 msgstr "Azokhoz a lejátszókhoz, amelyek nem tudják az AV1 kodeket (régebbi Shield, Apple TV)."
+
+msgctxt "#31068"
+msgid "Keep current settings"
+msgstr "Jelenlegi beállítások megtartása"

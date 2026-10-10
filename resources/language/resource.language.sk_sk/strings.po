@@ -3530,3 +3530,7 @@ msgstr "Skryť AV1"
 msgctxt "#31067"
 msgid "For players that cannot play the AV1 codec (older Shield, Apple TV)."
 msgstr "Pre prehrávače, ktoré kodek AV1 nevedia (staršie Shield, Apple TV)."
+
+msgctxt "#31068"
+msgid "Keep current settings"
+msgstr "Ponechať súčasné nastavenie"

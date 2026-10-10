@@ -7162,6 +7162,10 @@ class TestKatalogZMobilu(unittest.TestCase):
         upravit = {f.get("id") for f in default.mycat_remote_schema("series", False)[0]["fields"]}
         self.assertNotIn("kind", upravit)
         self.assertNotIn("genres_movie", upravit)
+        sablona = lambda new: next(f for f in default.mycat_remote_schema("movie", new)[0]["fields"]
+                                   if f.get("id") == "template")["options"][0]
+        self.assertEqual(sablona(True), ("", "Bez šablony"))
+        self.assertEqual(sablona(False), ("", "Ponechat současné nastavení"))   # úprava: šablona se neukládá
 
     def test_akce_sablona_a_nazev(self):
         out = default._mycat_remote_template(None)({"template": "movie-4k-cz-dub"})

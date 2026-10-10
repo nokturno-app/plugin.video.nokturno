@@ -3530,3 +3530,7 @@ msgstr ""
 msgctxt "#31067"
 msgid "For players that cannot play the AV1 codec (older Shield, Apple TV)."
 msgstr ""
+
+msgctxt "#31068"
+msgid "Keep current settings"
+msgstr ""
