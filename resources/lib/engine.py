@@ -34,7 +34,8 @@ from sosac_api import is_sosac_id as _is_legacy_sosac_id
 from sosac_direct import SosacDirect, is_direct_id
 from store import Store
 from streams import (arrange, assume_origin_language, estimate_rank, expand_groups, fold, group_streams,
-                            is_surround, langs_from_name, parse_stream, stream_3d, stream_hdr, stream_lowq)
+                            is_surround, langs_from_name, parse_stream, stream_3d, stream_hdr, stream_lowq,
+                            video_tags)
 from tracks import SUBTITLE_FALLBACK
 from hellspy_api import HellspyApi, HellspyError, HellspyRateLimited
 from sledujteto_api import SledujtetoApi, SledujtetoError
@@ -1723,6 +1724,7 @@ class Engine:
             "subs": stream.get("subs") or [],
             "vcodec": (stream.get("_media") or {}).get("vcodec") or "",
             "lowq": stream_lowq(stream),
+            "tags": video_tags(stream),
             "url": stream.get("url") or "",
             # Luna posílá titulky ve tvaru Stremia (`{"url", "lang"}`), klienti chtějí odkazy
             "subtitles": [s if isinstance(s, str) else s.get("url") for s in stream.get("subtitles") or []
@@ -3540,6 +3542,8 @@ class Engine:
                 pref_surround=bool(self.options.get("pref_surround")),
                 hide_3d=bool(self.options.get("hide_3d")),
                 hide_dv=bool(self.options.get("hide_dv")),
+                hide_dv_only=bool(self.options.get("hide_dv_only")),
+                hide_av1=bool(self.options.get("hide_av1")),
                 hide_hdr=bool(self.options.get("hide_hdr")),
                 hide_lowq=self.options.get("hide_lowq", True) not in (False, "0", 0, "false"),
                 max_bitrate=self._max_bitrate(),

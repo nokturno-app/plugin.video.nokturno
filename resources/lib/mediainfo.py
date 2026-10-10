@@ -12,7 +12,8 @@ Umí tři kontejnery, jiné se tiše přeskočí:
 * **MP4** – popis stop (`moov`) bývá až na konci souboru, pak se dotahuje
   druhým dotazem na jeho konec.
 
-Kodek obrazu jde do výsledku `probe()` jako `vcodec` (HEVC, AVC, AV1…).
+Kodek obrazu jde do výsledku `probe()` jako `vcodec` (HEVC, AVC, AV1…), Dolby Vision
+jako `dv` (`{"profile", "compat"}`) a HDR jako `hdr` (`PQ` = HDR10/HDR10+, `HLG`).
 
 Výstup je řetězec ve tvaru, který čte `streams.parse_stream`, tedy
 `Zvuk: CZ 5.1 EN 2.0`. Jazyky se překládají na dvoupísmenné kódy; co se přeložit
@@ -163,7 +164,18 @@ def _ebml_id(buf, i):
     return val, i + size
 
 
-MKV_MASTER = {0x18538067, 0x1654AE6B, 0xAE, 0xE1, 0xE0}   # Segment, Tracks, TrackEntry, Audio, Video
+# Segment, Tracks, TrackEntry, Audio, Video, Colour, BlockAdditionMapping
+MKV_MASTER = {0x18538067, 0x1654AE6B, 0xAE, 0xE1, 0xE0, 0x55B0, 0x41E4}
+# BlockAddIDType konfigurace Dolby Vision: dvcC, dvvC, dvwC
+MKV_DV_TYPES = {0x64766343, 0x64767643, 0x64767743}
+TRANSFER_HDR = {16: "PQ", 18: "HLG"}   # TransferCharacteristics: PQ = HDR10/HDR10+, HLG
+
+
+def _dv_record(data):
+    """DOVIDecoderConfigurationRecord → `{"profile", "compat"}`; příliš krátký záznam → None."""
+    if len(data) < 5:
+        return None
+    return {"profile": (struct.unpack(">H", data[2:4])[0] >> 9) & 0x7F, "compat": data[4] >> 4}
 
 
 def _mkv_info_fill(buf, i, end, info):
@@ -202,6 +214,9 @@ def _mkv_walk(buf, i, end, out, info=None):
         if eid in MKV_MASTER:
             if eid == 0xAE:
                 out.append({})
+            elif eid == 0x41E4 and out:
+                out[-1].pop("_bamt", None)
+                out[-1].pop("_bame", None)
             _mkv_walk(buf, k, stop, out, info)
         elif eid == 0x1549A966 and info is not None:   # Info — mimo strom stop, netýká se aktuální track
             _mkv_info_fill(buf, k, stop, info)
@@ -223,6 +238,13 @@ def _mkv_walk(buf, i, end, out, info=None):
                 cur["height"] = int.from_bytes(data, "big")
             elif eid == 0x53B8 and data:
                 cur["stereo"] = int.from_bytes(data, "big")   # StereoMode: 0 = 2D, jinak 3D (SBS, OU…)
+            elif eid == 0x55BA and data:
+                cur["transfer"] = int.from_bytes(data, "big")
+            elif eid in (0x41E7, 0x41ED) and data:
+                # typ i data mapování mohou přijít v kterémkoli pořadí
+                cur["_bamt" if eid == 0x41E7 else "_bame"] = int.from_bytes(data, "big") if eid == 0x41E7 else data
+                if cur.get("_bamt") in MKV_DV_TYPES and cur.get("_bame"):
+                    cur["dv"] = _dv_record(cur["_bame"]) or cur.get("dv")
         i = stop
     return
 
@@ -310,6 +332,13 @@ def _mp4_sample_entry(buf, start, end, track):
             if body + 28 <= stop:
                 track["width"] = struct.unpack(">H", buf[body + 24:body + 26])[0]
                 track["height"] = struct.unpack(">H", buf[body + 26:body + 28])[0]
+            if kind in (b"dvh1", b"dvhe", b"dva1", b"dvav"):   # DV i bez dvcC, profil neznáme
+                track["dv"] = {"profile": None, "compat": None}
+            for sub, sbody, sstop in _mp4_boxes(buf, body + 78, stop):   # za 78 bajty polí sample entry
+                if sub in (b"dvcC", b"dvvC", b"dvwC"):
+                    track["dv"] = _dv_record(buf[sbody:sstop]) or track.get("dv")
+                elif sub == b"colr" and sbody + 8 <= sstop and buf[sbody:sbody + 4] == b"nclx":
+                    track["transfer"] = struct.unpack(">H", buf[sbody + 6:sbody + 8])[0]
             break
         if body + 20 <= stop:
             track["channels"] = struct.unpack(">H", buf[body + 16:body + 18])[0]
@@ -496,6 +525,12 @@ def probe(url, opener=None):
     vcodec = next((c for c in (video_codec_name(t.get("codec")) for t in video) if c), "")
     if vcodec:
         out["vcodec"] = vcodec
+    dv = next((t["dv"] for t in video if t.get("dv")), None)
+    if dv:
+        out["dv"] = dv
+    hdr = next((TRANSFER_HDR[t["transfer"]] for t in video if t.get("transfer") in TRANSFER_HDR), "")
+    if hdr:
+        out["hdr"] = hdr
     if any(t.get("stereo") for t in video):
         out["stereo3d"] = True
     if is_avi:

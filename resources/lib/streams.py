@@ -258,16 +258,49 @@ def stream_hdr(s):
     na starší i chyba přehrání, takže se takové verze se SDR neslučují.
 
     Zahrnuje i Dolby Vision (`stream_dv`) — pro slučování i pro filtr „nevyhledávat
-    HDR streamy“ (přání uživatele spacik, Discord 2026-10-05) je DV jen jeho varianta."""
+    HDR streamy“ (přání uživatele spacik, Discord 2026-10-05) je DV jen jeho varianta.
+    Hlavička souboru (`_media.hdr` / `_media.dv`) platí vedle názvu."""
+    media = s.get("_media") or {}
+    if media.get("hdr") or media.get("dv"):
+        return True
     text = " ".join(str(s.get(k) or "") for k in ("label", "_ws_name", "name"))
     return bool(HDR_RE.search(text))
 
 
 def stream_dv(s):
     """Jen Dolby Vision, bez obyčejného HDR10 — pro uživatele, kterému na starší
-    televizi dělá DV divné barvy, ale HDR jinak chce (GremliNN, Discord 2026-10-05)."""
+    televizi dělá DV divné barvy, ale HDR jinak chce (GremliNN, Discord 2026-10-05).
+    Hlavička souboru (`_media.dv`) platí vedle názvu."""
+    if (s.get("_media") or {}).get("dv"):
+        return True
     text = " ".join(str(s.get(k) or "") for k in ("label", "_ws_name", "name"))
     return bool(DV_RE.search(text))
+
+
+# jasná značka profilu 5 (DV bez záložní vrstvy) v názvu; holé „DV“ nestačí
+DV_ONLY_RE = re.compile(r"(?<![A-Za-z0-9])(?:(?:DV|DoVi)[ ._-]?P(?:rofile)?[ ._-]?5|Profile[ ._-]?5|DV[ ._-]?only)"
+                        r"(?![A-Za-z0-9])", re.IGNORECASE)
+AV1_RE = re.compile(r"(?<![A-Za-z0-9])AV1(?![A-Za-z0-9])", re.IGNORECASE)
+
+
+def stream_dv_only(s):
+    """Dolby Vision bez záložní vrstvy (profil 5): televize bez DV ukáže zeleně a fialově.
+
+    Z hlavičky souboru (`_media.dv.compat == 0` ano, jiné compat ne); bez údaje z hlavičky
+    jen jasná značka profilu 5 v názvu, nikdy holé „DV“."""
+    dv = (s.get("_media") or {}).get("dv")
+    if dv:
+        return dv.get("compat") == 0
+    text = " ".join(str(s.get(k) or "") for k in ("label", "_ws_name", "name"))
+    return bool(DV_ONLY_RE.search(text))
+
+
+def stream_av1(s):
+    """Kodek AV1 podle hlavičky souboru, jinak podle popisku nebo názvu."""
+    if (s.get("_media") or {}).get("vcodec") == "AV1":
+        return True
+    text = " ".join(str(s.get(k) or "") for k in ("label", "_ws_name", "name"))
+    return bool(AV1_RE.search(text))
 
 
 STEREO_3D_RE = re.compile(r"(?<![A-Za-z0-9])(3D(?:[ ._-]?H?SBS|[ ._-]?H?OU)?|H?SBS|H-SBS|H-?OU|"
@@ -283,6 +316,32 @@ def stream_3d(s):
         return True
     text = " ".join(str(s.get(k) or "") for k in ("label", "_ws_name", "name"))
     return bool(STEREO_3D_RE.search(text) or STEREO_3D_SHORT_RE.search(text))
+
+
+NAME_HDR_RE = re.compile(r"(?<![A-Za-z0-9])(HDR10(?:\+|Plus)|HDR10|HDR|HLG)(?![A-Za-z0-9])", re.IGNORECASE)
+HEADER_HDR_TAGS = {"PQ": "HDR10", "HLG": "HLG"}
+
+
+def video_tags(s):
+    """Štítky formátu obrazu do výpisu streamů: `DV only` | `DV`, pak `HDR10+`/`HDR10`/`HDR`/`HLG`
+    (u `DV only` ne), nakonec `3D`. Zdroj je hlavička souboru, pak název; HDR10+ z názvu má
+    přednost před HDR10 z hlavičky (hlavička dynamická metadata nerozliší)."""
+    text = " ".join(str(s.get(k) or "") for k in ("label", "_ws_name", "name"))
+    tags = []
+    if stream_dv(s):
+        tags.append("DV only" if stream_dv_only(s) else "DV")
+    if "DV only" not in tags:
+        m = NAME_HDR_RE.search(text)
+        named = ""
+        if m:
+            named = m.group(1).upper().replace("PLUS", "+")
+        header = HEADER_HDR_TAGS.get((s.get("_media") or {}).get("hdr"), "")
+        hdr = "HDR10+" if (header == "HDR10" and named == "HDR10+") else (header or named)
+        if hdr:
+            tags.append(hdr)
+    if stream_3d(s):
+        tags.append("3D")
+    return tags
 
 
 # nahrávky z kina: screener a R5 jsou uniklé předverze v dobré kvalitě, proto je filtr nechytá;
@@ -350,7 +409,7 @@ def expand_groups(streams):
 
 def arrange(streams, pref_lang="", hide_sd=False, max_size_gb=0.0, order="source", pref_surround=False,
             hide_3d=False, max_bitrate=0.0, keep_smallest=False, hide_lowq=False, hide_dv=False,
-            hide_hdr=False):
+            hide_hdr=False, hide_dv_only=False, hide_av1=False):
     """Vyfiltruje a seřadí streamy; když by filtr nic nenechal, vrátí původní pořadí.
 
     Strop datového toku: známý tok streamu (`bitrate`) rozhoduje, velikost proti
@@ -362,7 +421,10 @@ def arrange(streams, pref_lang="", hide_sd=False, max_size_gb=0.0, order="source
 
     `hide_dv`/`hide_hdr`: podle popisku nebo názvu souboru, stejně nespolehlivě jako
     `hide_3d` níž — bez značky v názvu se DV/HDR/3D stream nepozná a filtr ho nechytí
-    (Discord 2026-10-05, GremliNN narazil na neoznačený 3D soubor i se zapnutým `hide_3d`)."""
+    (Discord 2026-10-05, GremliNN narazil na neoznačený 3D soubor i se zapnutým `hide_3d`).
+    U streamů s přečtenou hlavičkou (`_media`) se DV/HDR/AV1 pozná i z ní.
+    `hide_dv_only`: jen Dolby Vision bez záložní vrstvy (profil 5), DV s kompatibilním základem zůstane.
+    `hide_av1`: kodek AV1. Oba filtry, stejně jako `hide_dv`, bez pádu na původní seznam, i v `_alts`."""
     for s in streams:
         parse_stream(s)
     if hide_3d:
@@ -378,6 +440,12 @@ def arrange(streams, pref_lang="", hide_sd=False, max_size_gb=0.0, order="source
         for s in streams:
             if s.get("_alts"):
                 s["_alts"] = [a for a in s["_alts"] if not stream_dv(a)]
+    for hide, test in ((hide_dv_only, stream_dv_only), (hide_av1, stream_av1)):
+        if hide:
+            streams = [s for s in streams if not test(s)]
+            for s in streams:
+                if s.get("_alts"):
+                    s["_alts"] = [a for a in s["_alts"] if not test(a)]
     if hide_hdr:
         # širší než hide_dv — zahrnuje i DV (stream_hdr), pro uživatele, kterému HDR obraz
         # ztmavuje i bez Dolby Vision (spacik, Discord 2026-10-05)

@@ -34,6 +34,8 @@ CONF_HIDE_SD = "hide_sd"
 CONF_HIDE_3D = "hide_3d"
 CONF_HIDE_DV = "hide_dv"
 CONF_HIDE_HDR = "hide_hdr"
+CONF_HIDE_DV_ONLY = "hide_dv_only"
+CONF_HIDE_AV1 = "hide_av1"
 CONF_MAX_BITRATE = "max_bitrate_mbps"
 CONF_SORT = "sort_streams"
 
