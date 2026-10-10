@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.12.0" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.12.1" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.12.0 – Vlastní katalogy se dají řadit podle data vydání od nejstaršího.
+    <news>10.12.1 – V informacích o filmu nebo seriálu z vlastního katalogu se ukazují všichni herci i s fotkami a rolemi, pokud máš v doplňku klíč TMDB.
+10.12.0 – Vlastní katalogy se dají řadit podle data vydání od nejstaršího.
 10.11.1 – Drobné opravy.
 10.11.0 – V informacích o filmu nebo seriálu z katalogu se ukazují hlavní herci.
 10.10.6 – Katalogy podle země původu ukazují jen filmy a seriály v jazyce té země – bez zahraničních filmů, které se u nás jen natáčely. Vlastní katalogy neukazují ohlášené filmy, které ještě nevyšly.
