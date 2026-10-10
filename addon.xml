@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.13.2" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.13.3" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.13.2 – Úprava katalogu z mobilu u šablony ukazuje Ponechat současné nastavení, katalog si nedrží starý výsledek z doby před opravou.
+    <news>10.13.3 – Skrýt 3D a štítek 3D už nepovažují za 3D verzi filmy, které mají 3D v názvu.
+10.13.2 – Úprava katalogu z mobilu u šablony ukazuje Ponechat současné nastavení, katalog si nedrží starý výsledek z doby před opravou.
 10.13.0 – Nová volba Skrýt Dolby Vision bez záložní vrstvy (profil 5) a Skrýt AV1, formát obrazu (DV, HDR10, 3D) poznáváme i z hlavičky souboru a ukazujeme ve výpisu streamů.
 10.12.5 – Vlastní katalog řazený podle data vydání od nejnovějšího už není prázdný, ukazuje jen filmy a seriály, které už vyšly.
 10.12.2 – V informacích o filmu nebo seriálu se ukazují všichni herci i s fotkami a rolemi, i když nemáš klíč TMDB.
