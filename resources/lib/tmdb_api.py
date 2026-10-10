@@ -12,6 +12,7 @@ vynechá, se zbytkem doplňku by stejně nešla spárovat.
 Bez závislostí na Kodi — jde testovat samostatně:
     python3 tmdb_api.py <api_key> movie "matrix"
 """
+import datetime
 import json
 import re
 import urllib.error
@@ -94,7 +95,6 @@ class TmdbApi:
         return {g["id"]: g["name"] for g in data.get("genres") or []}
 
     def catalogs(self, ctype):
-        import datetime
         genres = list(self._genres(ctype).values())
         years = [str(y) for y in range(datetime.date.today().year, FIRST_YEAR - 1, -1)]
         return [{"id": cid, "name": name, "search": False, "genre_required": False, "genres": genres}
@@ -225,8 +225,10 @@ class TmdbApi:
         date_field = "primary_release_date" if kind == "movie" else "first_air_date"
         if params.get("year_from"):
             query[f"{date_field}.gte"] = f"{params['year_from']}-01-01"
-        if params.get("year_to"):
-            query[f"{date_field}.lte"] = f"{params['year_to']}-12-31"
+        # jen vydané tituly: řazení od nejnovějšího jinak na první stránky dá ohlášené filmy, které
+        # `mycat.released` stejně vyhodí, a katalog zůstane prázdný (Discord 2026-10-10)
+        to = f"{params['year_to']}-12-31" if params.get("year_to") else ""
+        query[f"{date_field}.lte"] = min(to or "9999", datetime.date.today().isoformat())
         if params.get("vote_count_gte"):
             query["vote_count.gte"] = params["vote_count_gte"]
         if params.get("vote_average_gte"):
