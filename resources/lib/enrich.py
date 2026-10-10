@@ -308,6 +308,11 @@ def _other_ratings(store, ctype, imdb, source, tmdb):
             r = None
         if r:
             out["tmdb"] = float(r)
+    if tmdb:   # s klíčem TMDB plné obsazení s rolemi a fotkami místo 3 jmen z Cinemety (Discord 2026-10-10)
+        try:
+            cast = tmdb.cast(ctype, imdb) or cast
+        except Exception:  # noqa: BLE001 – zůstanou jména z Cinemety
+            pass
     return out, cast
 
 

@@ -301,6 +301,23 @@ class TmdbApi:
             data["ratingSource"] = "tmdb"   # i záznamy z cache před 8.4.0, jinak by je enrich označil za IMDb
         return data
 
+    def cast(self, ctype, imdb_id):
+        """Obsazení (jméno, role, fotka) do 10 herců dvěma dotazy (`/find` + `/credits`) – pro výpisy
+        vlastních katalogů, jejichž tituly nesou jen 3 jména z Cinemety. Cache jako `brief`."""
+        if not _IMDB_RE.match(str(imdb_id or "")):
+            raise TmdbError(f"neplatné IMDb id: {str(imdb_id)[:20]!r}")
+        kind = self._kind(ctype)
+
+        def load():
+            results = self._get(f"/find/{imdb_id}", external_source="imdb_id").get(f"{kind}_results") or []
+            if not results:
+                return []
+            credits = self._get(f"/{kind}/{results[0]['id']}/credits")
+            return [{"name": c.get("name") or "", "character": c.get("character") or "",
+                     "photo": IMG + c["profile_path"] if c.get("profile_path") else ""}
+                    for c in credits.get("cast") or [] if c.get("name")][:10]
+        return self._cached(f"tmdb:cast:{kind}:{imdb_id}", DETAIL_TTL, load)
+
     def local_titles(self, ctype, imdb_id):
         """[český název, slovenský název] podle IMDb id – pro fulltextové zdroje. Wikidata
         u nových titulů český název často nemají (Time Bandits 2024 × „Zloději času")."""
