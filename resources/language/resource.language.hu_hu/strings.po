@@ -3498,17 +3498,33 @@ msgid "Hide Dolby Vision streams"
 msgstr "Dolby Vision streamek elrejtése"
 
 msgctxt "#31060"
-msgid "Dolby Vision files (by name: DV, DoVi, Dolby Vision) are never shown, not even when there is no other stream."
-msgstr "A Dolby Vision fájlok (név alapján: DV, DoVi, Dolby Vision) soha nem jelennek meg, akkor sem, ha nincs más stream."
+msgid "Dolby Vision files are never shown, not even when there is no other stream. Detected from the file header (for the first streams in the list), otherwise by name: DV, DoVi, Dolby Vision."
+msgstr "A Dolby Vision fájlok soha nem jelennek meg, akkor sem, ha nincs más stream. A fájl fejlécéből ismerjük fel őket (a lista első streamjeinél), egyébként a név alapján: DV, DoVi, Dolby Vision."
 
 msgctxt "#31061"
 msgid "Hide HDR streams"
 msgstr "HDR streamek elrejtése"
 
 msgctxt "#31062"
-msgid "HDR files, including Dolby Vision (by name: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision), are never shown, not even when there is no other stream."
-msgstr "A HDR fájlok, beleértve a Dolby Vision-t is (név alapján: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision), soha nem jelennek meg, akkor sem, ha nincs más stream."
+msgid "HDR files, including Dolby Vision, are never shown, not even when there is no other stream. Detected from the file header (for the first streams in the list), otherwise by name: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision."
+msgstr "A HDR fájlok, beleértve a Dolby Vision-t is, soha nem jelennek meg, akkor sem, ha nincs más stream. A fájl fejlécéből ismerjük fel őket (a lista első streamjeinél), egyébként a név alapján: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision."
 
 msgctxt "#31063"
 msgid "Release date – oldest first"
 msgstr "Megjelenés dátuma – legrégebbi elöl"
+
+msgctxt "#31064"
+msgid "Hide Dolby Vision without a fallback layer (profile 5)"
+msgstr "Dolby Vision tartalék réteg nélkül (5-ös profil) elrejtése"
+
+msgctxt "#31065"
+msgid "Only streams that a TV without Dolby Vision shows in green and purple. Detected from the file header, otherwise only by the P5 mark in the name."
+msgstr "Csak azok a streamek, amelyeket a Dolby Vision nélküli tévé zölden és lilán jelenít meg. A fájl fejlécéből ismerjük fel őket, a többinél csak a névben szereplő P5 jelölés alapján."
+
+msgctxt "#31066"
+msgid "Hide AV1"
+msgstr "AV1 elrejtése"
+
+msgctxt "#31067"
+msgid "For players that cannot play the AV1 codec (older Shield, Apple TV)."
+msgstr "Azokhoz a lejátszókhoz, amelyek nem tudják az AV1 kodeket (régebbi Shield, Apple TV)."

@@ -738,18 +738,29 @@ class TestJadroVKodi(unittest.TestCase):
 
     def test_volby_z_nastaveni(self):
         xbmcaddon.settings.update(pref_lang="1", sort_streams="2", hide_sd="true", hide_3d="true", hide_dv="true",
-                                  hide_hdr="true", max_bitrate_mbps="12,5",
+                                  hide_hdr="true", hide_dv_only="true", hide_av1="true", max_bitrate_mbps="12,5",
                                   audio_probe="5", cross_search="false", ws_enabled="false", ws_username="u")
         opts = default.engine_options()
         self.assertEqual((opts["pref_lang"], opts["sort_streams"], opts["hide_sd"]), ("CZ", "size_desc", True))
         self.assertTrue(opts["hide_3d"])
         self.assertTrue(opts["hide_dv"])
         self.assertTrue(opts["hide_hdr"])
+        self.assertTrue(opts["hide_dv_only"])
+        self.assertTrue(opts["hide_av1"])
         self.assertEqual((opts["audio_probe"], opts["cross_search"], opts["search_streams"]), ("5", False, True))
         self.assertEqual(opts["ws_username"], "", "vypnutý zdroj se jádru nehlásí ani při vyplněném účtu")
         engine = default.KodiEngine()
         self.assertAlmostEqual(engine._effective_max_gb({"runtime": "1h"}), 12.5e6 * 3600 / 8 / 2 ** 30, places=3)
         self.assertIs(engine.store, default.STORE, "jedno úložiště pro celý plugin")
+
+    def test_video_info_stitky_z_hlavicky(self):
+        """Formát obrazu v popisku bere `video_tags`: hlavička přebíjí název, DV profilu 5 je „DV only“."""
+        s = {"_media": {"width": 3840, "height": 2160, "dv": {"profile": 5, "compat": 0}, "hdr": "PQ"}}
+        self.assertEqual(default.video_info(s, "Film.2160p.HEVC.mkv"), "3840×2160 HEVC DV only")
+        s = {"_media": {"dv": {"profile": 8, "compat": 1}, "hdr": "PQ"}}
+        self.assertEqual(default.video_info(s, "Film.mkv"), "DV HDR10")
+        self.assertEqual(default.video_info({}, "Film.HDR10+.AV1.mkv"), "AV1 HDR10+")
+        self.assertEqual(default.video_info({}, "Film.1080p.mkv"), "")
 
     def test_klienty_podle_prepinacu(self):
         xbmcaddon.settings.update(ws_enabled="false", ws_username="u", ws_password="p",
@@ -5825,7 +5836,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 137)   # +2 menu_edit_action, menu_reset_action (hlavní menu), +1 sync_concerts (10.3.0), +1 tmdb_check, +3 mylist1–3_enabled, +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs, +2 hide_dv, hide_hdr (DV/HDR filtr)
+        self.assertEqual(len(volby), 139)   # +2 menu_edit_action, menu_reset_action (hlavní menu), +1 sync_concerts (10.3.0), +1 tmdb_check, +3 mylist1–3_enabled, +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs, +2 hide_dv, hide_hdr (DV/HDR filtr), +2 hide_dv_only, hide_av1
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):

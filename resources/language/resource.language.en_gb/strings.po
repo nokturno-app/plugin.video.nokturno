@@ -3500,7 +3500,7 @@ msgid "Hide Dolby Vision streams"
 msgstr ""
 
 msgctxt "#31060"
-msgid "Dolby Vision files (by name: DV, DoVi, Dolby Vision) are never shown, not even when there is no other stream."
+msgid "Dolby Vision files are never shown, not even when there is no other stream. Detected from the file header (for the first streams in the list), otherwise by name: DV, DoVi, Dolby Vision."
 msgstr ""
 
 msgctxt "#31061"
@@ -3508,9 +3508,25 @@ msgid "Hide HDR streams"
 msgstr ""
 
 msgctxt "#31062"
-msgid "HDR files, including Dolby Vision (by name: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision), are never shown, not even when there is no other stream."
+msgid "HDR files, including Dolby Vision, are never shown, not even when there is no other stream. Detected from the file header (for the first streams in the list), otherwise by name: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision."
 msgstr ""
 
 msgctxt "#31063"
 msgid "Release date – oldest first"
+msgstr ""
+
+msgctxt "#31064"
+msgid "Hide Dolby Vision without a fallback layer (profile 5)"
+msgstr ""
+
+msgctxt "#31065"
+msgid "Only streams that a TV without Dolby Vision shows in green and purple. Detected from the file header, otherwise only by the P5 mark in the name."
+msgstr ""
+
+msgctxt "#31066"
+msgid "Hide AV1"
+msgstr ""
+
+msgctxt "#31067"
+msgid "For players that cannot play the AV1 codec (older Shield, Apple TV)."
 msgstr ""

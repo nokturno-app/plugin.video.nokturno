@@ -76,7 +76,7 @@ import kodi_settings  # noqa: E402
 import watch as watch_lib  # noqa: E402
 import setsync  # noqa: E402
 import syncbox  # noqa: E402
-from streams import estimate_rank, langs_from_name, parse_stream, subs_from_name  # noqa: E402
+from streams import estimate_rank, langs_from_name, parse_stream, subs_from_name, video_tags  # noqa: E402
 from tracks import FILE_CODES, SUBTITLE_FALLBACK, decode_subtitle, subtitle_format, subtitle_lang  # noqa: E402
 from trakt_api import TraktApi, TraktError, pick_keys  # noqa: E402
 from webshare_api import SORTS, WebshareApi, WebshareError, human_size  # noqa: E402
@@ -886,7 +886,9 @@ def engine_options():
         "hide_sd": on("hide_sd", "false"),
         "hide_3d": on("hide_3d", "false"),
         "hide_dv": on("hide_dv", "false"),
+        "hide_dv_only": on("hide_dv_only", "false"),
         "hide_hdr": on("hide_hdr", "false"),
+        "hide_av1": on("hide_av1", "false"),
         "hide_lowq": on("hide_lowq", "true"),
         "pref_surround": on("pref_surround", "false"),
         "max_bitrate_mbps": setting("max_bitrate_mbps", "0"),
@@ -2250,15 +2252,14 @@ VIDEO_TAGS = (
     (r"\b(?:x|h)\.?265\b|\bhevc\b", "HEVC"),
     (r"\b(?:x|h)\.?264\b|\bavc\b", "H.264"),
     (r"\bav1\b", "AV1"),
-    (r"\b(?:dv|dovi|dolby[ ._-]?vision)\b", "DV"),
-    (r"\bhdr(?:10\+?)?\b", "HDR"),
     (r"\b10[ ._-]?bit\b", "10bit"),
 )
 
 
 def video_info(s, name):
     """Druhý řádek výběru streamu: rozlišení (jen přečtené z hlavičky souboru — z názvu
-    se neví) a video kodek/HDR z názvu souboru (hlavička je nečte, zdroje ho neposílají)."""
+    se neví), video kodek z názvu souboru a formát obrazu (DV, HDR10, 3D…) z `video_tags`,
+    tedy z hlavičky souboru, jinak z názvu."""
     import re as _re
     parts = []
     media = s.get("_media") or {}
@@ -2268,6 +2269,7 @@ def video_info(s, name):
     for pattern, tag in VIDEO_TAGS:
         if _re.search(pattern, low) and tag not in parts:
             parts.append(tag)
+    parts += video_tags(dict(s, label=name))
     return " ".join(parts)
 
 
@@ -2395,7 +2397,7 @@ def quality_icon(s):
     if not key:
         return ""
     tags = video_info({}, s.get("_ws_name") or s.get("label") or "").split()
-    suffix = "-hdr" if ("HDR" in tags or "DV" in tags) else ""
+    suffix = "-hdr" if any(t.startswith(("HDR", "DV", "HLG")) for t in tags) else ""
     return os.path.join(QUALITY_ICON_DIR, f"{key}{suffix}.png")
 
 

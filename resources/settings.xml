@@ -932,7 +932,17 @@
           <default>false</default>
           <control type="toggle"/>
         </setting>
+        <setting id="hide_dv_only" type="boolean" label="31064" help="31065">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
         <setting id="hide_hdr" type="boolean" label="31061" help="31062">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
+        <setting id="hide_av1" type="boolean" label="31066" help="31067">
           <level>0</level>
           <default>false</default>
           <control type="toggle"/>

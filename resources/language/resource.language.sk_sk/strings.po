@@ -3500,17 +3500,33 @@ msgid "Hide Dolby Vision streams"
 msgstr "Skryť Dolby Vision streamy"
 
 msgctxt "#31060"
-msgid "Dolby Vision files (by name: DV, DoVi, Dolby Vision) are never shown, not even when there is no other stream."
-msgstr "Súbory Dolby Vision (podľa názvu: DV, DoVi, Dolby Vision) sa nezobrazia nikdy, ani keď iný stream nie je."
+msgid "Dolby Vision files are never shown, not even when there is no other stream. Detected from the file header (for the first streams in the list), otherwise by name: DV, DoVi, Dolby Vision."
+msgstr "Súbory Dolby Vision sa nezobrazia nikdy, ani keď iný stream nie je. Spoznáme ich z hlavičky súboru (pri prvých streamoch výpisu), inak podľa názvu: DV, DoVi, Dolby Vision."
 
 msgctxt "#31061"
 msgid "Hide HDR streams"
 msgstr "Skryť HDR streamy"
 
 msgctxt "#31062"
-msgid "HDR files, including Dolby Vision (by name: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision), are never shown, not even when there is no other stream."
-msgstr "Súbory HDR, vrátane Dolby Vision (podľa názvu: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision), sa nezobrazia nikdy, ani keď iný stream nie je."
+msgid "HDR files, including Dolby Vision, are never shown, not even when there is no other stream. Detected from the file header (for the first streams in the list), otherwise by name: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision."
+msgstr "Súbory HDR vrátane Dolby Vision sa nezobrazia nikdy, ani keď iný stream nie je. Spoznáme ich z hlavičky súboru (pri prvých streamoch výpisu), inak podľa názvu: HDR, HDR10, HDR10+, DV, DoVi, Dolby Vision."
 
 msgctxt "#31063"
 msgid "Release date – oldest first"
 msgstr "Dátumu vydania – najstaršie prvé"
+
+msgctxt "#31064"
+msgid "Hide Dolby Vision without a fallback layer (profile 5)"
+msgstr "Skryť Dolby Vision bez záložnej vrstvy (profil 5)"
+
+msgctxt "#31065"
+msgid "Only streams that a TV without Dolby Vision shows in green and purple. Detected from the file header, otherwise only by the P5 mark in the name."
+msgstr "Len streamy, ktoré televízor bez Dolby Vision zobrazí zelene a fialovo. Spoznáme ich z hlavičky súboru, pri ostatných len podľa označenia P5 v názve."
+
+msgctxt "#31066"
+msgid "Hide AV1"
+msgstr "Skryť AV1"
+
+msgctxt "#31067"
+msgid "For players that cannot play the AV1 codec (older Shield, Apple TV)."
+msgstr "Pre prehrávače, ktoré kodek AV1 nevedia (staršie Shield, Apple TV)."
