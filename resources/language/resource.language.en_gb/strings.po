@@ -3534,3 +3534,8 @@ msgstr ""
 msgctxt "#31068"
 msgid "Keep current settings"
 msgstr ""
+
+msgctxt "#31069"
+msgid "Rows on the home screen"
+msgstr ""
+

@@ -28,7 +28,10 @@ if not BETA:
     # i z „Nokturno repozitář“ a ze zrcadel, která repo-beta/ nemají
     ADDONS["repository.nokturno"] = os.path.join(ROOT, "repository.nokturno")
     ADDONS["repository.nokturno.beta"] = os.path.join(ROOT, "repository.nokturno.beta")
-EXCLUDE = {".git", ".gitignore", "repo", "repo-beta", "tools", "tests", "repository.nokturno",
+# Skin Estuary Nokturno se nestaví odsud: zip do repo/ (s --beta do repo-beta/) ukládá
+# `skin/build.py` (potřebuje zdroj Estuary ze sítě). Tady se jen vypíšou jeho verze do addons.xml.
+PREBUILT = ["skin.estuary.nokturno"]
+EXCLUDE = {".git", ".gitignore", "repo", "repo-beta", "tools", "tests", "skin", "repository.nokturno",
            "repository.nokturno.beta", "__pycache__", ".github",
            # v zipu bez užitku: vánoční seznam
            "lists"}
@@ -180,6 +183,12 @@ def main():
         blocks = all_versions_xml(addon_id, os.path.dirname(out))
         parts.extend(blocks)
         print(f"{addon_id} {version} -> {os.path.relpath(out, ROOT)} ({len(blocks)} verzí v seznamu)")
+    for addon_id in PREBUILT:
+        out_dir = os.path.join(REPO, addon_id)
+        if os.path.isdir(out_dir):
+            blocks = all_versions_xml(addon_id, out_dir)
+            parts.extend(blocks)
+            print(f"{addon_id} (hotový zip) — {len(blocks)} verzí v seznamu")
     parts.append("</addons>")
     addons_xml = "\n".join(parts) + "\n"
     with open(os.path.join(REPO, "addons.xml"), "w", encoding="utf-8") as f:

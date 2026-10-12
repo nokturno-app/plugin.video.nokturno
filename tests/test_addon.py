@@ -2820,6 +2820,40 @@ class TestObsahZDashboardu(unittest.TestCase):
         self.assertEqual([params_of(u) for u in xbmcplugin.urls()],
                          [{"action": "catalog", "type": "movie", "catalog": "komedie", "src": "dash"}])
 
+    def test_rady_skinu_estuary_nokturno(self):
+        """`home_row&slot=N`: nejdřív katalogy z dashboardu (každé umístění), pak výchozí Můj seznam a vlastní
+        katalogy v menu; nadpis jde do Window(home), prázdný slot vlastnost smaže. Výběr v Nastavení vzhledu
+        (`home_pick`) má přednost."""
+        mycats = [{"id": "m1", "kind": "series", "name": "Moje krimi", "menu": True},
+                  {"id": "m2", "kind": "movie", "name": "Jen v Katalozích"}]
+        apis = {"dash": FakeDash(self.MENU)}
+        win = xbmcgui.Window(10000)
+        default.STORE.save(default.HOME_ROWS_KEY, None)
+        self.addCleanup(lambda: default.STORE.save(default.HOME_ROWS_KEY, None))
+        with mock.patch.object(default, "mycats", return_value=mycats), \
+                mock.patch.object(default, "list_catalog") as katalog, mock.patch.object(default, "list_mycat") as vlastni, \
+                mock.patch.object(default, "list_favourites") as seznam, mock.patch.object(default, "list_foryou") as protebe:
+            self.assertEqual([r[0] for r in default.home_rows(apis)], ["dash", "dash", "fav", "mycat"])
+            default.list_home_row(apis, 1)
+            katalog.assert_called_once_with(apis, "movie", "vanoce", "dash")
+            self.assertEqual(win.getProperty("nokturno.home.1"), "Vánoční filmy")
+            default.list_home_row(apis, 3)
+            seznam.assert_called_once_with()
+            default.list_home_row(apis, 4)
+            vlastni.assert_called_once_with(apis, "series", "m1", widget=True)
+            win.setProperty("nokturno.home.5", "staré")
+            default.list_home_row(apis, 5)
+            self.assertEqual(win.getProperty("nokturno.home.5"), "")
+            # výběr: Pro Tebe seriály a katalog mimo menu, Můj seznam ne
+            keys = [k for k, _ in default.home_choices()]
+            with mock.patch.object(xbmcgui.Dialog, "multiselect", create=True,
+                                   return_value=[keys.index("foryou_series"), keys.index("mycat:m2")]):
+                default.home_pick()
+            self.assertEqual([r[3] for r in default.home_rows(apis)][2:], ["Pro Tebe – Seriály", "Jen v Katalozích"])
+            self.assertTrue(win.getProperty("nokturno.home.rev"))
+            default.list_home_row(apis, 3)
+            protebe.assert_called_once_with(apis, "series")
+
     def test_zmizela_slozka_skonci_jako_obycejny_katalog(self):
         """Server u složky vrátí slité položky potomků — lepší než prázdný výpis."""
         with mock.patch.object(default, "list_catalog") as vypis:

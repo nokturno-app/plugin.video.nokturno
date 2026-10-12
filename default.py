@@ -1127,6 +1127,81 @@ def dash_entry_item(entry):
                                               src="dash"), icon=icon)
 
 
+HOME_ROW_PROP = "nokturno.home.%d"   # Window(home).Property — nadpis řady ve skinu Estuary Nokturno
+HOME_REV_PROP = "nokturno.home.rev"   # změna = skin načte řady znovu (je v adrese widgetu)
+HOME_ROWS_KEY = "home_rows"         # klíče řad na domovské obrazovce (`home_choices`), v pořadí; None = výchozí
+
+
+def home_choices():
+    """Co si uživatel může dát na domovskou obrazovku skinu: (klíč, název). Můj seznam a Pro Tebe
+    vedle vlastních katalogů (klíč `mycat:<id>`)."""
+    builtin = [("fav", L(30060, "Můj seznam")),
+               ("foryou_movie", "%s – %s" % (L(30605, "Pro Tebe"), L(30012, "Filmy"))),
+               ("foryou_series", "%s – %s" % (L(30605, "Pro Tebe"), L(30013, "Seriály")))]
+    return builtin + [("mycat:" + c["id"], "%s (%s)" % (c.get("name") or L(30972, "Vlastní katalog"),
+                                                         L(30013, "Seriály") if c.get("kind") == "series" else L(30012, "Filmy")))
+                      for c in mycats()]
+
+
+def home_chosen():
+    """Vybrané klíče v pořadí výběru; dokud uživatel nevybíral, Můj seznam a katalogy z menu Filmy/Seriály."""
+    chosen = STORE.load(HOME_ROWS_KEY, None)
+    if isinstance(chosen, list):
+        return chosen
+    return ["fav"] + ["mycat:" + c["id"] for c in mycats() if c.get("menu")]
+
+
+def home_rows(apis):
+    """Řady pod položkou Nokturno ve skinu Estuary Nokturno: všechny katalogy zapnuté na dashboardu
+    (Vánoce, Film pro dnešní den… z hlavního menu i z Filmů a Seriálů) a to, co si uživatel vybral
+    v Nastavení vzhledu (`home_pick`): Můj seznam, Pro Tebe, vlastní katalogy."""
+    dash = apis.get("dash")
+    rows = [("dash", e["kind"], e["slug"], e["title"]) for e in (dash.menu() if dash else [])]
+    names = dict(home_choices())
+    cats = {c["id"]: c for c in mycats()}
+    for key in home_chosen():
+        if key.startswith("mycat:") and key[6:] in cats:
+            c = cats[key[6:]]
+            rows.append(("mycat", c.get("kind", "movie"), c["id"], c.get("name") or L(30972, "Vlastní katalog")))
+        elif key in ("fav", "foryou_movie", "foryou_series"):
+            rows.append((key, "series" if key.endswith("series") else "movie", key, names[key]))
+    return rows
+
+
+def home_pick():
+    """Výběr řad na domovskou obrazovku skinu Estuary Nokturno (tlačítko v Nastavení vzhledu, spouští ho
+    uživatel — dialog je tu v pořádku). Pořadí řad = pořadí v seznamu."""
+    choices = home_choices()
+    current = set(home_chosen())
+    sel = xbmcgui.Dialog().multiselect(L(31069, "Řady na domovské obrazovce"), [n for _, n in choices],
+                                       preselect=[i for i, (k, _) in enumerate(choices) if k in current])
+    if sel is None:
+        return
+    STORE.save(HOME_ROWS_KEY, [choices[i][0] for i in sel])
+    xbmcgui.Window(10000).setProperty(HOME_REV_PROP, str(int(time.time())))
+
+
+def list_home_row(apis, slot):
+    """N-tá řada z `home_rows` jako widget (skin má pevný počet slotů, prázdný slot schová).
+    Nadpis jde do vlastnosti okna Home, adresa widgetu se tak s katalogy nemění."""
+    rows = home_rows(apis)
+    win = xbmcgui.Window(10000)
+    if not 1 <= slot <= len(rows):
+        win.clearProperty(HOME_ROW_PROP % slot)
+        xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
+        return
+    src, kind, key, title = rows[slot - 1]
+    win.setProperty(HOME_ROW_PROP % slot, title)
+    if src == "dash":   # u složky vrátí server slité položky podkategorií
+        list_catalog(apis, kind, key, "dash")
+    elif src == "fav":
+        list_favourites()
+    elif src.startswith("foryou"):
+        list_foryou(apis, kind)
+    else:
+        list_mycat(apis, kind, key, widget=True)
+
+
 def list_dash_group(apis, slug, ctype):
     """Podkategorie složky z dashboardu. Když složka mezitím zmizela nebo podkategorie
     ztratila (server posílá jen neprázdné), otevře se rovnou jako katalog — server u
@@ -5709,9 +5784,10 @@ def list_mycats(ctype):
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
 
 
-def list_mycat_verified(apis, cat, ctype, page):
+def list_mycat_verified(apis, cat, ctype, page, widget=False):
     """Ověřovaný katalog: jen tituly, které index (`mycat_index_<id>`) označil za vyhovující; první řádek
-    je akce „načíst teď“, prázdný index nebo tituly po termínu popoženou službu."""
+    je akce „načíst teď“, prázdný index nebo tituly po termínu popoženou službu. `widget` = řada na
+    domovské obrazovce skinu: bez akce a bez upozornění, jen tituly."""
     index = mycat.load_index(STORE, cat)
     if not index.get("items") and apis.get("dash") is not None:
         # Kandidáty stahuje služba, jenže na Androidu bývá na pozadí bez sítě (a pak hodinu čeká, viz
@@ -5722,13 +5798,13 @@ def list_mycat_verified(apis, cat, ctype, page):
             log_error(f"mycat pool {cat['id']}: {e}")
         index = mycat.load_index(STORE, cat)
     checked, matched, total = mycat.counts(index)
-    if page == 1:
+    if page == 1 and not widget:
         action_item(_swf(30777, "Ověřeno %s z %s – spustit dávku nyní", checked, total),
                     build_url(action="mycat_batch", id=cat["id"]), icon="DefaultAddonsUpdates.png", thumb=True)
     metas = mycat.shown(index, sort=cat.get("show") or "found")
     if not metas or mycat_trigger_due(index):
         xbmcgui.Window(10000).setProperty(VERIFY_TRIGGER_PROP, cat["id"])
-    if not metas:
+    if not metas and not widget:
         notify(L(30778, "Katalog se připravuje – tituly se ověřují na pozadí."), xbmcgui.NOTIFICATION_INFO, 4000)
     rate(metas, ctype)
     for m in metas:
@@ -5736,7 +5812,7 @@ def list_mycat_verified(apis, cat, ctype, page):
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
 
 
-def list_mycat(apis, ctype, cat_id, page=1):
+def list_mycat(apis, ctype, cat_id, page=1, widget=False):
     cat = next((c for c in mycats(ctype) if c.get("id") == cat_id), None)
     dash = apis.get("dash")
     if not cat or (dash is None and not cat.get("verify")):
@@ -5744,7 +5820,7 @@ def list_mycat(apis, ctype, cat_id, page=1):
         return
     set_content("tvshows" if ctype == "series" else "movies")
     if cat.get("verify"):
-        list_mycat_verified(apis, cat, ctype, page)
+        list_mycat_verified(apis, cat, ctype, page, widget)
         return
     if cat.get("sort") == mycat.ALPHA:   # nejoblíbenější tituly podle filtrů, seřazené podle abecedy (pool má cache)
         pool = mycat.pool(dash, dict(cat, kind=ctype))
@@ -5753,12 +5829,13 @@ def list_mycat(apis, ctype, cat_id, page=1):
         metas, pages = dash.discover(ctype, mycat_params(cat), page=page)
         metas = None if metas is None else mycat.released(metas)
     if metas is None:
-        notify(L(30959, "Katalog se nepodařilo načíst. Zkus to později."), xbmcgui.NOTIFICATION_WARNING)
+        if not widget:
+            notify(L(30959, "Katalog se nepodařilo načíst. Zkus to později."), xbmcgui.NOTIFICATION_WARNING)
         metas = []
     rate(metas, ctype)
     for m in metas:
         add_meta_item(m, ctype)
-    if metas and page < pages:
+    if metas and page < pages and not widget:
         next_page_item(build_url(action="mycat", type=ctype, id=cat_id, page=page + 1))
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False, updateListing=UPDATE_LISTING)
 
@@ -8015,6 +8092,7 @@ def router(query):
         "mycat_edit": lambda: _tlacitko(lambda: mycat_edit(p.get("id", ""))),
         "mycat_delete": lambda: _tlacitko(lambda: mycat_delete(p.get("id", ""))),
         "mycat_menu": lambda: _tlacitko(lambda: mycat_menu(p.get("id", ""), p.get("on") == "1")),
+        "home_pick": lambda: _tlacitko(home_pick),
         "mycat_batch": lambda: _tlacitko(lambda: mycat_batch(p.get("id", ""))),
         "menu_hide": lambda: _tlacitko(lambda: menu_hide(p.get("key", ""))),
         "menu_edit": lambda: _tlacitko(menu_edit),
@@ -8191,6 +8269,8 @@ def router(query):
             play_ref(apis, p.get("ref", ""), p.get("name", ""), p.get("alts", ""))
         elif action == "dash_group":
             list_dash_group(apis, p["catalog"], p.get("type", "movie"))
+        elif action == "home_row":
+            list_home_row(apis, int(p.get("slot") or 0))
         elif action == "catalog":
             list_catalog(apis, p["type"], p["catalog"], p.get("src", "luna"), genre=p.get("genre"),
                          search=p.get("search"), skip=int(p.get("skip") or 0))
@@ -8291,7 +8371,7 @@ MARKS_SKIP = frozenset((
     "cztor_status", "cztor_logout", "clear_cache", "stats_send", "log_send", "website_info",
     "test_sources", "source_pause", "remote_setup", "stream_layout_reset", "setup_wizard", "sub_status",
     "luna_check", "luna_find", "os_check", "speedtest", "update_repos", "tmdbhelper_player", "sync_now",
-    "sync_create", "sync_join", "sync_leave", "mycats", "mycat_artist", "lastfm_check", "tmdb_check", "mycat_new", "mycat_edit", "mycat_delete", "mycat_menu",
+    "sync_create", "sync_join", "sync_leave", "mycats", "mycat_artist", "lastfm_check", "tmdb_check", "mycat_new", "mycat_edit", "mycat_delete", "mycat_menu", "home_pick",
     "mycat_remote", "concerts", "concerts_recent", "concerts_tags", "concerts_tag", "concerts_letters",
     "concerts_letter", "concerts_artist", "concerts_setup", "concerts_find", "concerts_add",
     "watch_series", "want", "watch_episode", "watch_flag", "watch_seen", "watch_check", "watch_check_now",

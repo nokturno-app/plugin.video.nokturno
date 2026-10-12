@@ -3534,3 +3534,8 @@ msgstr "Pro přehrávače, které kodek AV1 neumí (starší Shield, Apple TV)."
 msgctxt "#31068"
 msgid "Keep current settings"
 msgstr "Ponechat současné nastavení"
+
+msgctxt "#31069"
+msgid "Rows on the home screen"
+msgstr "Řady na domovské obrazovce"
+
