@@ -127,7 +127,11 @@ class TmdbApi:
         return self._imdb_id(ctype, tmdb_id)
 
     def _art(self, kind, tmdb_id, background_path="", images=None):
-        """Náhled (`landscapePoster`) a logo z obrázků TMDB.
+        """Pozadí, náhled (`landscapePoster`) a logo z obrázků TMDB.
+
+        Hlavní pozadí TMDB (`backdrop_path`) bývá tentýž motiv jako plakát, jen bez textu —
+        na domovské obrazovce skinu pak byl pod plakátem stejný obrázek. Pozadím je proto
+        nejlépe hodnocený jiný obrázek bez textu (záběr z filmu), hlavní jen když jiný není.
 
         Skin (Arctic Fuse) kreslí v náhledu `landscape`, a když chybí, vezme tentýž
         obrázek jako na pozadí — u titulů Nokturna tak byl stejný obrázek dvakrát
@@ -143,9 +147,12 @@ class TmdbApi:
             return ""
 
         backdrops = [b for b in data.get("backdrops") or [] if b.get("file_path") != background_path]
-        landscape = best(backdrops, ("cs", "en")) or best(backdrops, (None,))
+        background = best(backdrops, (None,))
+        landscape = best(backdrops, ("cs", "en")) \
+            or best([b for b in backdrops if b.get("file_path") != background], (None,))
         logo = best(data.get("logos") or [], ("cs", "en", None))
         return {
+            **({"background": IMG_BIG + background} if background else {}),
             "landscapePoster": IMG_BIG + landscape if landscape else "",
             "logo": IMG + logo if logo else "",
         }
@@ -425,7 +432,7 @@ class TmdbApi:
                 "videos": videos,
                 **self._art(kind, tmdb_id, data.get("backdrop_path") or "", images=data.get("images") or {}),
             }
-        return self._cached(f"tmdb:meta4:{kind}:{imdb_id}", DETAIL_TTL, load)
+        return self._cached(f"tmdb:meta5:{kind}:{imdb_id}", DETAIL_TTL, load)
 
 
 if __name__ == "__main__":
