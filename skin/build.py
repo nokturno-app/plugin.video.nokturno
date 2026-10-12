@@ -717,9 +717,9 @@ def build(src, out):
     # nadpis řady zmenšené na ROWS_ZOOM: font13 (výchozí nadpis Estuary) zvětšený zpět na 100 %
     f = out / "xml/Font.xml"
     f.write_text(re.sub(r"\t\t<font>\n\t\t\t<name>font13</name>.*?</font>\n",
-                        lambda m: m.group(0) + m.group(0).replace("font13", "font13_rows").replace(
-                            re.search(r"<size>\d+</size>", m.group(0)).group(0),
-                            f"<size>{round(int(re.search(r'<size>(\d+)', m.group(0)).group(1)) * 100 / ROWS_ZOOM)}</size>"),
+                        lambda m: m.group(0) + re.sub(
+                            r"<size>(\d+)</size>", lambda z: "<size>%d</size>" % round(int(z.group(1)) * 100 / ROWS_ZOOM),
+                            m.group(0).replace("font13", "font13_rows")),
                         f.read_text(encoding="utf-8"), flags=re.S), encoding="utf-8")
     fontsets(out)
     # oddělovač v záhlaví (Řadit podle ∙ 2 / 50): U+2219 Inter nemá, „·“ mají všechna písma
