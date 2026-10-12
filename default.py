@@ -3205,7 +3205,7 @@ def sw_menu():
             action_item(_swf(30835, "Vrátit se do filmu: %s", status.get("title") or ""),
                         build_url(action="sw_rejoin"), icon="DefaultVideo.png")
         action_item("%s · %s · %s" % (session.get("code", ""), role, _swf(30806, "připojeno: %d", online)),
-                    build_url(action="sw_window"), icon="DefaultNetwork.png")
+                    build_url(action="sw_window"), icon="DefaultUser.png")
         if session.get("leader"):
             action_item(L(30807, "Zavřít skupinu pro další zařízení") if not status.get("locked")
                         else L(30808, "Otevřít skupinu pro další zařízení"),
@@ -3217,7 +3217,7 @@ def sw_menu():
     else:
         action_item(L(30811, "Založit skupinu (budu vedoucí)"), build_url(action="sw_create"),
                     icon="DefaultAddSource.png")
-        action_item(L(30812, "Připojit se kódem"), build_url(action="sw_join"), icon="DefaultNetwork.png")
+        action_item(L(30812, "Připojit se kódem"), build_url(action="sw_join"), icon="DefaultUser.png")
     action_item(L(30813, "Jak SyncWatch funguje"), build_url(action="sw_intro"), icon="DefaultIconInfo.png")
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
 
@@ -5080,7 +5080,7 @@ def root_item(key):
         # společné sledování; ve skupině ukazuje i kód, ať je vidět, že běží
         sw_code = sw_session().get("code")
         action_item("%s · %s" % (sw_title(), sw_code) if sw_code else sw_title(),
-                    build_url(action="syncwatch"), icon="DefaultNetwork.png", context=ctx)
+                    build_url(action="syncwatch"), icon="DefaultUser.png", context=ctx)
     else:
         url, icon = {"continue": (build_url(action="continue"), "DefaultInProgressShows.png"),
                      "movies": (build_url(action="browse", type="movie"), "DefaultMovies.png"),
@@ -5130,7 +5130,8 @@ def menu_reset():
     notify(L(31056, "Hlavní menu vráceno na výchozí."))
 
 
-def main_menu(apis):
+def main_menu(apis, home=False):
+    """`home` = dlaždice na domovské obrazovce skinu Estuary Nokturno: bez položky Novinky."""
     mark_used()
     if not any(apis.values()):
         # bez modálního dialogu: ten by při volání z widgetu/JSON-RPC čekal na OK a zablokoval i vypínání Kodi
@@ -5167,7 +5168,7 @@ def main_menu(apis):
     if not accounts_set():   # i po přeskočení: bez účtu nemá doplněk co ukázat
         action_item(L(30359, "Průvodce nastavením"), build_url(action="setup_wizard"),
                     icon="DefaultAddonProgram.png")
-    fresh = unseen_changelog()
+    fresh = None if home else unseen_changelog()
     if fresh:
         action_item(f"{L(30192, 'Novinky ve verzi')} {fresh[0][0]}",
                     build_url(action="whats_new"), icon="DefaultAddonRepository.png")
@@ -8220,7 +8221,7 @@ def router(query):
             return
         apis = get_apis()
         if not action:
-            main_menu(apis)
+            main_menu(apis, home=p.get("home") == "1")
         elif action == "menu_move":
             _tlacitko(lambda: menu_move(apis, p.get("key", ""), -1 if p.get("step") == "-1" else 1))
         elif action == "accounts":

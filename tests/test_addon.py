@@ -6568,6 +6568,16 @@ class TestHlidane(unittest.TestCase):
         self.assertIn("1", polozka.label)
         self.assertEqual(polozka.art["icon"], "DefaultRecentlyAddedEpisodes.png", "jen výchozí ikony skinu")
 
+    def test_novinky_v_dlazdicich_skinu_nejsou(self):
+        apis = {"engine": default.KodiEngine(), "luna": object()}
+        with mock.patch.object(default, "unseen_changelog", return_value=[("10.14.0", "x")]), \
+                mock.patch.object(default.KodiEngine, "accounts", return_value={}):
+            default.main_menu(apis)
+            self.assertTrue(any("action=whats_new" in u for u in xbmcplugin.urls()))
+            xbmcplugin.reset()
+            default.main_menu(apis, home=True)
+        self.assertFalse(any("action=whats_new" in u for u in xbmcplugin.urls()))
+
     def test_vypis_novy_dil_nahore_a_stav_titulu(self):
         default.watch_lib.watch_series(default.STORE, "tt1", {"title": "A bez novinky"})
         default.watch_lib.watch_series(default.STORE, "tt2", {"title": "B s novým dílem"})

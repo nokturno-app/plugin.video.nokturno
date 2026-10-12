@@ -20,7 +20,7 @@ class TestSkinUrls(unittest.TestCase):
         for u in urls:
             action = re.search(r"action=(\w+)", u)
             if not action:
-                self.assertEqual(u, build.P)   # kořen doplňku
+                self.assertTrue(u.startswith(build.P), u)   # kořen doplňku
                 continue
             a = action.group(1)
             self.assertTrue(re.search(rf'action == "{a}"|build_url\(action="{a}"', src), a)

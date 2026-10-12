@@ -34,7 +34,7 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 ADDON_ID = "skin.estuary.nokturno"
 ESTUARY_COMMIT = "f8815ee40f49a700c047982d752be4b2a61420e2"   # xbmc/xbmc Omega, Estuary 4.0.0
 GOOGLE_FONTS = "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/"
@@ -90,7 +90,7 @@ def url(**q):
 TREND = lambda t: url(action="catalog", type=t, catalog="nejsledovanejsi", src="trend")
 # řady pod položkou Nokturno: (typ, nadpis, adresa); "cat" = dlaždice složek, "poster" = plakáty
 ROWS = [
-    ("cat", "$LOCALIZE[31700]", P),
+    ("cat", "$LOCALIZE[31700]", P + "?home=1"),
     ("poster", A(30063), url(action="continue")),
     ("poster", f"{A(30012)} – {A(30393)}", TREND("movie")),
     ("poster", f"{A(30013)} – {A(30393)}", TREND("series")),
@@ -134,6 +134,272 @@ def sidemenu_icon(path):
     out = Image.new("LA", (95, 95), (255, 0))
     out.paste(layer, ((95 - w) // 2, (95 - h) // 2 + 1), layer)
     out.save(path)
+
+
+BUSY_OLD = """				<control type="image">
+					<centerleft>50%</centerleft>
+					<centertop>50%</centertop>
+					<width>80</width>
+					<height>80</height>
+					<aspectratio>keep</aspectratio>
+					<animation effect="rotate" end="-45" center="auto" time="200" delay="600" loop="true" reversible="false" condition="true">Conditional</animation>
+					<texture colordiffuse="button_focus">spinner.png</texture>
+				</control>
+				<control type="image">
+					<centerleft>50%</centerleft>
+					<centertop>50%</centertop>
+					<width>50</width>
+					<height>50</height>
+					<aspectratio>keep</aspectratio>
+					<animation effect="rotate" end="45" center="auto" time="200" delay="600" loop="true" reversible="false" condition="true">Conditional</animation>
+					<texture flipx="true" colordiffuse="button_focus">spinner.png</texture>
+				</control>"""
+BUSY_NEW = """				<control type="image">
+					<centerleft>50%</centerleft>
+					<centertop>50%</centertop>
+					<width>122</width>
+					<height>122</height>
+					<aspectratio>keep</aspectratio>
+					<animation effect="fade" start="100" end="55" time="900" tween="sine" easing="inout" pulse="true" condition="true">Conditional</animation>
+					<animation effect="zoom" start="100" end="90" center="auto" time="900" tween="sine" easing="inout" pulse="true" condition="true">Conditional</animation>
+					<texture>icons/sidemenu/nokturno.png</texture>
+				</control>
+				<control type="image">
+					<centerleft>50%</centerleft>
+					<centertop>50%</centertop>
+					<width>128</width>
+					<height>128</height>
+					<animation effect="rotate" start="0" end="-360" center="auto" time="1100" loop="true" reversible="false" condition="true">Conditional</animation>
+					<texture colordiffuse="selected">dialogs/extendedprogress/loading.png</texture>
+				</control>"""
+
+
+LIST_BUSY_OLD = """				<control type="image">
+					<top>$PARAM[posy]</top>
+					<width>100</width>
+					<height>100</height>
+					<aspectratio aligny="center">keep</aspectratio>
+					<texture colordiffuse="black">dialogs/extendedprogress/loading-back.png</texture>
+				</control>
+				<control type="image">
+					<top>$PARAM[posy]</top>
+					<width>100</width>
+					<height>100</height>
+					<aspectratio aligny="center">keep</aspectratio>
+					<texture>dialogs/extendedprogress/loading.png</texture>
+					<animation effect="rotate" center="auto" start="360" end="0" time="1500" loop="true" condition="true">Conditional</animation>
+				</control>"""
+LIST_BUSY_NEW = """				<control type="group">
+					<top>$PARAM[posy]</top>
+					<width>100</width>
+					<height>100</height>
+					<control type="image">   <!-- ikona má kolem loga průhledný okraj -->
+						<left>3</left>
+						<top>3</top>
+						<width>94</width>
+						<height>94</height>
+						<aspectratio>keep</aspectratio>
+						<animation effect="fade" start="100" end="55" time="900" tween="sine" easing="inout" pulse="true" condition="true">Conditional</animation>
+						<animation effect="zoom" start="100" end="90" center="auto" time="900" tween="sine" easing="inout" pulse="true" condition="true">Conditional</animation>
+						<texture>icons/sidemenu/nokturno.png</texture>
+					</control>
+					<control type="image">
+						<width>100</width>
+						<height>100</height>
+						<animation effect="rotate" start="0" end="-360" center="auto" time="1100" loop="true" reversible="false" condition="true">Conditional</animation>
+						<texture colordiffuse="selected">dialogs/extendedprogress/loading.png</texture>
+					</control>
+				</control>"""
+
+
+PROGRESS_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<!-- Estuary Nokturno: karta načítání vpravo nahoře (hledání streamů a jiné dlouhé akce) -->
+<window>
+	<zorder>3</zorder>
+	<animation effect="fade" start="0" end="100" time="300">WindowOpen</animation>
+	<animation effect="fade" start="100" end="0" time="200">WindowClose</animation>
+	<controls>
+		<control type="group">
+			<depth>DepthBars</depth>
+			<right>30</right>
+			<top>24</top>   <!-- hodiny se mezitím schovají (Includes.xml) -->
+			<width>620</width>
+			<height>100</height>
+			<animation effect="slide" end="0,-130" time="300" tween="sine" easing="inout" condition="$EXP[infodialog_active]">conditional</animation>
+			<animation effect="slide" end="0,-130" time="150" condition="Window.IsVisible(FullscreenVideo) | Window.IsVisible(FullscreenGame)">conditional</animation>
+			<control type="image">
+				<width>620</width>
+				<height>100</height>
+				<texture colordiffuse="B3141B38">colors/white.png</texture>
+			</control>
+			<control type="image">
+				<left>22</left>
+				<top>22</top>
+				<width>56</width>
+				<height>56</height>
+				<aspectratio>keep</aspectratio>
+				<animation effect="fade" start="100" end="55" time="900" tween="sine" easing="inout" pulse="true" condition="true">Conditional</animation>
+				<texture>icons/sidemenu/nokturno.png</texture>
+			</control>
+			<control type="image">
+				<left>18</left>
+				<top>18</top>
+				<width>64</width>
+				<height>64</height>
+				<animation effect="rotate" start="0" end="-360" center="auto" time="1100" loop="true" reversible="false" condition="true">Conditional</animation>
+				<texture colordiffuse="selected">dialogs/extendedprogress/loading.png</texture>
+			</control>
+			<control type="label" id="31">
+				<left>100</left>
+				<top>14</top>
+				<width>490</width>
+				<height>34</height>
+				<font>font12</font>
+				<textcolor>grey</textcolor>
+			</control>
+			<control type="label" id="30">
+				<left>100</left>
+				<top>44</top>
+				<width>490</width>
+				<height>34</height>
+				<font>font12</font>
+				<scroll>true</scroll>
+			</control>
+			<control type="progress" id="32">
+				<left>100</left>
+				<top>80</top>
+				<width>490</width>
+				<height>4</height>
+				<texturebg colordiffuse="33FFFFFF">colors/white.png</texturebg>
+				<midtexture colordiffuse="selected">colors/white.png</midtexture>
+				<visible>Integer.IsGreater(Control.GetLabel(32),0)</visible>
+			</control>
+		</control>
+	</controls>
+</window>
+"""
+
+
+NOTIFICATION_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<!-- Estuary Nokturno: hláška vpravo nahoře ve stejné kartě jako načítání (hranatá jako zbytek Estuary) -->
+<window>
+	<zorder>3</zorder>
+	<animation effect="slide" start="660,0" end="0,0" time="300" tween="cubic" easing="out">WindowOpen</animation>
+	<animation effect="fade" start="0" end="100" time="300">WindowOpen</animation>
+	<animation effect="slide" start="0,0" end="660,0" time="250" tween="cubic" easing="in">WindowClose</animation>
+	<animation effect="fade" start="100" end="0" time="250">WindowClose</animation>
+	<controls>
+		<control type="group">
+			<depth>DepthMax</depth>
+			<right>30</right>
+			<top>24</top>   <!-- hodiny se mezitím schovají (Includes.xml) -->
+			<width>620</width>
+			<height>100</height>
+			<visible>String.IsEmpty(Window(Home).Property(script.cinemavision.running))</visible>
+			<animation effect="slide" end="0,116" time="200" condition="Window.IsVisible(extendedprogressdialog)">Conditional</animation>
+			<control type="image">
+				<width>620</width>
+				<height>100</height>
+				<texture colordiffuse="B3141B38">colors/white.png</texture>
+			</control>
+			<control type="image" id="400">
+				<left>22</left>
+				<top>22</top>
+				<width>56</width>
+				<height>56</height>
+				<aspectratio>keep</aspectratio>
+			</control>
+			<control type="fadelabel" id="401">
+				<left>100</left>
+				<top>14</top>
+				<width>490</width>
+				<height>34</height>
+				<font>font12</font>
+				<textcolor>selected</textcolor>
+				<scrollout>false</scrollout>
+				<pauseatend>2000</pauseatend>
+			</control>
+			<control type="fadelabel" id="402">
+				<left>100</left>
+				<top>46</top>
+				<width>490</width>
+				<height>40</height>
+				<font>font12</font>
+				<scrollout>false</scrollout>
+				<pauseatend>2000</pauseatend>
+			</control>
+		</control>
+	</controls>
+</window>
+"""
+
+
+MDI = "https://cdn.jsdelivr.net/npm/@mdi/svg@7.4.47/"   # Material Design Icons (Apache 2.0)
+# obrázek Estuary v media/ → ikona MDI (outline); nahrazují se jen ikony, které jsou v Nokturnu vidět
+MDI_ICONS = {
+ "icons/power.png": "power", "icons/settings.png": "cog-outline", "icons/search.png": "magnify",
+ "icons/sidemenu/addons.png": "puzzle-outline", "icons/sidemenu/android.png": "android",
+ "icons/sidemenu/disc.png": "disc", "icons/sidemenu/download.png": "download-outline",
+ "icons/sidemenu/favourites.png": "star-outline", "icons/sidemenu/games.png": "gamepad-variant-outline",
+ "icons/sidemenu/livetv.png": "television-classic", "icons/sidemenu/manage.png": "cog-outline",
+ "icons/sidemenu/movies.png": "movie-open-outline", "icons/sidemenu/music.png": "music-note-outline",
+ "icons/sidemenu/musicvideos.png": "music-box-outline", "icons/sidemenu/pictures.png": "image-outline",
+ "icons/sidemenu/programs.png": "apps", "icons/sidemenu/radio.png": "radio",
+ "icons/sidemenu/tv.png": "television", "icons/sidemenu/videos.png": "filmstrip",
+ "icons/sidemenu/weather.png": "weather-partly-cloudy",
+ "DefaultMovies.png": "movie-open-outline", "DefaultVideoPlaylists.png": "playlist-play",
+ "DefaultAddonProgram.png": "cog-outline", "DefaultTVShows.png": "television-classic",
+ "DefaultAddonsSearch.png": "magnify", "DefaultYear.png": "calendar-outline",
+ "DefaultFavourites.png": "star-outline", "DefaultAddonsUpdates.png": "update",
+ "DefaultRecentlyAddedMovies.png": "movie-open-star-outline", "DefaultGenre.png": "drama-masks",
+ "DefaultNetwork.png": "web", "DefaultUser.png": "account-multiple-outline", "DefaultFolder.png": "folder-outline",
+ "DefaultMusicArtists.png": "account-music-outline", "DefaultIconError.png": "alert-circle-outline",
+ "DefaultHardDisk.png": "harddisk", "DefaultActor.png": "account-outline", "DefaultVideo.png": "video-outline",
+ "DefaultStudios.png": "domain", "DefaultSets.png": "layers-outline",
+ "DefaultMusicGenres.png": "music-box-multiple-outline", "DefaultInProgressShows.png": "play-circle-outline",
+ "DefaultCountry.png": "earth", "DefaultAddSource.png": "plus-circle-outline",
+ "DefaultAddonVideo.png": "video-outline", "DefaultAddonService.png": "cog-play-outline",
+ "DefaultAddonPVRClient.png": "television-guide", "DefaultVideoDeleted.png": "delete-outline",
+ "DefaultRecentlyAddedMusicVideos.png": "music-box-outline", "DefaultRecentlyAddedEpisodes.png": "television-play",
+ "DefaultMusicVideos.png": "music-box-outline", "DefaultMusicSongs.png": "music-note-outline",
+ "DefaultMusicAlbums.png": "album", "DefaultIconWarning.png": "alert-outline",
+ "DefaultIconInfo.png": "information-outline", "DefaultAddonsRecentlyUpdated.png": "update",
+ "DefaultAddonRepository.png": "package-variant", "DefaultAddonMusic.png": "music-note-outline",
+}
+
+
+MDI_SCALE = {72: 1.0, 80: 0.92, 95: 0.52, 110: 0.78, 256: 0.6}   # velikost kresby podle velikosti obrázku (menu, hlášky, Default*)
+
+
+def mdi_icons(out):
+    """Ikony Estuary → bílé MDI outline, kresba stejně velká uprostřed (Estuary ji má v každé ikoně
+    jinak velkou, ve výpisu pak třeba Pro Tebe vedle Náhodného filmu vypadala větší).
+    Barví ji dál `colordiffuse` skinu."""
+    import cairosvg
+    svgs = {}
+    for path, name in MDI_ICONS.items():
+        if name not in svgs:
+            svgs[name] = urllib.request.urlopen(f"{MDI}svg/{name}.svg", timeout=30).read().decode()
+        f = out / "media" / path
+        old = Image.open(f).convert("RGBA")
+        w, h = old.size
+        side = round(min(w, h) * MDI_SCALE.get(min(w, h), 0.6))
+        svg = svgs[name].replace("<path ", '<path fill="#ffffff" ')
+        icon = Image.open(io.BytesIO(cairosvg.svg2png(bytestring=svg.encode(), output_width=side * 4,
+                                                      output_height=side * 4))).convert("RGBA")
+        icon = icon.resize((side, side), Image.LANCZOS)
+        new = Image.new("RGBA", old.size, (255, 255, 255, 0))
+        new.paste(icon, ((w - side) // 2, (h - side) // 2), icon)
+        new.save(f)
+    (out / "media" / "MDI-LICENSE.txt").write_bytes(urllib.request.urlopen(MDI + "LICENSE", timeout=30).read())
+
+
+def spinner_arc(path):
+    """Načítání: zlatý oblouk 70° (barví ho `colordiffuse`, točí animace) kolem loga Nokturna."""
+    n, size = 4, 128
+    big = Image.new("LA", (size * n, size * n), (255, 0))
+    ImageDraw.Draw(big).arc((4 * n, 4 * n, (size - 4) * n, (size - 4) * n), -90, -20, fill=(255, 255), width=5 * n)
+    big.resize((size, size), Image.LANCZOS).save(path)
 
 
 def round_badge(path):
@@ -222,53 +488,102 @@ def strings(out):
         f.write_text(t, encoding="utf-8")
 
 
-INFO_HEIGHT = 474   # pruh s popisem nad řadami (jako Arctic Fuse 3)
+INFO_HEIGHT = 291   # pruh s popisem nad řadami (jako Arctic Fuse 3)
+ROW_LEFT = 55       # nadpis řady jako v Estuary (55 / ROWS_ZOOM × 100), popis taky
+INFO_LEFT = 55
+ROWS_ZOOM = 100     # velikost řad v % — 100 = jako ostatní sekce Estuary (Doplňky…)
+ROWS_HEIGHT = round((1080 - INFO_HEIGHT) * 100 / ROWS_ZOOM)   # oblast řad před zmenšením
+# Grouplist posouvá jen tolik, aby byl vybraný prvek celý vidět — u spodního okraje by tak nad
+# vybranou řadou visel useknutý kus předchozí a další by nebyla vidět. Každá řada je proto skupina
+# s rezervou PEEK pod sebou a itemgap o PEEK menší (rozestup řad zůstává): vybraná řada se zarovná
+# výš a v rezervě vykukuje další. Estuary: plakátová řada 644, kategorie 410, itemgap -160 —
+# řady se překrývají a spodek předchozí (plakáty, popisky dlaždic) by vykukoval nad vybranou;
+# rozestup je proto o ROW_SPACE větší.
+ROW_SPACE = 45      # plakát i s odznakem končí ~40 pod horním okrajem další řady
+HEAD_GAP = 15      # mezera nadpis řady → plakáty navíc oproti Estuary
+POSTER_ROW = 644 + HEAD_GAP
+PEEK = ROWS_HEIGHT - POSTER_ROW
+# Dlaždice nabídky (první řada) nejsou v grouplistu, ale nahoře na místě popisu: popis je vidět, když
+# je vybraný titul v řadě, jinak dlaždice. Jen se prolnou, řady se neposouvají.
+DETAIL = "ControlGroup(30001).HasFocus"
+ROW_HEIGHT = {"poster": POSTER_ROW + PEEK}
 
 
 def info_panel(c, visible):
     """Název (nebo logo), rok · stopáž · hodnocení a děj titulu z kontejneru `c` nad řadami."""
+    nologo = f"String.IsEmpty({c}.ListItem.Art(clearlogo))"
+    plot = "".join(f"""
+						<control type="textbox">
+							<top>125</top>
+							<width>1300</width>
+							<height>{h}</height>
+							<font>font27</font>
+							<shadowcolor>text_shadow</shadowcolor>
+							<label>$INFO[{c}.ListItem.Plot]</label>
+							<visible>{v}</visible>
+						</control>""" for h, v in ((115, "!" + nologo), (195, nologo)))   # 3 / 5 řádků
     return f"""
 					<control type="group">
-						<left>60</left>
-						<top>120</top>
+						<left>{INFO_LEFT}</left>
+						<top>45</top>
 						<visible>{visible}</visible>
 						<animation effect="fade" time="200">VisibleChange</animation>
+						<!-- bez loga je nadpis nižší: vše o 25 výš a děj o řádek delší -->
+						<animation effect="slide" end="0,-25" time="0" condition="{nologo}">conditional</animation>
 						<control type="image">
 							<width>640</width>
-							<height>140</height>
+							<height>80</height>
 							<aspectratio align="left" aligny="bottom">keep</aspectratio>
 							<texture background="true">$INFO[{c}.ListItem.Art(clearlogo)]</texture>
 						</control>
 						<control type="label">
-							<top>60</top>
+							<top>0</top>
 							<width>1300</width>
 							<height>80</height>
 							<aligny>bottom</aligny>
 							<font>font52_title</font>
 							<label>$INFO[{c}.ListItem.Title]</label>
 							<shadowcolor>text_shadow</shadowcolor>
-							<visible>String.IsEmpty({c}.ListItem.Art(clearlogo))</visible>
+							<visible>{nologo}</visible>
 						</control>
 						<control type="label">
-							<top>155</top>
+							<top>85</top>
 							<width>1300</width>
 							<height>40</height>
 							<font>font27</font>
 							<textcolor>grey</textcolor>
 							<label>$INFO[{c}.ListItem.Year]$INFO[{c}.ListItem.Duration(mins),  ·  , min]$INFO[{c}.ListItem.Rating,  ·  [COLOR selected]★[/COLOR] ]</label>
-						</control>
-						<control type="textbox">
-							<top>200</top>
-							<width>1300</width>
-							<height>110</height>
-							<font>font27</font>
-							<shadowcolor>text_shadow</shadowcolor>
-							<label>$INFO[{c}.ListItem.Plot]</label>
-						</control>
+						</control>{plot}
 					</control>"""
 
 
-def nokturno_menu(home):
+def expand_widget(includes, name, params, extra):
+    """Include řady z Estuary rozvinutý do textu s `extra` (navigace) přímo v seznamu.
+
+    Řada je v obalu (skupina s rezervou PEEK) a šipku nahoru/dolů Kodi předá jen přímo
+    seznamu — navigaci grouplistu obal nedostane. Include ji jako parametr nepřijme."""
+    def expand(name, params):
+        m = re.search(rf'<include name="{name}">(.*?)<definition>(.*?)</definition>', includes, re.S)
+        values = dict(re.findall(r'<param name="(\w+)">([^<]*)</param>', m.group(1)))
+        values.update(params)
+        return re.sub(r"\$PARAM\[(\w+)\]", lambda p: values.get(p.group(1), ""), m.group(2))
+
+    def label(m):
+        """Nadpis řady rozvinutý taky, aby lícoval s levou hranou vybraného (zvětšeného) plakátu."""
+        params = dict(re.findall(r'<param name="(\w+)">([^<]*)</param>', m.group(1)))
+        params.update(re.findall(r'<param name="(\w+)" value="([^"]*)"/>', m.group(1)))
+        return sub1(expand("CategoryLabel", params), "<left>55</left>",
+                    f"<left>{ROW_LEFT}</left>\n\t\t\t\t<font>font13_rows</font>")
+
+    body = re.sub(r'<include content="CategoryLabel">(.*?)</include>', label, expand(name, params), flags=re.S)
+    # plakáty o HEAD_GAP dál od nadpisu, dlaždice o 10 (jako Kategorie v Doplňcích)
+    top, gap = (115, HEAD_GAP) if name == "WidgetListPoster" else (110, 10)
+    body = sub1(body, f"<left>0</left>\n\t\t\t\t<top>{top}</top>", f"<left>0</left>\n\t\t\t\t<top>{top + gap}</top>")
+    return sub1(body, f'<control type="panel" id="{params["list_id"]}">',
+                f'<control type="panel" id="{params["list_id"]}">{extra}')
+
+
+def nokturno_menu(home, includes):
     """Položka Nokturno na prvním místě hlavní nabídky a její řady."""
     item = f"""<content>
 						<item>
@@ -281,24 +596,48 @@ def nokturno_menu(home):
 						</item>"""
     home = sub1(home, "<content>\n\t\t\t\t\t\t<item>\n\t\t\t\t\t\t\t<label>$LOCALIZE[342]</label>", item +
                 "\n\t\t\t\t\t\t<item>\n\t\t\t\t\t\t\t<label>$LOCALIZE[342]</label>")
+    ids = [30100 + i * 100 for i in range(len(ROWS))]
+    shown = lambda lid: f"[Integer.IsGreater(Container({lid}).NumItems,0) | Container({lid}).IsUpdating]"
+
+    def nav(tag, lids):
+        """Šipka do nejbližší viditelné řady."""
+        return "".join(f"""
+							<{tag} condition="{' + '.join(['!' + shown(x) for x in lids[:k]] + [shown(lid)])}">SetFocus({lid})</{tag}>"""
+                       for k, lid in enumerate(lids))
+
+    def row(i):
+        kind, header, path = ROWS[i]
+        return expand_widget(includes, "WidgetListCategories" if kind == "cat" else "WidgetListPoster",
+                             {"content_path": path, "widget_header": header, "widget_target": "videos",
+                              "list_id": str(ids[i])},
+                             nav("onup", ids[:i][::-1]) + nav("ondown", ids[i + 1:]))
+
+    assert ROWS[0][0] == "cat" and all(kind == "poster" for kind, _, _ in ROWS[1:])
+    tiles = f"""
+					<control type="group">
+						<top>{round(80 * (100 - ROWS_ZOOM) / 100)}</top>   <!-- nadpis dlaždic na výšce Estuary (80) -->
+						<width>{round(1458 * 100 / ROWS_ZOOM)}</width>
+						<animation effect="zoom" start="{ROWS_ZOOM}" end="{ROWS_ZOOM}" center="0,0" time="0" condition="true">Conditional</animation>
+						<animation effect="fade" time="200">VisibleChange</animation>
+						<visible allowhiddenfocus="true">!{DETAIL}</visible>{row(0)}
+					</control>"""
     widgets = "".join(f"""
-						<include content="{'WidgetListCategories' if kind == 'cat' else 'WidgetListPoster'}">
-							<param name="content_path" value="{path}"/>
-							<param name="widget_header" value="{header}"/>
-							<param name="widget_target" value="videos"/>
-							<param name="list_id" value="{30100 + i * 100}"/>
-						</include>""" for i, (kind, header, path) in enumerate(ROWS))
+						<control type="group">
+							<height>{ROW_HEIGHT["poster"]}</height>
+							<visible>{shown(ids[i])}</visible>{row(i)}
+						</control>""" for i in range(1, len(ROWS)))
     group = f"""<control type="group" id="30000">
 					<visible>String.IsEqual(Container(9000).ListItem.Property(id),nokturno)</visible>
 					<include content="Visible_Right_Delayed">
 						<param name="id" value="nokturno"/>
-					</include>{info_panel("Container", "ControlGroup(30001).HasFocus + !String.IsEmpty(Container.ListItem.Plot)")}{
-                        info_panel("Container(30200)", "![ControlGroup(30001).HasFocus + !String.IsEmpty(Container.ListItem.Plot)]"
-                                                       " + !String.IsEmpty(Container(30200).ListItem.Plot)")}
+					</include>{info_panel("Container", DETAIL)}{tiles}
 					<control type="group">
 						<top>{INFO_HEIGHT}</top>
-						<height>{1080 - INFO_HEIGHT}</height>
+						<width>{round(1458 * 100 / ROWS_ZOOM)}</width>
+						<height>{ROWS_HEIGHT}</height>
+						<animation effect="zoom" start="{ROWS_ZOOM}" end="{ROWS_ZOOM}" center="0,{INFO_HEIGHT}" time="0" condition="true">Conditional</animation>
 						<control type="grouplist" id="30001">
+							<itemgap>{-160 - PEEK + ROW_SPACE}</itemgap>
 							<include>WidgetGroupListCommon</include>
 							<pagecontrol>30010</pagecontrol>{widgets}
 						</control>
@@ -349,8 +688,39 @@ def build(src, out):
 				<control type="radiobutton" id="611">"""), encoding="utf-8")
 
     sidemenu_icon(out / "media/icons/sidemenu/nokturno.png")
+    mdi_icons(out)
     round_badge(out / "media/overlays/badge.png")
+    spinner_arc(out / "media/dialogs/extendedprogress/loading.png")   # načítání řad (BusyListSpinner)
+    (out / "xml/DialogExtendedProgressBar.xml").write_text(PROGRESS_XML, encoding="utf-8")
+    (out / "xml/DialogNotification.xml").write_text(NOTIFICATION_XML, encoding="utf-8")
+    # hodiny se schovají, dokud je vpravo nahoře karta hlášky nebo načítání
+    hide = "<visible>!Window.IsVisible(extendedprogressdialog) + !Window.IsVisible(notification)</visible>"
+    f = out / "xml/Includes.xml"
+    f.write_text(sub1(f.read_text(encoding="utf-8"), "<font>font_clock</font>\n",
+                      f"<font>font_clock</font>\n\t\t\t\t\t\t{hide}\n"
+                      '\t\t\t\t\t\t<animation effect="fade" time="150">VisibleChange</animation>\n'), encoding="utf-8")
+    f = out / "xml/Custom_1109_TopBarOverlay.xml"
+    f.write_text(sub1(f.read_text(encoding="utf-8"), "<visible>!Window.IsVisible(extendedprogressdialog)</visible>", hide),
+                 encoding="utf-8")
+    # místní nabídka: Estuary ji na domovské obrazovce posouvá o 175 dolů — u řad pak přetéká.
+    # Podmínka na položku menu nejde: v dialogu Container(9000) míří na dialog, ne na domovskou obrazovku.
+    f = out / "xml/DialogContextMenu.xml"
+    f.write_text(sub1(f.read_text(encoding="utf-8"),
+                      '\t\t\t<animation effect="slide" end="0,175" time="0" condition="Window.IsActive(home)">conditional</animation>\n', ""),
+                 encoding="utf-8")
+    f = out / "xml/DialogBusy.xml"
+    f.write_text(sub1(f.read_text(encoding="utf-8"), BUSY_OLD, BUSY_NEW), encoding="utf-8")
+    # načítání řad na domovské obrazovce: totéž logo s obloukem
+    f = out / "xml/Includes_Home.xml"
+    f.write_text(sub1(f.read_text(encoding="utf-8"), LIST_BUSY_OLD, LIST_BUSY_NEW), encoding="utf-8")
 
+    # nadpis řady zmenšené na ROWS_ZOOM: font13 (výchozí nadpis Estuary) zvětšený zpět na 100 %
+    f = out / "xml/Font.xml"
+    f.write_text(re.sub(r"\t\t<font>\n\t\t\t<name>font13</name>.*?</font>\n",
+                        lambda m: m.group(0) + m.group(0).replace("font13", "font13_rows").replace(
+                            re.search(r"<size>\d+</size>", m.group(0)).group(0),
+                            f"<size>{round(int(re.search(r'<size>(\d+)', m.group(0)).group(1)) * 100 / ROWS_ZOOM)}</size>"),
+                        f.read_text(encoding="utf-8"), flags=re.S), encoding="utf-8")
     fontsets(out)
     # oddělovač v záhlaví (Řadit podle ∙ 2 / 50): U+2219 Inter nemá, „·“ mají všechna písma
     for f in (out / "xml").glob("*.xml"):
@@ -362,9 +732,15 @@ def build(src, out):
     f.write_text(sub1(f.read_text(encoding="utf-8"), '<value condition="Container.SortMethod(7) | Container.SortMethod(29)">$INFO[ListItem.Year]</value>',
                       '\t\t<value condition="!String.IsEmpty(ListItem.Rating) + !String.IsEmpty(ListItem.Year)">★ $INFO[ListItem.Rating]   $INFO[ListItem.Year]</value>\n'
                       '\t\t<value condition="Container.SortMethod(7) | Container.SortMethod(29)">$INFO[ListItem.Year]</value>'), encoding="utf-8")
+    # odznak hodnocení dole uvnitř plakátu — nahoře zasahoval do nadpisu řady, na hraně do další řady
+    f = out / "xml/View_54_InfoWall.xml"
+    t = sub1(f.read_text(encoding="utf-8"), "<left>135</left>\n\t\t\t\t<top>-8</top>",
+             "<left>135</left>\n\t\t\t\t<top>339</top>")
+    f.write_text(t, encoding="utf-8")
 
     home = out / "xml/Home.xml"
-    home.write_text(nokturno_menu(home.read_text(encoding="utf-8")), encoding="utf-8")
+    home.write_text(nokturno_menu(home.read_text(encoding="utf-8"),
+                                  (out / "xml/Includes_Home.xml").read_text(encoding="utf-8")), encoding="utf-8")
 
 
 def zip_skin(skin_dir, repo):
