@@ -34,7 +34,9 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
-VERSION = "1.0.1"
+VERSION = "1.0.2"
+P_ID = "plugin.video.nokturno"
+PLUGIN_MIN = "10.14.0~beta2"   # nejnižší doplněk, který zná všechny akce v ROWS
 ADDON_ID = "skin.estuary.nokturno"
 ESTUARY_COMMIT = "f8815ee40f49a700c047982d752be4b2a61420e2"   # xbmc/xbmc Omega, Estuary 4.0.0
 GOOGLE_FONTS = "https://raw.githubusercontent.com/google/fonts/bd8f81ddb5c74d5c8897b36ad88b440266245103/ofl/"
@@ -455,6 +457,9 @@ def addon_xml(src):
     head = sub1(head, '<addon id="skin.estuary" version="4.0.0" name="Estuary" provider-name="phil65, Ichabod Fletchman">',
                 f'<addon id="{ADDON_ID}" version="{VERSION}" name="Estuary Nokturno" '
                 'provider-name="Nokturno (z Estuary od phil65, Ichabod Fletchman)">')
+    # řady volají akce doplňku (home_row…), které starší verze nemá — vrátila by místo řady hlavní menu
+    head = sub1(head, '<import addon="xbmc.gui" version="5.17.0"/>',
+                f'<import addon="xbmc.gui" version="5.17.0"/>\n\t\t<import addon="{P_ID}" version="{PLUGIN_MIN}"/>')
     return head + """<extension point="xbmc.addon.metadata">
 		<platform>all</platform>
 		<license>CC BY-SA 4.0, GNU GENERAL PUBLIC LICENSE Version 2.0</license>
