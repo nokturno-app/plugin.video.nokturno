@@ -34,7 +34,7 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
-VERSION = "1.0.2"
+VERSION = "1.0.3"
 P_ID = "plugin.video.nokturno"
 PLUGIN_MIN = "10.14.0~beta2"   # nejnižší doplněk, který zná všechny akce v ROWS
 ADDON_ID = "skin.estuary.nokturno"
@@ -99,6 +99,18 @@ ROWS = [
 ] + [("poster", f"$INFO[Window(home).Property(nokturno.home.{n})]",
        url(action="home_row", slot=n) + "&amp;rev=$INFO[Window(home).Property(nokturno.home.rev)]")
      for n in range(1, HOME_SLOTS + 1)]   # rev: po výběru katalogů v nastavení se adresa změní a řady načtou znovu
+SLOT1 = ROWS[-HOME_SLOTS]
+HOME_COUNT = "Skin.String(nokturno.home.count)"   # počet řad, zapisuje ho doplněk (HOME_COUNT_SKIN)
+slot_var = lambda n: f"NokturnoSlot{n}"
+
+
+def slot_variables():
+    """Adresy slotů 2+ jen do uloženého počtu řad. Po startu Kodi se tak nespouští Python pro prázdné
+    sloty (každé volání doplňku na slabém boxu stojí sekundy). Slot 1 se volá vždy a počet obnoví."""
+    return "".join(f"""
+	<variable name="{slot_var(n)}">
+		<value condition="String.IsEmpty({HOME_COUNT}) | Integer.IsGreaterOrEqual({HOME_COUNT},{n})">{ROWS[ROWS.index(SLOT1) + n - 1][2]}</value>
+	</variable>""" for n in range(2, HOME_SLOTS + 1))
 
 
 # ---------------------------------------------------------------- zdroj Estuary
@@ -354,7 +366,7 @@ MDI_ICONS = {
  "DefaultAddonsSearch.png": "magnify", "DefaultYear.png": "calendar-outline",
  "DefaultFavourites.png": "star-outline", "DefaultAddonsUpdates.png": "update",
  "DefaultRecentlyAddedMovies.png": "movie-open-star-outline", "DefaultGenre.png": "drama-masks",
- "DefaultNetwork.png": "web", "DefaultUser.png": "account-multiple-outline", "DefaultFolder.png": "folder-outline",
+ "DefaultNetwork.png": "web", "lists/year.png": "calendar-month-outline", "DefaultUser.png": "account-multiple-outline", "DefaultFolder.png": "folder-outline",
  "DefaultMusicArtists.png": "account-music-outline", "DefaultIconError.png": "alert-circle-outline",
  "DefaultHardDisk.png": "harddisk", "DefaultActor.png": "account-outline", "DefaultVideo.png": "video-outline",
  "DefaultStudios.png": "domain", "DefaultSets.png": "layers-outline",
@@ -370,7 +382,7 @@ MDI_ICONS = {
 }
 
 
-MDI_SCALE = {72: 1.0, 80: 0.92, 95: 0.52, 110: 0.78, 256: 0.6}   # velikost kresby podle velikosti obrázku (menu, hlášky, Default*)
+MDI_SCALE = {32: 0.9, 72: 1.0, 80: 0.92, 95: 0.52, 110: 0.78, 256: 0.6}   # velikost kresby podle velikosti obrázku (menu, hlášky, Default*)
 
 
 def mdi_icons(out):
@@ -402,6 +414,103 @@ def spinner_arc(path):
     big = Image.new("LA", (size * n, size * n), (255, 0))
     ImageDraw.Draw(big).arc((4 * n, 4 * n, (size - 4) * n, (size - 4) * n), -90, -20, fill=(255, 255), width=5 * n)
     big.resize((size, size), Image.LANCZOS).save(path)
+
+
+RADIUS = 14   # zaoblení plakátů a dlaždic (px při 1080p)
+# posuvníky a dialogy s informacemi: obrázek nad kartou se ořezává (aspectratio scale) a maska na něm
+# v Kodi nesedí — zaoblená karta pod hranatým plakátem pak vypadá hůř než celé hranaté (Office 2026-10-13)
+ROUND_SKIP = {"Custom_1103_VolumeSlider.xml", "Custom_1110_TempoControl.xml", "DialogSlider.xml",
+              "DialogVideoInfo.xml", "DialogMusicInfo.xml", "DialogAddonInfo.xml"}
+
+
+def round_mask(path, w, h, top=True):
+    """Bílá maska se zaoblenými rohy přesně na velikost obrázku (`diffuse`), ať jsou rohy kruhové."""
+    big = Image.new("LA", (w * 4, h * 4), (255, 0))
+    d = ImageDraw.Draw(big)
+    d.rounded_rectangle((0, 0, w * 4 - 1, h * 4 - 1), radius=RADIUS * 4, fill=(255, 255))
+    if not top:   # jen spodní rohy (pruh u spodní hrany plakátu)
+        d.rectangle((0, 0, w * 4 - 1, h * 2), fill=(255, 255))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    big.resize((w, h), Image.LANCZOS).save(path)
+
+
+def round_cards(out):
+    """Zaoblené rohy plakátů a dlaždic: každý obrázek s rámečkem (`bordersize` ≥ 4 — karty, plakáty,
+    náhledy; ikony seznamů mají 2 nebo nic) dostane `diffuse` masku na vnitřní velikost. Hlavní nabídka,
+    seznamy a posuvníky zůstávají hranaté. Stín karty (`overlays/shadow.png`) se zaoblí taky."""
+    def fix(m):
+        b = m.group(0)
+        bs = re.search(r"<bordersize>(\d+)</bordersize>", b)
+        w = re.search(r"<width>(\d+)</width>", b)
+        h = re.search(r"<height>(\d+)</height>", b)
+        if not (w and h) or re.search(r"<texture[^>]*\sdiffuse=", b):
+            return b
+        if not bs or int(bs.group(1)) < 4:
+            return b
+        iw, ih = int(w.group(1)) - 2 * int(bs.group(1)), int(h.group(1)) - 2 * int(bs.group(1))
+        if min(iw, ih) < 4 * RADIUS:
+            return b
+        name = f"overlays/round/{iw}x{ih}.png"
+        if not (out / "media" / name).exists():
+            round_mask(out / "media" / name, iw, ih)
+        return re.sub(r"<texture(?=[ >])", f'<texture diffuse="{name}"', b, count=1)
+    for f in (out / "xml").glob("*.xml"):
+        if f.name in ROUND_SKIP:
+            continue
+        t = f.read_text(encoding="utf-8")
+        n = re.sub(r'<control type="image"[^>]*>(?:(?!<control).)*?</control>', fix, t, flags=re.S)
+        if n != t:
+            f.write_text(n, encoding="utf-8")
+    # místní nabídka: pozadí i zvýraznění položky jako 9-slice se zaoblenými rohy (výška se mění)
+    r = Image.new("LA", (256, 256), (255, 0))
+    ImageDraw.Draw(r).rounded_rectangle((0, 0, 255, 255), radius=RADIUS * 4, fill=(255, 255))
+    r.resize((64, 64), Image.LANCZOS).save(out / "media/overlays/round/slice.png")
+    f = out / "xml/DialogContextMenu.xml"
+    t = sub1(f.read_text(encoding="utf-8"), '<texture colordiffuse="dialog_tint">colors/white.png</texture>',
+             f'<texture colordiffuse="dialog_tint" border="{RADIUS + 2}">overlays/round/slice.png</texture>')
+    t = sub1(t, '<texturefocus colordiffuse="button_focus">lists/focus.png</texturefocus>',
+             f'<texturefocus colordiffuse="button_focus" border="{RADIUS + 2}">overlays/round/slice.png</texturefocus>')
+    f.write_text(t, encoding="utf-8")
+    # pruh u spodní hrany plakátu (zhlédnuto, rozkoukáno): jen spodní rohy
+    round_mask(out / "media/overlays/round/250x50-bottom.png", 250, 50, top=False)
+    f = out / "xml/View_54_InfoWall.xml"
+    f.write_text(f.read_text(encoding="utf-8").replace(
+        '<texture colordiffuse="CCFFFFFF">overlays/overlayfade.png</texture>',
+        '<texture colordiffuse="CCFFFFFF" diffuse="overlays/round/250x50-bottom.png">overlays/overlayfade.png</texture>'),
+        encoding="utf-8")
+    # linka výběru kolem velkého plakátu ve výpisu Plakát (9-slice, barva výběru)
+    ring = Image.new("LA", (256, 256), (255, 0))
+    ImageDraw.Draw(ring).rounded_rectangle((0, 0, 255, 255), radius=(RADIUS + 4) * 4, outline=(255, 255), width=16)
+    ring.resize((64, 64), Image.LANCZOS).save(out / "media/overlays/round/ring.png")
+    # výpis Plakát: velký plakát vlevo zaoblený, zaoblená linka výběru, hodnocení dole uvnitř
+    round_mask(out / "media/overlays/round/476x716.png", 476, 716)
+    round_mask(out / "media/overlays/round/476x50-bottom.png", 476, 50, top=False)
+    f = out / "xml/View_51_Poster.xml"
+    t = sub1(f.read_text(encoding="utf-8"), '<texture fallback="DefaultMovies.png" background="true">$VAR[PosterThumbVar]</texture>',
+             '<texture diffuse="overlays/round/476x716.png" fallback="DefaultMovies.png" background="true">$VAR[PosterThumbVar]</texture>')
+    t = sub1(t, '<aspectratio>scale</aspectratio>\n\t\t\t\t<texture diffuse="overlays/round/476x716.png"',
+             '<aspectratio>stretch</aspectratio>\n\t\t\t\t<texture diffuse="overlays/round/476x716.png"')
+    t = sub1(t, '<width>476</width>\n\t\t\t\t\t<height>50</height>\n\t\t\t\t\t<texture colordiffuse="CCFFFFFF">overlays/overlayfade.png</texture>',
+             '<width>476</width>\n\t\t\t\t\t<height>50</height>\n\t\t\t\t\t'
+             '<texture colordiffuse="CCFFFFFF" diffuse="overlays/round/476x50-bottom.png">overlays/overlayfade.png</texture>')
+    t = sub1(t, '<left>1</left>\n\t\t\t\t<top>1</top>\n\t\t\t\t<width>482</width>\n\t\t\t\t<height>721</height>',
+             '<left>0</left>\n\t\t\t\t<top>0</top>\n\t\t\t\t<width>484</width>\n\t\t\t\t<height>724</height>')
+    t = sub1(t, '<texture border="8" colordiffuse="button_focus">buttons/thumbnail_focused.png</texture>',
+             f'<texture border="{RADIUS + 6}" colordiffuse="button_focus">overlays/round/ring.png</texture>')
+    t = sub1(t, '<left>216</left>\n\t\t\t\t<top>-18</top>\n\t\t\t\t<include content="RatingCircle">',
+             '<left>216</left>\n\t\t\t\t<top>671</top>\n\t\t\t\t<include content="RatingCircle">')
+    f.write_text(t, encoding="utf-8")
+    # stopáž vpravo dole: odznak s plně kulatými konci místo hranatého rámečku
+    pill = Image.new("LA", (1080, 480), (255, 0))
+    ImageDraw.Draw(pill).rounded_rectangle((40, 80, 1039, 399), radius=160, outline=(255, 255), width=20)
+    pill.resize((270, 120), Image.LANCZOS).save(out / "media/flags/flag.png")
+    # stín: v Estuary jen tenká tmavá linka 2–3 px těsně kolem karty (80×80, okraj 21) — tady zaoblená
+    sh = Image.new("L", (80, 80), 0)
+    ImageDraw.Draw(sh).rounded_rectangle((17, 17, 62, 62), radius=RADIUS + 3, fill=45)
+    sh = sh.filter(ImageFilter.GaussianBlur(1))
+    hole = Image.new("L", (80, 80), 255)
+    ImageDraw.Draw(hole).rounded_rectangle((20, 20, 59, 59), radius=RADIUS, fill=0)
+    Image.merge("LA", (Image.new("L", (80, 80), 0), ImageChops.multiply(sh, hole))).save(out / "media/overlays/shadow.png")
 
 
 def round_badge(path):
@@ -612,6 +721,8 @@ def nokturno_menu(home, includes):
 
     def row(i):
         kind, header, path = ROWS[i]
+        if i > ROWS.index(SLOT1):   # sloty 2+ přes proměnnou: nad uloženým počtem řad prázdná adresa = žádné volání
+            path = f"$VAR[{slot_var(i - ROWS.index(SLOT1) + 1)}]"
         return expand_widget(includes, "WidgetListCategories" if kind == "cat" else "WidgetListPoster",
                              {"content_path": path, "widget_header": header, "widget_target": "videos",
                               "list_id": str(ids[i])},
@@ -735,13 +846,31 @@ def build(src, out):
     # vpravo v seznamu: hodnocení a rok (Estuary tam má jen rok nebo Label2)
     f = out / "xml/Variables.xml"
     f.write_text(sub1(f.read_text(encoding="utf-8"), '<value condition="Container.SortMethod(7) | Container.SortMethod(29)">$INFO[ListItem.Year]</value>',
-                      '\t\t<value condition="!String.IsEmpty(ListItem.Rating) + !String.IsEmpty(ListItem.Year)">★ $INFO[ListItem.Rating]   $INFO[ListItem.Year]</value>\n'
+                      '\t\t<value condition="!String.IsEmpty(ListItem.Rating) + !String.IsEmpty(ListItem.Year)">★ $INFO[ListItem.Rating]  ·  $INFO[ListItem.Year]</value>\n'
                       '\t\t<value condition="Container.SortMethod(7) | Container.SortMethod(29)">$INFO[ListItem.Year]</value>'), encoding="utf-8")
+    f.write_text(sub1(f.read_text(encoding="utf-8"), "</includes>", slot_variables() + "\n</includes>"), encoding="utf-8")
     # odznak hodnocení dole uvnitř plakátu — nahoře zasahoval do nadpisu řady, na hraně do další řady
     f = out / "xml/View_54_InfoWall.xml"
     t = sub1(f.read_text(encoding="utf-8"), "<left>135</left>\n\t\t\t\t<top>-8</top>",
              "<left>135</left>\n\t\t\t\t<top>339</top>")
     f.write_text(t, encoding="utf-8")
+    # plakát s jiným poměrem než 2:3 by „scale“ ořízl i s maskou (diffuse jde s texturou) a rohy by
+    # zůstaly hranaté — plakáty se proto roztáhnou na rám, odchylka od 2:3 je u plakátů malá
+    f = out / "xml/View_54_InfoWall.xml"
+    f.write_text(sub1(f.read_text(encoding="utf-8"),
+                      '<texture background="true">$INFO[ListItem.Art(poster)]</texture>\n\t\t\t\t\t<aspectratio>scale</aspectratio>',
+                      '<texture background="true">$INFO[ListItem.Art(poster)]</texture>\n\t\t\t\t\t<aspectratio>stretch</aspectratio>'),
+                 encoding="utf-8")
+    # seriál z doplňku nemá WatchedEpisodes ani TotalEpisodes: Estuary porovná dvě prázdné hodnoty
+    # a ukáže „zhlédnuto“ — ikony stavu seriálu jen když počet dílů známe
+    f = out / "xml/Variables.xml"
+    t = sub1(f.read_text(encoding="utf-8"),
+             '[String.IsEqual(Listitem.DBType,tvshow) | String.IsEqual(Listitem.DBType,season)] + String.IsEqual(ListItem.Property(WatchedEpisodes),ListItem.Property(TotalEpisodes))',
+             '[String.IsEqual(Listitem.DBType,tvshow) | String.IsEqual(Listitem.DBType,season)] + !String.IsEmpty(ListItem.Property(TotalEpisodes)) + String.IsEqual(ListItem.Property(WatchedEpisodes),ListItem.Property(TotalEpisodes))')
+    t = sub1(t, '<value condition="String.IsEqual(ListItem.DBtype,tvshow) | String.IsEqual(ListItem.DBtype,set) | String.IsEqual(ListItem.DBType,season)">lists/played-total.png</value>',
+             '<value condition="[String.IsEqual(ListItem.DBtype,tvshow) | String.IsEqual(ListItem.DBType,season)] + !String.IsEmpty(ListItem.Property(TotalEpisodes)) | String.IsEqual(ListItem.DBtype,set)">lists/played-total.png</value>')
+    f.write_text(t, encoding="utf-8")
+    round_cards(out)
 
     home = out / "xml/Home.xml"
     home.write_text(nokturno_menu(home.read_text(encoding="utf-8"),

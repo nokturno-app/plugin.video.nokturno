@@ -1128,6 +1128,7 @@ def dash_entry_item(entry):
 
 
 HOME_ROW_PROP = "nokturno.home.%d"   # Window(home).Property — nadpis řady ve skinu Estuary Nokturno
+HOME_COUNT_SKIN = "nokturno.home.count"   # Skin.String — kolik slotů má skin načítat (slot 1 vždy)
 HOME_REV_PROP = "nokturno.home.rev"   # změna = skin načte řady znovu (je v adrese widgetu)
 HOME_ROWS_KEY = "home_rows"         # klíče řad na domovské obrazovce (`home_choices`), v pořadí; None = výchozí
 
@@ -1186,6 +1187,9 @@ def list_home_row(apis, slot):
     Nadpis jde do vlastnosti okna Home, adresa widgetu se tak s katalogy nemění."""
     rows = home_rows(apis)
     win = xbmcgui.Window(10000)
+    # počet řad si skin pamatuje (Skin.String) a prázdné sloty po startu Kodi vůbec nevolá
+    if xbmc.getInfoLabel("Skin.String(%s)" % HOME_COUNT_SKIN) != str(len(rows)):
+        xbmc.executebuiltin("Skin.SetString(%s,%d)" % (HOME_COUNT_SKIN, len(rows)))
     if not 1 <= slot <= len(rows):
         win.clearProperty(HOME_ROW_PROP % slot)
         xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
