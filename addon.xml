@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.14.0~beta3" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.14.0" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -40,7 +40,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.14.0~beta3 – Vzhled Estuary Nokturno se instaluje jen s doplňkem, který umí řady na domovské obrazovce; místo řad se už neopakuje nabídka.
+    <news>10.14.0 – Nový vzhled Estuary Nokturno pro Kodi 21: Nokturno je první položka hlavní nabídky, na domovské obrazovce ukazuje řady Pokračovat ve sledování, Nejsledovanější, Můj seznam a katalogy s popisem vybraného titulu. Pozadí titulu se liší od plakátu.
+10.14.0~beta3 – Vzhled Estuary Nokturno se instaluje jen s doplňkem, který umí řady na domovské obrazovce; místo řad se už neopakuje nabídka.
 10.14.0~beta2 – Vzhled Estuary Nokturno: popis vybraného titulu nad řadami, nové načítání, hlášky a ikony, pozadí titulu se liší od plakátu.
 10.14.0~beta1 – Nový vzhled Estuary Nokturno v beta repozitáři: Nokturno je první položka hlavní nabídky a na domovské obrazovce ukazuje řady Pokračovat ve sledování, Nejsledovanější, Můj seznam a katalogy s popisem vybraného filmu. Řady vybereš v nastavení vzhledu.
 10.13.3 – Skrýt 3D a štítek 3D už nepovažují za 3D verzi filmy, které mají 3D v názvu.
