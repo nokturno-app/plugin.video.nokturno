@@ -879,7 +879,7 @@ msgid "Folder address"
 msgstr "Mappa címe"
 
 msgctxt "#30380"
-msgid "WebDAV folder, e.g. davs://nas.doma:10000/ or https://nas/remote.php/dav/files/me/Video/. Empty = storage off. The file list is refreshed at most once an hour."
+msgid "WebDAV or SMB folder, e.g. davs://nas.doma:10000/, https://nas/remote.php/dav/files/me/Video/ or smb://nas/Video/. Empty = storage off. The file list is refreshed at most once an hour."
 msgstr "WebDAV mappa, pl. davs://nas.doma:10000/ vagy https://nas/remote.php/dav/files/me/Video/. Üres = tárhely kikapcsolva. A fájllista legfeljebb óránként frissül."
 
 msgctxt "#30381"
@@ -3438,8 +3438,8 @@ msgid "nothing found"
 msgstr "nincs találat"
 
 msgctxt "#31045"
-msgid "Do you have your own storage (WebDAV, NAS)? Nokturno plays films, series and concerts from it."
-msgstr "Van saját tárhelyed (WebDAV, NAS)? A Nokturno filmeket, sorozatokat és koncerteket játszik le róla."
+msgid "Do you have your own storage (WebDAV, SMB, NAS)? Nokturno plays films, series and concerts from it."
+msgstr "Van saját tárhelyed (WebDAV, SMB, NAS)? A Nokturno filmeket, sorozatokat és koncerteket játszik le róla."
 
 msgctxt "#31046"
 msgid "Third-party storages are optional. In the next steps you can turn on only the ones you want to use."

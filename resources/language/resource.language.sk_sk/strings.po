@@ -880,7 +880,7 @@ msgid "Folder address"
 msgstr "Adresa priečinka"
 
 msgctxt "#30380"
-msgid "WebDAV folder, e.g. davs://nas.doma:10000/ or https://nas/remote.php/dav/files/me/Video/. Empty = storage off. The file list is refreshed at most once an hour."
+msgid "WebDAV or SMB folder, e.g. davs://nas.doma:10000/, https://nas/remote.php/dav/files/me/Video/ or smb://nas/Video/. Empty = storage off. The file list is refreshed at most once an hour."
 msgstr "Priečinok na WebDAV, napríklad davs://nas.doma:10000/ alebo https://nas/remote.php/dav/files/ja/Video/. Prázdne = úložisko vypnuté. Zoznam súborov sa obnovuje najviac raz za hodinu."
 
 msgctxt "#30381"
@@ -3440,8 +3440,8 @@ msgid "nothing found"
 msgstr "nič sa nenašlo"
 
 msgctxt "#31045"
-msgid "Do you have your own storage (WebDAV, NAS)? Nokturno plays films, series and concerts from it."
-msgstr "Máš vlastné úložisko (WebDAV, NAS)? Nokturno z neho prehráva filmy, seriály aj koncerty."
+msgid "Do you have your own storage (WebDAV, SMB, NAS)? Nokturno plays films, series and concerts from it."
+msgstr "Máš vlastné úložisko (WebDAV, SMB, NAS)? Nokturno z neho prehráva filmy, seriály aj koncerty."
 
 msgctxt "#31046"
 msgid "Third-party storages are optional. In the next steps you can turn on only the ones you want to use."

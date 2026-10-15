@@ -7671,3 +7671,37 @@ class TestPokracovatVeSledovani(unittest.TestCase):
             default.list_continue({})
         ids = [params_of(url).get("id") for _h, url, _li, _f in xbmcplugin.items]
         self.assertEqual(ids, ["tt100:1:2"])
+
+
+class TestSmbUloziste(unittest.TestCase):
+    """P23: vlastní úložiště `smb://` v Kodi jde přes xbmcvfs (Kodi umí SMB samo)."""
+
+    def setUp(self):
+        reset_kodi()
+        import kodi_smb
+        self.kodi_smb = kodi_smb
+        xbmcaddon.settings.update({"dav1_url": "smb://nas/Video", "dav1_username": "nok", "dav1_password": "he slo"})
+
+    def test_uloziste_s_backendem_kodi(self):
+        [api] = default.get_storages()
+        self.assertIsInstance(api.backend, self.kodi_smb.KodiSmbBackend)
+        self.assertEqual(api.backend.base, "smb://nok:he%20slo@nas/Video/")
+        self.assertEqual(api.kodi_url("Filmy/A.mkv"), "smb://nok:he%20slo@nas/Video/Filmy/A.mkv")
+
+    def test_vypis_slozky(self):
+        backend = self.kodi_smb.KodiSmbBackend("nas", 445, "Video", "", "")
+        stat = mock.Mock(return_value=mock.Mock(st_size=lambda: 1234))
+        with mock.patch.object(self.kodi_smb.xbmcvfs, "listdir", return_value=(["Filmy"], ["A.mkv", "pozn.txt"])), \
+             mock.patch.object(self.kodi_smb.xbmcvfs, "Stat", stat, create=True):
+            self.assertEqual(backend.listdir("Kino"), [("Filmy", True, 0), ("A.mkv", False, 1234), ("pozn.txt", False, 0)])
+        stat.assert_called_once_with("smb://nas/Video/Kino/A.mkv")
+        with mock.patch.object(self.kodi_smb.xbmcvfs, "listdir", return_value=([], [])), \
+             mock.patch.object(self.kodi_smb.xbmcvfs, "exists", return_value=False):
+            with self.assertRaises(OSError):
+                backend.listdir("")
+            with self.assertRaises(FileNotFoundError):
+                backend.listdir("Nic")
+
+    def test_stahovac_dostane_smb(self):
+        self.assertEqual(service.resolve_internal("dav:1:Filmy/A.mkv", default.STORE),
+                         ("smb://nok:he%20slo@nas/Video/Filmy/A.mkv", {}))

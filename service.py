@@ -52,7 +52,7 @@ from crash import CRASH_URL, CrashReporter  # noqa: E402
 import accounts as accounts_lib  # noqa: E402
 import keepalive  # noqa: E402
 import usage  # noqa: E402
-from storage_api import StorageApi, parse_ref  # noqa: E402
+from storage_api import SmbStorage, open_storage, parse_ref  # noqa: E402
 from store import Store, migrate_profile  # noqa: E402
 from sync import sync_once  # noqa: E402
 import syncbox  # noqa: E402
@@ -63,6 +63,7 @@ import trakt_pull  # noqa: E402
 from dash_api import DashApi  # noqa: E402
 from webshare_api import WebshareApi  # noqa: E402
 import kodi_marks  # noqa: E402 – vedle service.py, čte videodatabázi Kodi
+import kodi_smb  # noqa: E402 – vedle service.py, SMB vlastního úložiště přes xbmcvfs
 import update_info  # noqa: E402 – vedle service.py, čte databázi doplňků Kodi
 import kodi_settings  # noqa: E402 – vedle service.py, most do settings.xml
 import kodi_sources  # noqa: E402 – vedle service.py, sdílený výčet zdrojů do statistik
@@ -765,8 +766,10 @@ def resolve_internal(url, store):
         return SosacDirect(s("streamuj_username"), s("streamuj_password"), cache=store).resolve(url), {}
     if url.startswith("dav:"):
         slot, path = parse_ref(url)
-        api = StorageApi(s(f"dav{slot}_url"), s(f"dav{slot}_username"), addon.getSetting(f"dav{slot}_password") if addon else "",
-                         s(f"dav{slot}_name"), slot=slot, cache=store)
+        api = open_storage(s(f"dav{slot}_url"), s(f"dav{slot}_username"), addon.getSetting(f"dav{slot}_password") if addon else "",
+                           s(f"dav{slot}_name"), slot=slot, cache=store, backend=kodi_smb.KodiSmbBackend)
+        if isinstance(api, SmbStorage):
+            return api.kodi_url(path), {}   # stahovač čte `smb://` přes xbmcvfs (`kodi_smb.open_range`)
         return api.file_url(path), api.headers()
     return url, {}
 
@@ -833,7 +836,8 @@ class Downloader(threading.Thread):
             if od:
                 headers = {**headers, "Range": f"bytes={od}-"}
             req = urllib.request.Request(link, headers={"User-Agent": "Kodi plugin.video.nokturno", **headers})
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            with (kodi_smb.open_range(link, od) if link.startswith("smb://")
+                  else urllib.request.urlopen(req, timeout=60)) as resp:
                 # 206 = server navázání přijal; cokoli jiného (200, nebo zdroj Range
                 # neumí) znamená, že posílá soubor od začátku — pak se přepisuje
                 navazuje = od > 0 and resp.getcode() == 206

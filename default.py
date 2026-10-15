@@ -64,7 +64,7 @@ from sledujteto_api import SledujtetoApi, SledujtetoError  # noqa: E402
 from fastshare_api import FastshareApi, FastshareError  # noqa: E402
 from cztor_api import CztorApi, CztorError  # noqa: E402
 from prehrajto_api import PrehrajtoApi, PrehrajtoError  # noqa: E402
-from storage_api import SLOTS as STORAGE_SLOTS, StorageApi, StorageError, parse_ref  # noqa: E402
+from storage_api import SLOTS as STORAGE_SLOTS, StorageError, open_storage, parse_ref  # noqa: E402
 from accounts import (FAIL as ACC_FAIL, OFF as ACC_OFF, OK as ACC_OK,  # noqa: E402
                       WARN as ACC_WARN, problems as accounts_problems,
                       PAUSE_CHOICES, pause as accounts_pause,
@@ -81,6 +81,7 @@ from tracks import FILE_CODES, SUBTITLE_FALLBACK, decode_subtitle, subtitle_form
 from trakt_api import TraktApi, TraktError, pick_keys  # noqa: E402
 from webshare_api import SORTS, WebshareApi, WebshareError, human_size  # noqa: E402
 import kodi_marks  # noqa: E402 – vedle default.py, ne kopie jádra (čte videodatabázi Kodi)
+import kodi_smb  # noqa: E402 – vedle default.py, SMB vlastního úložiště přes xbmcvfs
 import mylist  # noqa: E402 – vedle default.py, vlastní seznam z JSON
 import kodi_sources  # noqa: E402 – vedle default.py, sdílený výčet zdrojů do statistik
 from engine import AUDIO_PROBE_MAX, DEFAULT_RUNTIME_S, Engine, NokturnoError, release_probe_pool, runtime_minutes  # noqa: E402
@@ -793,8 +794,9 @@ def get_storages():
         if not url or setting(f"dav{slot}_enabled") == "false":   # vypnuté = jako nevyplněné, údaje zůstávají
             continue
         try:
-            out.append(StorageApi(url, setting(f"dav{slot}_username"), setting(f"dav{slot}_password"),
-                                  setting(f"dav{slot}_name"), slot=slot, cache=STORE, should_stop=should_stop))
+            out.append(open_storage(url, setting(f"dav{slot}_username"), setting(f"dav{slot}_password"),
+                                    setting(f"dav{slot}_name"), slot=slot, cache=STORE, should_stop=should_stop,
+                                    backend=kodi_smb.KodiSmbBackend))
         except StorageError as e:
             log_error(f"úložiště {slot}: {e}")
     return out
@@ -3828,7 +3830,7 @@ def transfer_apply(payload):
 def _wizard_accounts(dialog):
     """Průvodce ovladačem: nejdřív vlastní úložiště, pak volitelné zdroje třetích stran otázku po otázce."""
     if dialog.yesno(L(30374, "Vlastní úložiště"),
-                    L(31045, "Máš vlastní úložiště (WebDAV, NAS)? Nokturno z něj přehrává filmy, seriály i koncerty.")):
+                    L(31045, "Máš vlastní úložiště (WebDAV, SMB, NAS)? Nokturno z něj přehrává filmy, seriály i koncerty.")):
         url = dialog.input(L(30379, "Adresa složky"))
         if url:
             ADDON.setSetting("dav1_url", url)
