@@ -394,8 +394,10 @@ class SmbStorage(StorageApi):
         return "/".join(p for p in (self.root, str(rel).strip("/")) if p)
 
     def kodi_url(self, path):
-        """`smb://jméno:heslo@server/…` – Kodi přehrává SMB samo, bez proxy."""
-        url = self.file_url(path)
+        """`smb://jméno:heslo@server/…` – Kodi přehrává SMB samo, bez proxy. Cesta **nekódovaná**:
+        Kodi si ji kóduje samo a `%20` by zakódovalo podruhé (Office 2026-10-15: složka
+        „Big Buck Bunny (2008)“ jako `Big%2520Buck…` neexistovala)."""
+        url = self.base + safe_path(path)
         if not self.username:
             return url
         domena, _sep, jmeno = self.username.rpartition("\\")   # Kodi chce „DOMÉNA;jméno“

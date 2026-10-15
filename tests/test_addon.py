@@ -7686,7 +7686,8 @@ class TestSmbUloziste(unittest.TestCase):
         [api] = default.get_storages()
         self.assertIsInstance(api.backend, self.kodi_smb.KodiSmbBackend)
         self.assertEqual(api.backend.base, "smb://nok:he%20slo@nas/Video/")
-        self.assertEqual(api.kodi_url("Filmy/A.mkv"), "smb://nok:he%20slo@nas/Video/Filmy/A.mkv")
+        self.assertEqual(api.kodi_url("Filmy/A B.mkv"), "smb://nok:he%20slo@nas/Video/Filmy/A B.mkv")
+        self.assertEqual(api.backend.url("Kino a TV", folder=True), "smb://nok:he%20slo@nas/Video/Kino a TV/")
 
     def test_vypis_slozky(self):
         backend = self.kodi_smb.KodiSmbBackend("nas", 445, "Video", "", "")

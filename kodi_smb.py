@@ -22,12 +22,14 @@ class KodiSmbBackend:
         if jmeno:
             cred = (_q(domena) + ";" if domena else "") + _q(jmeno) + ":" + _q(password) + "@"
         netloc = host + (f":{port}" if port and int(port) != 445 else "")
-        self.base = f"smb://{cred}{netloc}/{_q(share)}/"
+        # sdílení a cesta nekódované: Kodi si je kóduje samo, `%20` by zakódovalo podruhé (`%2520`)
+        # a složka s mezerou „neexistovala“ (Office 2026-10-15); jméno a heslo kódované být musí (`@`, `:`)
+        self.base = f"smb://{cred}{netloc}/{share}/"
 
     def url(self, path, folder=False):
         if not path:
             return self.base
-        return self.base + urllib.parse.quote(path) + ("/" if folder else "")
+        return self.base + path + ("/" if folder else "")
 
     def listdir(self, path):
         url = self.url(path, folder=True)
