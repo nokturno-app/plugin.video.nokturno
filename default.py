@@ -1783,7 +1783,8 @@ def streams_context(ctype, item_id, series_id=None, alt=None):
     Stáhnout vybraný stream zařadí do fronty stahování místo přehrání. Výpis streamů jako složka od
     `5.2.14~beta4` není (na přání uživatele vše v modálním okně)."""
     params = dict(type=ctype, id=item_id, series=series_id, alt=alt)
-    return [(L(30513, "Vybrat stream"), runplugin(action="title", **params)),
+    # dlouhé podržení → „Vybrat stream“ vždy hledá znovu, bez cache (`fresh=1`)
+    return [(L(30513, "Vybrat stream"), runplugin(action="title", fresh="1", **params)),
             (L(30070, "Stáhnout"), runplugin(action="title_download", **params))]
 
 
@@ -1921,7 +1922,8 @@ def load_meta_video(meta, item_id):
                  if int(v.get("season") or 0) == season and int(v.get("episode") or 0) == episode), None)
 
 
-def collect_streams(apis, ctype, item_id, meta, alt=None, progress=None, strict=True, errors=None, track=True):
+def collect_streams(apis, ctype, item_id, meta, alt=None, progress=None, strict=True, errors=None, track=True,
+                    refresh=False):
     """Streamy ze všech zdrojů, vyfiltrované a seřazené podle nastavení — `Engine.raw_streams`.
 
     Každý zdroj běží pod vlastní pojistkou jádra: když selže (vypnutý addon Luny,
@@ -1942,7 +1944,8 @@ def collect_streams(apis, ctype, item_id, meta, alt=None, progress=None, strict=
         streams = engine.raw_streams(ctype, item_id, alt, on_progress=progress.set if progress else None,
                                      failures=failures, strict=strict, meta_video=(meta, load_meta_video(meta, item_id)),
                                      on_source_done=progress.source if progress else None,
-                                     on_audio_progress=progress.audio if progress else None)
+                                     on_audio_progress=progress.audio if progress else None,
+                                     **({"refresh": True} if refresh else {}))
     finally:
         if track:
             xbmcgui.Window(10000).clearProperty(SEARCH_PROP)
@@ -7620,10 +7623,11 @@ def upnext_notify(meta, video, series_id, alt=None):
         "sender": f"{ADDON_ID}.SIGNAL", "message": "upnext_data", "data": [encoded]}}))
 
 
-def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, download=False):
+def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, download=False, fresh=False):
     """Klik na titul ve výpisu Nokturna (handle −1, viz `add_playable`) i „Vybrat stream“ v kontextovém
     menu: najít streamy s ukazatelem průběhu v rohu (`DialogProgressBG`), ukázat dialog a vybraný stream
     pustit přes `PlayMedia` s jeho referencí — `play()` ji jen rozklíčuje a zapamatuje volbu u seriálu.
+    `fresh=True` (kontextové menu) = streamy se hledají znovu bez cache zdrojů (`raw_streams(refresh=True)`).
     Modál je tu v pořádku: tuhle cestu spouští jen klik uživatele, widget ani JSON-RPC položku
     `action=title` nerozklíčují jako skript.
 
@@ -7644,7 +7648,8 @@ def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, d
         errors = []
         try:
             found = collect_streams(apis, ctype, item_id, meta, alt,
-                                    SearchProgress(bar, Engine.STREAM_SOURCE_STEPS + AUDIO_PROBE_MAX), strict, errors)
+                                    SearchProgress(bar, Engine.STREAM_SOURCE_STEPS + AUDIO_PROBE_MAX), strict, errors,
+                                    refresh=fresh)
         finally:
             bar.close()
         if errors:
@@ -7682,7 +7687,7 @@ def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, d
                            expand=lambda: expand_streams(apis, streams, meta, video),
                            refresh=engine_of(apis).refresh_media)
     if picked == FULLTEXT:
-        pick_title(apis, ctype, item_id, series_id, alt, fulltext=True, download=download)
+        pick_title(apis, ctype, item_id, series_id, alt, fulltext=True, download=download, fresh=fresh)
         return
     if picked is None:
         return
@@ -8252,7 +8257,7 @@ def router(query):
             # klik na titul ve výpisu Nokturna: Kodi ne-přehratelnou položku spustí jako skript
             # bez handle → streamy v dialogu na dva řádky (viz add_playable, pick_title)
             pick_title(get_apis(), p.get("type", "movie"), p["id"], p.get("series"), alt=p.get("alt"),
-                       fulltext=bool(p.get("fulltext")))
+                       fulltext=bool(p.get("fulltext")), fresh=bool(p.get("fresh")))
             return
         if action in ("streams", "streams_filter"):
             # výpis streamů jako složka zrušen v `5.2.14~beta4` — starý odkaz (oblíbené, widget) nic
