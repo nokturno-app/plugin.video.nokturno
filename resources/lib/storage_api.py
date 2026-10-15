@@ -25,6 +25,7 @@ v adrese (`kodi_url`), Stremio přes proxy doplňku (`request`).
 """
 import base64
 import hashlib
+import http.client
 import re
 import time
 import urllib.error
@@ -309,7 +310,9 @@ class StorageApi:
             with self._open(self.base + REV_FILE, headers={"Cache-Control": "no-cache"},
                             timeout=REV_TIMEOUT) as resp:
                 return {"rev": resp.read(64).decode("ascii", "ignore").strip()}
-        except StorageError:
+        except (StorageError, OSError, http.client.HTTPException):
+            # spojení spadlo až při čtení těla (Windows 10.13.3: WinError 10054) – bez značky
+            # se úložiště jen projde znovu
             return {"rev": ""}
 
     def revision(self):

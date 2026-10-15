@@ -8,7 +8,8 @@ Výsledek se ukládá do cache doplňku na 30 dní, takže seznam se zdrží jen
 import json
 import threading
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError, as_completed
+from concurrent.futures import TimeoutError as FuturesTimeoutError, as_completed
+from abort import SparePool
 from keepalive import urlopen as pooled_urlopen
 
 CINEMETA = "https://v3-cinemeta.strem.io/meta/{ctype}/{imdb}.json"
@@ -193,7 +194,10 @@ def enrich(metas, luna=None, store=None, ctype="movie", deadline=DEADLINE, on_ti
         return 0
     by_future = {}
     for m in todo:
-        by_future.setdefault(_submit(luna, store, ctype, m, tmdb), []).append(m)
+        try:
+            by_future.setdefault(_submit(luna, store, ctype, m, tmdb), []).append(m)
+        except RuntimeError:
+            break   # „can't start new thread“: popis je doplněk výpisu, zbytek se dotáhne příště
     filled = 0
     try:
         # jako dřívější wait(timeout=deadline) — po timeoutu se přestane čekat,
@@ -238,7 +242,7 @@ def _pool():
     global _POOL
     with _POOL_LOCK:
         if _POOL is None:
-            _POOL = ThreadPoolExecutor(max_workers=WORKERS, thread_name_prefix="nokturno-enrich")
+            _POOL = SparePool(max_workers=WORKERS, thread_name_prefix="nokturno-enrich")
         return _POOL
 
 
@@ -332,7 +336,10 @@ def add_ratings(metas, store=None, ctype="movie", tmdb=None, deadline=RATINGS_DE
         if not imdb or m.get("ratings"):
             continue
         source = m.get("ratingSource") if m.get("imdbRating") else ""
-        by_future[_pool().submit(_other_ratings, store, ctype, imdb, source, tmdb, dash)] = m
+        try:
+            by_future[_pool().submit(_other_ratings, store, ctype, imdb, source, tmdb, dash)] = m
+        except RuntimeError:
+            break   # „can't start new thread“ (Android, 10.14.0): katalog se ukáže bez druhého hodnocení
     try:
         for fut in as_completed(list(by_future), timeout=deadline):
             try:

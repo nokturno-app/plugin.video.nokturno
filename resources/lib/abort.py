@@ -30,7 +30,20 @@ class Aborted(BaseException):
         super().__init__(message)
 
 
-class BackgroundPool(ThreadPoolExecutor):
+class SparePool(ThreadPoolExecutor):
+    """Fond, který přežije „can't start new thread“ (Android, zařízení došla vlákna): když
+    nové vlákno nejde založit, úlohu ve frontě zpracuje některé z existujících. Výjimka
+    projde, jen když fond nemá ani jedno vlákno."""
+
+    def _adjust_thread_count(self):
+        try:
+            super()._adjust_thread_count()
+        except RuntimeError:
+            if not self._threads:
+                raise
+
+
+class BackgroundPool(SparePool):
     """Fond pro práci, na kterou nikdo nečeká (`shutdown(wait=False)`): opozdilé zdroje,
     hlavičky na pozadí, obnova starého seznamu. `shutdown(wait=False)` nechá doběhnout
     i celou frontu úloh — a Kodi při vypnutí čeká na každé vlákno interpretu (Office
@@ -59,14 +72,6 @@ class BackgroundPool(ThreadPoolExecutor):
             _PENDING.add(future)
         future.add_done_callback(_forget)
         return future
-
-    def _adjust_thread_count(self):
-        try:
-            super()._adjust_thread_count()
-        except RuntimeError:
-            # nové vlákno nejde založit; úlohu ve frontě zpracuje některé z existujících
-            if not self._threads:
-                raise
 
 
 _LOCK = threading.Lock()

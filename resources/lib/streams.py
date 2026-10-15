@@ -330,6 +330,11 @@ def stream_3d(s):
 
 NAME_HDR_RE = re.compile(r"(?<![A-Za-z0-9])(HDR10(?:\+|Plus)|HDR10|HDR|HLG)(?![A-Za-z0-9])", re.IGNORECASE)
 HEADER_HDR_TAGS = {"PQ": "HDR10", "HLG": "HLG"}
+# záložní vrstva Dolby Vision podle compat ID z hlavičky: 1 a 6 = HDR10, 4 = HLG, 2 = SDR (bez štítku)
+DV_COMPAT_HDR = {1: "HDR10", 6: "HDR10", 4: "HLG"}
+# „UHDR+DV“ a „HDR10+DV“ nesou u všech vzorků HDR10+ i DV (joliana); platí jen s DV a HDR10 z hlavičky.
+# „UHDRDV“ a „UHDR DV“ jsou nejednoznačné (HDR10 i HDR10+), ty se neberou
+DV_HDR10PLUS_RE = re.compile(r"(?<![A-Za-z0-9])(?:UHDR|HDR10)\+DV(?![A-Za-z0-9])", re.IGNORECASE)
 
 
 def video_tags(s):
@@ -345,7 +350,11 @@ def video_tags(s):
         named = ""
         if m:
             named = m.group(1).upper().replace("PLUS", "+")
-        header = HEADER_HDR_TAGS.get((s.get("_media") or {}).get("hdr"), "")
+        media = s.get("_media") or {}
+        dv = media.get("dv") or {}
+        header = HEADER_HDR_TAGS.get(media.get("hdr"), "") or DV_COMPAT_HDR.get(dv.get("compat"), "")
+        if header == "HDR10" and dv and DV_HDR10PLUS_RE.search(text):
+            named = "HDR10+"
         hdr = "HDR10+" if (header == "HDR10" and named == "HDR10+") else (header or named)
         if hdr:
             tags.append(hdr)
