@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="10.14.1" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="10.16.0" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -43,7 +43,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>10.14.1 – Film přerušený uprostřed přehrávání zůstane v Pokračovat ve sledování i s pozicí, díly seriálů mají vlastní popis, výpis streamů přesněji označí HDR u Dolby Vision a na slabších zařízeních už katalog ani služba nespadnou.
+    <news>10.16.0 – Vlastní úložiště může být i sdílená složka SMB, dialog Titulky v přehrávači nabízí Nokturno a hledá na OpenSubtitles, úložiště za přesměrováním nehlásí chybu HTTP 301 a rozkoukaný další díl se v Pokračovat ve sledování neukazuje dvakrát.
+10.14.1 – Film přerušený uprostřed přehrávání zůstane v Pokračovat ve sledování i s pozicí, díly seriálů mají vlastní popis, výpis streamů přesněji označí HDR u Dolby Vision a na slabších zařízeních už katalog ani služba nespadnou.
 10.14.0 – Nový vzhled Estuary Nokturno pro Kodi 21: Nokturno je první položka hlavní nabídky, na domovské obrazovce ukazuje řady Pokračovat ve sledování, Nejsledovanější, Můj seznam a katalogy s popisem vybraného titulu. Pozadí titulu se liší od plakátu.
 10.14.0~beta3 – Vzhled Estuary Nokturno se instaluje jen s doplňkem, který umí řady na domovské obrazovce; místo řad se už neopakuje nabídka.
 10.14.0~beta2 – Vzhled Estuary Nokturno: popis vybraného titulu nad řadami, nové načítání, hlášky a ikony, pozadí titulu se liší od plakátu.
