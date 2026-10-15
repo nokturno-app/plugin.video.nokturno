@@ -7736,7 +7736,7 @@ class TestSluzbaTitulku(unittest.TestCase):
                                  "VideoPlayer.Episode": "2"})
         osub = self.Osub()
         self.run_router("?action=search&languages=English,Czech&preferredlanguage=Czech", osub)
-        self.assertEqual(osub.volano, [("id", "tt100", ("CZ", "EN"), 1, 2)])
+        self.assertEqual(osub.volano, [("id", "tt100", ("CZ", "SK", "EN"), 1, 2)])
         [(_h, url, li, folder)] = xbmcplugin.items
         self.assertEqual((li.label, li.label2, folder), ("Czech", "Seriál.S01E02.WEB", False))
         self.assertEqual(params_of(url), {"action": "subs_download", "id": "11"})
@@ -7744,7 +7744,7 @@ class TestSluzbaTitulku(unittest.TestCase):
     def test_rucni_hledani_a_hledani_doplnku_se_neplete(self):
         osub = self.Osub()
         self.run_router("?action=manualsearch&searchstring=Kobra%2011&languages=Czech", osub)
-        self.assertEqual(osub.volano, [("text", "Kobra 11", ("CZ",))])
+        self.assertEqual(osub.volano, [("text", "Kobra 11", ("CZ", "SK"))])
         with mock.patch.object(default, "subs_service_search") as sluzba:
             try:
                 default.router("?action=search")   # hledání v doplňku (klávesnice), ne dialog Titulky

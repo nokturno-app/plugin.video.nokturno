@@ -2558,9 +2558,11 @@ def subs_service_search(apis, p):
     přehrávaného titulu (`fill_info` ho dává do `VideoPlayer.IMDBNumber`), u dílu i podle
     sezóny a čísla; bez id a při ručním hledání podle textu. Kvótu bere až stažení."""
     engine = engine_of(apis)
+    # nejdřív jazyky z nastavení Nokturna: Kodi má výchozí jen angličtinu a málokdo to mění
+    # (Office 2026-10-15: dialog nabídl k Matrixu jen anglické titulky)
     chtene = [p.get("preferredlanguage", "")] + p.get("languages", "").split(",")
-    jazyky = list(dict.fromkeys(SUBS_KODI_LANGS[j.strip().lower()] for j in chtene
-                                if j.strip().lower() in SUBS_KODI_LANGS)) or engine._subtitle_langs()
+    jazyky = list(dict.fromkeys(list(engine._subtitle_langs()) + [SUBS_KODI_LANGS[j.strip().lower()] for j in chtene
+                                                                  if j.strip().lower() in SUBS_KODI_LANGS]))
     api = engine.osub
     nalezeno = []
     if api is None:
