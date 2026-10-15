@@ -22,6 +22,10 @@ serveru v něm není záměrně: slot se překládá na úložiště z nastaven�
 z odkazu nejde přesměrovat jinam, a cesta se kontroluje, aby nevedla ven
 (`..`). Přehrát jde s hlavičkou `Authorization` — Kodi ji bere za svislítkem
 v adrese (`kodi_url`), Stremio přes proxy doplňku (`request`).
+
+Adresa `smb://server/sdílení/složka/` vede na `SmbStorage` (`open_storage`): stejné
+procházení i hledání, jen složky čte backend SMB (`lib/smbfs.py`). Kodi přehrává
+`smb://` samo, Stremio a HA mimo Kodi posílají soubor přes proxy (`reader`).
 """
 import base64
 import hashlib
@@ -37,6 +41,7 @@ from html.parser import HTMLParser
 
 from abort import check as check_stop, gather
 from safe_redirect import OPENER as SAFE_OPENER
+from smbfs import PysmbBackend, SmbAuthError, SmbFile
 
 SLOTS = 3                   # kolik vlastních úložišť jde nastavit
 TIMEOUT = 20
@@ -85,10 +90,12 @@ def normalize_url(url):
         url = "https://" + url[7:]
     elif low.startswith("dav://"):
         url = "http://" + url[6:]
+    elif low.startswith("\\\\"):   # \\server\sdílení z Windows
+        url = "smb://" + url[2:].replace("\\", "/")
     elif "://" not in url:
         url = "http://" + url
     parts = urllib.parse.urlsplit(url)
-    if parts.scheme not in ("http", "https") or not parts.hostname:
+    if parts.scheme not in ("http", "https", "smb") or not parts.hostname:
         return ""
     try:
         port = parts.port
@@ -355,6 +362,80 @@ class StorageApi:
     def check(self):
         """Počet položek v kořeni — ověření adresy a hesla, bez procházení celého stromu."""
         return len(self._list_dir(""))
+
+
+class SmbStorage(StorageApi):
+    """Úložiště na sdílené složce SMB. Procházení, hledání a cache jako u WebDAV (`StorageApi`),
+    jen složky a značku změny čte `backend` (viz `lib/smbfs.py`)."""
+
+    def __init__(self, url, username="", password="", name="", slot=1, cache=None, index_ttl=INDEX_TTL,
+                 opener=None, should_stop=None, crawl_deadline=None, max_dirs=MAX_DIRS, timeout=TIMEOUT,
+                 backend=None):
+        if opener is not None:
+            # požadavek z internetu (aplikace pro Stremio): SMB nejde hlídat jako HTTP (`sit.OPENER`)
+            # a vedlo by kamkoli do domácí sítě
+            raise StorageError("SMB jen z domácí sítě")
+        super().__init__(url, username, password, name, slot, cache, index_ttl, None, should_stop,
+                         crawl_deadline, max_dirs, timeout)
+        parts = urllib.parse.urlsplit(self.base)
+        segs = [urllib.parse.unquote(p) for p in parts.path.split("/") if p]
+        if not segs:
+            raise StorageError("v adrese chybí sdílená složka (smb://server/složka)")
+        self.host, self.port = parts.hostname, parts.port or 445
+        self.share, self.root = segs[0], "/".join(segs[1:])
+        self._password = password or ""
+        self.backend = (backend or PysmbBackend)(self.host, self.port, self.share, self.username,
+                                                 self._password, self.timeout)
+
+    def headers(self):
+        return {}
+
+    def _full(self, rel):
+        return "/".join(p for p in (self.root, str(rel).strip("/")) if p)
+
+    def kodi_url(self, path):
+        """`smb://jméno:heslo@server/…` – Kodi přehrává SMB samo, bez proxy."""
+        url = self.file_url(path)
+        if not self.username:
+            return url
+        domena, _sep, jmeno = self.username.rpartition("\\")   # Kodi chce „DOMÉNA;jméno“
+        cred = (urllib.parse.quote(domena, safe="") + ";" if domena else "") + urllib.parse.quote(jmeno, safe="") \
+            + ":" + urllib.parse.quote(self._password, safe="")
+        return url.replace("smb://", f"smb://{cred}@", 1)
+
+    def request(self, path):
+        raise StorageError("soubor ze SMB se posílá přes reader(), ne HTTP")
+
+    def reader(self, path):
+        """Soubor pro proxy (Stremio, HA mimo Kodi) – `SmbFile` s velikostí a čtením po kusech."""
+        return SmbFile(self.backend, self._full(safe_path(path)))
+
+    def _list_dir(self, rel):
+        try:
+            entries = self.backend.listdir(self._full(rel))
+        except SmbAuthError as e:
+            raise StorageError("špatné jméno nebo heslo", 401) from e
+        except FileNotFoundError as e:
+            raise StorageError("složka neexistuje", 404) from e
+        except Exception as e:  # noqa: BLE001 – síť, SMB, chybějící knihovna
+            raise StorageError(str(e)[:120] or type(e).__name__) from e
+        prefix = str(rel).strip("/") + "/" if str(rel).strip("/") else ""
+        return [(prefix + n, d, s) for n, d, s in entries]
+
+    def _read_revision(self):
+        try:
+            return {"rev": self.backend.read(self._full(REV_FILE), 0, 64).decode("ascii", "ignore").strip()}
+        except Exception:  # noqa: BLE001 – bez značky se úložiště jen projde znovu
+            return {"rev": ""}
+
+
+def open_storage(url, *args, **kwargs):
+    """`StorageApi` pro WebDAV/HTTP, `SmbStorage` pro `smb://` (a `\\\\server\\sdílení`).
+    `backend` (SMB z hostitele, Kodi) se WebDAVu nepředává."""
+    backend = kwargs.pop("backend", None)
+    if normalize_url(url).startswith("smb://"):
+        return SmbStorage(url, *args, backend=backend, **kwargs)
+    return StorageApi(url, *args, **kwargs)
 
 
 def parse_ref(url):

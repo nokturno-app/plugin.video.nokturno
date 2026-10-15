@@ -21,7 +21,15 @@ def _host(url):
 
 class StripCredsRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
-        novy = super().redirect_request(req, fp, code, msg, headers, newurl)
+        metoda = req.get_method()
+        if metoda not in ("GET", "HEAD", "POST") and code in (301, 302, 307, 308):
+            # WebDAV PROPFIND: CPython přesměrování jiné metody odmítne (HTTPError 301) a úložiště
+            # za http→https nebo bez `/` na konci by nešlo vůbec – metoda i tělo se zachovají
+            novy = urllib.request.Request(newurl.replace(" ", "%20"), data=req.data, method=metoda,
+                                          headers=dict(req.headers),   # bez Host a spol. (unredirected)
+                                          origin_req_host=req.origin_req_host, unverifiable=True)
+        else:
+            novy = super().redirect_request(req, fp, code, msg, headers, newurl)
         if novy is not None and _host(newurl) != _host(req.full_url):
             for jmeno in CITLIVE:
                 novy.remove_header(jmeno)

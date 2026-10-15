@@ -247,10 +247,11 @@ class OpenSubtitlesApi:
         return (0 if polozka["hash_match"] else 1, jazyk, 1 if polozka["machine"] else 0,
                 -polozka["downloads"])
 
-    def hledej(self, imdb_id="", jazyky=(), season=0, episode=0, moviehash=""):
+    def hledej(self, imdb_id="", jazyky=(), season=0, episode=0, moviehash="", dotaz=""):
         """Kandidáti na titulky, seřazení od nejlepšího. Nikdy nevyhodí výjimku ze sítě —
-        titulky jsou příslušenství, výpadek nesmí shodit výpis streamů."""
-        if not self.api_key or not (imdb_id or moviehash):
+        titulky jsou příslušenství, výpadek nesmí shodit výpis streamů.
+        `dotaz`: hledání podle textu (ruční hledání v dialogu Titulky v Kodi)."""
+        if not self.api_key or not (imdb_id or moviehash or dotaz):
             return []
         if self._vypadek():
             return []
@@ -258,6 +259,8 @@ class OpenSubtitlesApi:
         params = {"languages": ",".join(DO_ISO[j] for j in jazyky if j in DO_ISO)}
         if moviehash:
             params["moviehash"] = moviehash
+        if dotaz:
+            params["query"] = str(dotaz)[:100]
         if imdb_id:
             cislo = str(imdb_id)[2:].lstrip("0") if str(imdb_id).startswith("tt") else str(imdb_id)
             if season and episode:

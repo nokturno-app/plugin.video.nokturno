@@ -44,7 +44,7 @@ from prehrajto_api import (PrehrajtoApi, PrehrajtoError, PrehrajtoRateLimited,
                                 make_ref as prehrajto_ref)
 from cztor_api import CztorApi, CztorError
 from dash_api import DashApi
-from storage_api import StorageApi, StorageError, match_texts, parse_ref
+from storage_api import SmbStorage, StorageError, match_texts, open_storage, parse_ref
 from wikidata_api import local_titles
 from mediainfo import describe as describe_media, fetch_sized, probe as probe_media, quality_from_size
 from opensubtitles_api import BLOK as OSUB_BLOK, OpenSubtitlesApi, OpenSubtitlesError, otisk as osub_otisk
@@ -830,10 +830,10 @@ class Engine:
                 if not str(self._opt(url) or "").strip():
                     continue
                 try:
-                    self._storages.append(StorageApi(self._opt(url), self._opt(user), self._opt(password),
-                                                     self._opt(name), slot=slot, cache=self.store,
-                                                     opener=self.opener, should_stop=self.should_stop,
-                                                     **self.storage_limits))
+                    self._storages.append(open_storage(self._opt(url), self._opt(user), self._opt(password),
+                                                       self._opt(name), slot=slot, cache=self.store,
+                                                       opener=self.opener, should_stop=self.should_stop,
+                                                       **self.storage_limits))
                 except StorageError as err:
                     _LOGGER.warning("úložiště %d: %s", slot, err)
         return self._storages
@@ -850,9 +850,12 @@ class Engine:
         return api, path
 
     def storage_request(self, url):
-        """(adresa, hlavičky) souboru z vlastního úložiště — pro proxy doplňku pro Stremio."""
+        """(adresa, hlavičky) souboru z vlastního úložiště — pro proxy doplňku pro Stremio.
+        U SMB je místo adresy `SmbFile` (`chunks()`), proxy ho pošle sama."""
         api, path = self.storage_for(url)
         try:
+            if isinstance(api, SmbStorage):
+                return api.reader(path), {}
             return api.request(path)
         except StorageError as err:
             raise NokturnoError(f"Úložiště: {err}") from err
@@ -2008,6 +2011,8 @@ class Engine:
             except Exception as err:  # noqa: BLE001 – vypršelý odkaz, odhlášený účet, mrtvý zdroj
                 _LOGGER.debug("hlavička %s: %s", url[:28], err)
                 return self._media_failed(store, url, {"unreachable": True})
+            if adresa.startswith("smb://"):
+                return {}   # ponytail: hlavičku SMB nečteme (mediainfo umí jen HTTP), soubor hraje i bez ní
             host = deadhost.host_of(adresa)
             if deadhost.is_dead(host, self.store):
                 return {"unreachable": True}
