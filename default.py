@@ -1460,7 +1460,7 @@ def snapshot(meta, ctype, video=None, series_id=None, alt=None):
         "tvshow": (meta.get("_title") or meta.get("name")) if (video or ctype == "series") else "",
         "season": (video or {}).get("season"),
         "episode": (video or {}).get("episode"),
-        "plot": (video or {}).get("overview") or meta.get("description") or "",
+        "plot": (video or {}).get("overview") or (video or {}).get("description") or meta.get("description") or "",
         "year": str(meta.get("year") or meta.get("releaseInfo") or "")[:4],
         "art": art_for(meta, video),
         # totéž, co kreslí `fill_info` v katalogu — bez toho měl Můj seznam/Pokračovat jen
@@ -1566,7 +1566,7 @@ def fill_info(li, meta, ctype="movie", video=None, tech=True):
         tag.setOriginalTitle(meta["_orig"])
     if ctype == "series":
         tag.setTvShowTitle(meta.get("_title") or meta.get("name") or "")
-    plot = (video or {}).get("overview") or meta.get("description") or ""
+    plot = (video or {}).get("overview") or (video or {}).get("description") or meta.get("description") or ""
     genres = ", ".join(genre_label(g) for g in (meta.get("genres") or []))
     if genres:
         # žánr na stejný řádek jako popis — s prázdným řádkem za ním zabral v panelu
@@ -7521,7 +7521,7 @@ def upnext_episode(meta, v, series_id):
         "season": int(v.get("season") or 0),
         "episode": int(v.get("episode") or 0),
         "showtitle": meta.get("_title") or meta.get("name") or "",
-        "plot": v.get("overview") or "",
+        "plot": v.get("overview") or v.get("description") or "",
         "playcount": 1 if STORE.playcount(ep_id) else 0,
         "rating": str(meta.get("imdbRating") or ""),
         "firstaired": str(v.get("released") or "")[:10],
