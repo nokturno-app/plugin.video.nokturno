@@ -6994,7 +6994,8 @@ def list_continue(apis):
     # u konkrétního typu je na výběr celá sada zobrazení. Kodi si zobrazení
     # pamatuje podle typu obsahu, takže tyhle seznamy sdílejí nastavení s Filmy.
     set_content("movies")
-    for key, _entry in STORE.in_progress():
+    rozkoukane = STORE.in_progress()
+    for key, _entry in rozkoukane:
         snap = STORE.item(key)
         if not snap or thin_snapshot(snap):
             snap = recover_snapshot(apis, key, (snap or {}).get("type")) or snap
@@ -7018,7 +7019,8 @@ def list_continue(apis):
             continue
         video, meta = found
         ep_id = video.get("id") or f"{snap['series']}:{video.get('season')}:{video.get('episode')}"
-        if STORE.playcount(ep_id) or STORE.next_hidden(snap["series"]) == ep_id:
+        # rozkoukaný další díl už je nahoře mezi rozkoukanými – podruhé jako „Další díl“ ne
+        if STORE.playcount(ep_id) or STORE.next_hidden(snap["series"]) == ep_id or ep_id in dict(rozkoukane):
             continue
         li = xbmcgui.ListItem(label=f"{L(30067)}: {meta.get('_title') or meta.get('name')} – "
                                     f"{int(video.get('season') or 0)}x{int(video.get('episode') or 0):02d} {video.get('title') or ''}")

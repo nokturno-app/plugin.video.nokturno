@@ -7652,3 +7652,22 @@ class TestPrerusenyStream(unittest.TestCase):
 
     def test_konec_filmu_je_zhlednuto(self):
         self.assertTrue(self.konec("tt9000002", 7190, 7200).get("playcount"))
+
+
+class TestPokracovatVeSledovani(unittest.TestCase):
+    """P20: rozkoukané díly v Pokračovat ve sledování; rozkoukaný další díl se neopakuje jako „Další díl“."""
+
+    def test_rozkoukany_dil_jednou(self):
+        reset_kodi()
+        default.STORE.save("watched", {})
+        meta = {"id": "tt100", "name": "Seriál", "videos": [
+            {"id": f"tt100:1:{n}", "season": 1, "episode": n, "title": f"Díl {n}", "released": "2020-01-0" + str(n)}
+            for n in (1, 2, 3)]}
+        for v in meta["videos"][:2]:
+            default.STORE.remember_item(v["id"], default.snapshot(meta, "series", v, "tt100"))
+        default.STORE.set_watched("tt100:1:1", True)
+        default.STORE.set_resume("tt100:1:2", 600, 2400)
+        with mock.patch.object(default, "api_for", return_value=mock.Mock(meta=lambda ctype, mid: meta)):
+            default.list_continue({})
+        ids = [params_of(url).get("id") for _h, url, _li, _f in xbmcplugin.items]
+        self.assertEqual(ids, ["tt100:1:2"])
