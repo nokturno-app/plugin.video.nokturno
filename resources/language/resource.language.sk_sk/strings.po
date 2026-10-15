@@ -3539,3 +3539,6 @@ msgctxt "#31069"
 msgid "Rows on the home screen"
 msgstr "Rady na domovskej obrazovke"
 
+msgctxt "#31070"
+msgid "OpenSubtitles is off (Settings → Sources and accounts → OpenSubtitles)."
+msgstr "OpenSubtitles je vypnuté (Nastavenia → Zdroje a účty → OpenSubtitles)."

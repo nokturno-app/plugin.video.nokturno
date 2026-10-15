@@ -7,6 +7,9 @@
     <provides>video</provides>
   </extension>
   <extension point="xbmc.service" library="service.py"/>
+  <!-- služba titulků v dialogu přehrávače (Titulky → Stáhnout titulky); Kodi ji volá jako
+       plugin://…?action=search&languages=… knihovnou pluginu, obsluha je v default.py (subs_service_*) -->
+  <extension point="xbmc.subtitle.module" library="default.py"/>
   <extension point="xbmc.addon.metadata">
     <!-- Kodi nechá interpret běžet a při dalším kliknutí spustí default.py znovu v něm.
          Ušetří se start interpretu a import ~30 modulů. Patří sem, do metadat — uvnitř

@@ -3539,3 +3539,6 @@ msgctxt "#31069"
 msgid "Rows on the home screen"
 msgstr ""
 
+msgctxt "#31070"
+msgid "OpenSubtitles is off (Settings → Sources and accounts → OpenSubtitles)."
+msgstr ""

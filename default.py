@@ -2544,6 +2544,62 @@ def subtitle_refs(apis, chosen, resolved_path, video=None, ctype="movie"):
     return presne + [r for r in refs if r not in presne]
 
 
+# služba titulků v dialogu Kodi (P25): jména jazyků, jak je posílá Kodi (`languages`), a zpět
+SUBS_KODI_LANGS = {"czech": "CZ", "slovak": "SK", "english": "EN", "hungarian": "HU"}
+SUBS_KODI_NAMES = {"CZ": ("Czech", "cs"), "SK": ("Slovak", "sk"), "EN": ("English", "en"), "HU": ("Hungarian", "hu")}
+
+
+def subs_service_search(apis, p):
+    """Nokturno jako služba titulků v dialogu Kodi (přehrávač → Titulky → Stáhnout titulky).
+
+    Bez služby byl dialog prázdný a „Vyhledat titulky“ Kodi zasekl (P25). Kodi volá
+    `plugin://…?action=search&languages=…` knihovnou pluginu (`default.py`), takže se volání
+    od dialogu pozná podle `languages` (router). Hledá se na OpenSubtitles podle IMDb id
+    přehrávaného titulu (`fill_info` ho dává do `VideoPlayer.IMDBNumber`), u dílu i podle
+    sezóny a čísla; bez id a při ručním hledání podle textu. Kvótu bere až stažení."""
+    engine = engine_of(apis)
+    chtene = [p.get("preferredlanguage", "")] + p.get("languages", "").split(",")
+    jazyky = list(dict.fromkeys(SUBS_KODI_LANGS[j.strip().lower()] for j in chtene
+                                if j.strip().lower() in SUBS_KODI_LANGS)) or engine._subtitle_langs()
+    api = engine.osub
+    nalezeno = []
+    if api is None:
+        notify(L(31070, "OpenSubtitles je vypnuté (Nastavení → Zdroje a účty → OpenSubtitles)."))
+    elif p.get("action") == "manualsearch":
+        nalezeno = api.hledej(jazyky=jazyky, dotaz=p.get("searchstring", ""))
+    else:
+        imdb = xbmc.getInfoLabel("VideoPlayer.IMDBNumber")
+        cislo = lambda label: int(xbmc.getInfoLabel(label) or 0) if xbmc.getInfoLabel(label).isdigit() else 0
+        season, episode = cislo("VideoPlayer.Season"), cislo("VideoPlayer.Episode")
+        if imdb.startswith("tt"):
+            nalezeno = api.hledej_cachovane(imdb, jazyky, season, episode)
+        else:
+            dotaz = xbmc.getInfoLabel("VideoPlayer.TVShowTitle") or xbmc.getInfoLabel("VideoPlayer.Title")
+            nalezeno = api.hledej(jazyky=jazyky, dotaz=dotaz) if dotaz else []
+    for t in nalezeno:
+        jmeno, iso = SUBS_KODI_NAMES.get(t.get("lang"), ("Unknown", ""))
+        li = xbmcgui.ListItem(label=jmeno, label2=t.get("release") or "OpenSubtitles")
+        # icon = hodnocení 0–5, thumb = kód jazyka pro vlaječku; otisk souboru = sedí časově
+        li.setArt({"icon": "5" if t.get("hash_match") else str(min(4, int(t.get("downloads") or 0) // 1000)),
+                   "thumb": iso})
+        li.setProperty("sync", "true" if t.get("hash_match") else "false")
+        li.setProperty("hearing_imp", "false")
+        xbmcplugin.addDirectoryItem(HANDLE, build_url(action="subs_download", id=t["file_id"]), li, isFolder=False)
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
+def subs_service_download(apis, file_id):
+    """Vybrané titulky z dialogu Kodi: stáhnou se jako u přehrání (UTF-8, jazyk v názvu souboru)
+    a Kodi dostane cestu k souboru jako položku výpisu – zkopíruje si ji a zapne."""
+    try:
+        refs = [f"os:{int(file_id)}"]
+    except (TypeError, ValueError):
+        refs = []
+    for cesta in local_subtitles(apis, refs):
+        xbmcplugin.addDirectoryItem(HANDLE, cesta, xbmcgui.ListItem(label=cesta), isFolder=False)
+    xbmcplugin.endOfDirectory(HANDLE)
+
+
 def local_subtitles(apis, refs):
     """Titulky ze zdroje (`ws:<ident>`, odkaz Sosáče) stáhne do profilu a vrátí cesty.
 
@@ -8084,6 +8140,12 @@ def source_pause(source):
 def router(query):
     p = dict(urllib.parse.parse_qsl(query.lstrip("?")))
     action = p.get("action")
+    if action in ("search", "manualsearch") and "languages" in p:
+        subs_service_search(get_apis(), p)   # dialog Titulky v Kodi, ne hledání v doplňku
+        return
+    if action == "subs_download":
+        subs_service_download(get_apis(), p.get("id"))
+        return
     global UPDATE_LISTING
     UPDATE_LISTING = p.get("paged") == "1"
     # akce bez seznamu (RunPlugin) a bez API
@@ -8372,7 +8434,7 @@ MARKS_SKIP = frozenset((
     # přehrání a streamy
     "play", "play_ws", "play_hs", "play_dav", "play_ref", "title", "title_download", "prefetch", "hq_refresh",
     "verify_refresh", "mycat_batch", "hq_setup", "hq_info", "hq_batch",
-    "download", "download_ws", "download_hs", "toggle_fav", "streams", "streams_filter",
+    "download", "download_ws", "download_hs", "toggle_fav", "streams", "streams_filter", "subs_download",
     "dav_browse", "tv_pick", "page",
     # akce bez výpisu titulů (tlačítka v nastavení, hledání, stahování, Trakt, CZtor…)
     "history_remove", "history_clear", "remove_progress", "search", "search_new", "downloads",

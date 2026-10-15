@@ -7705,3 +7705,56 @@ class TestSmbUloziste(unittest.TestCase):
     def test_stahovac_dostane_smb(self):
         self.assertEqual(service.resolve_internal("dav:1:Filmy/A.mkv", default.STORE),
                          ("smb://nok:he%20slo@nas/Video/Filmy/A.mkv", {}))
+
+
+class TestSluzbaTitulku(unittest.TestCase):
+    """P25: dialog Titulky v Kodi volá doplněk jako službu titulků (`action=search&languages=…`)."""
+
+    def setUp(self):
+        reset_kodi()
+
+    class Osub:
+        def __init__(self):
+            self.volano = []
+
+        def hledej_cachovane(self, imdb_id, jazyky, season=0, episode=0):
+            self.volano.append(("id", imdb_id, tuple(jazyky), season, episode))
+            return [{"file_id": 11, "lang": "CZ", "release": "Seriál.S01E02.WEB", "downloads": 3200,
+                     "hash_match": False}]
+
+        def hledej(self, jazyky=(), dotaz="", **_):
+            self.volano.append(("text", dotaz, tuple(jazyky)))
+            return []
+
+    def run_router(self, query, osub):
+        engine = mock.Mock(osub=osub, _subtitle_langs=lambda: ["CZ", "SK"])
+        with mock.patch.object(default, "get_apis", return_value={"engine": engine}):
+            default.router(query)
+
+    def test_hledani_podle_prehravaneho_dilu(self):
+        xbmc.info_labels.update({"VideoPlayer.IMDBNumber": "tt100", "VideoPlayer.Season": "1",
+                                 "VideoPlayer.Episode": "2"})
+        osub = self.Osub()
+        self.run_router("?action=search&languages=English,Czech&preferredlanguage=Czech", osub)
+        self.assertEqual(osub.volano, [("id", "tt100", ("CZ", "EN"), 1, 2)])
+        [(_h, url, li, folder)] = xbmcplugin.items
+        self.assertEqual((li.label, li.label2, folder), ("Czech", "Seriál.S01E02.WEB", False))
+        self.assertEqual(params_of(url), {"action": "subs_download", "id": "11"})
+
+    def test_rucni_hledani_a_hledani_doplnku_se_neplete(self):
+        osub = self.Osub()
+        self.run_router("?action=manualsearch&searchstring=Kobra%2011&languages=Czech", osub)
+        self.assertEqual(osub.volano, [("text", "Kobra 11", ("CZ",))])
+        with mock.patch.object(default, "subs_service_search") as sluzba:
+            try:
+                default.router("?action=search")   # hledání v doplňku (klávesnice), ne dialog Titulky
+            except Exception:  # noqa: BLE001 – stub Kodi nemá vše, jde jen o to, kam se volání dostalo
+                pass
+        sluzba.assert_not_called()
+
+    def test_stazeni_vrati_cestu(self):
+        with mock.patch.object(default, "local_subtitles", return_value=["/tmp/nokturno-11.cze.srt"]) as stahni, \
+             mock.patch.object(default, "get_apis", return_value={}):
+            default.router("?action=subs_download&id=11")
+        stahni.assert_called_once_with({}, ["os:11"])
+        self.assertEqual([url for _h, url, _li, _f in xbmcplugin.items], ["/tmp/nokturno-11.cze.srt"])
