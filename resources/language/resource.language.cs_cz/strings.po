@@ -3542,3 +3542,163 @@ msgstr "Řady na domovské obrazovce"
 msgctxt "#31070"
 msgid "OpenSubtitles is off (Settings → Sources and accounts → OpenSubtitles)."
 msgstr "OpenSubtitles je vypnuté (Nastavení → Zdroje a účty → OpenSubtitles)."
+
+msgctxt "#31071"
+msgid "Searches movies, series and files at once in all your sources."
+msgstr "Hledá filmy, seriály i soubory najednou ve všech tvých zdrojích."
+
+msgctxt "#31072"
+msgid "Partly watched movies and series. Pick up exactly where playback stopped."
+msgstr "Rozkoukané filmy a seriály. Navážeš přesně od místa, kde přehrávání skončilo."
+
+msgctxt "#31073"
+msgid "Series and movies you follow. The add-on shows new episodes and a title as soon as it finds a stream."
+msgstr "Seriály a filmy, které hlídáš. Doplněk ukáže nové díly a titul, jakmile pro něj najde stream."
+
+msgctxt "#31074"
+msgid "Movies from catalogs, recommendations and your own picks. Choose a title to see streams from all sources."
+msgstr "Filmy z katalogů, doporučení a vlastních výběrů. Po výběru titulu uvidíš streamy ze všech zdrojů."
+
+msgctxt "#31075"
+msgid "Series from catalogs, recommendations and your own picks. Choose a season and episode, the add-on finds a stream."
+msgstr "Seriály z katalogů, doporučení a vlastních výběrů. Vybereš sezónu a epizodu, doplněk najde stream."
+
+msgctxt "#31076"
+msgid "Concerts from your storage. Browse by artist, genre or date added."
+msgstr "Koncerty z tvého úložiště. Procházej je podle interpreta, žánru nebo data přidání."
+
+msgctxt "#31077"
+msgid "Movies and series on Czech and Slovak TV today. Pick the day, channel and type."
+msgstr "Filmy a seriály, které dnes dávají v české a slovenské televizi. Vybereš den, stanici i typ."
+
+msgctxt "#31078"
+msgid "Watch together: several people on different devices play the same thing at the same moment."
+msgstr "Společné sledování: víc lidí na různých zařízeních přehrává totéž ve stejném okamžiku."
+
+msgctxt "#31079"
+msgid "Your saved titles and what you played most recently."
+msgstr "Tvoje uložené tituly a to, co jsi naposledy přehrával."
+
+msgctxt "#31080"
+msgid "Videos from your own storage, browse them by folder."
+msgstr "Videa z tvého vlastního úložiště, procházej je po složkách."
+
+msgctxt "#31081"
+msgid "Files downloaded to the device or to Home Assistant."
+msgstr "Soubory stažené do zařízení nebo do Home Assistantu."
+
+msgctxt "#31082"
+msgid "Sets up sources and accounts step by step, so you can start watching right away."
+msgstr "Krok za krokem nastaví zdroje a účty, ať můžeš hned sledovat."
+
+msgctxt "#31083"
+msgid "Sources, accounts, playback, sync and look of the add-on."
+msgstr "Zdroje, účty, přehrávání, synchronizace a vzhled doplňku."
+
+msgctxt "#31084"
+msgid "Tips based on what you have already watched."
+msgstr "Tipy podle toho, co jsi už zhlédl."
+
+msgctxt "#31085"
+msgid "What other Nokturno users are watching this week."
+msgstr "Co tento týden sledují ostatní uživatelé Nokturna."
+
+msgctxt "#31086"
+msgid "Your own title picks by genre, year or rating that you put together yourself."
+msgstr "Vlastní výběry titulů podle žánru, roku nebo hodnocení, které si skládáš sám."
+
+msgctxt "#31087"
+msgid "Picks a random title and offers to play it right away."
+msgstr "Vybere náhodný titul a rovnou nabídne přehrání."
+
+msgctxt "#31088"
+msgid "Concerts that were added to the catalog most recently."
+msgstr "Koncerty, které se do katalogu dostaly naposledy."
+
+msgctxt "#31089"
+msgid "Concerts grouped by music genre."
+msgstr "Koncerty seskupené podle hudebního žánru."
+
+msgctxt "#31090"
+msgid "Artists sorted by the first letter of the name."
+msgstr "Interpreti seřazení podle prvního písmene jména."
+
+msgctxt "#31091"
+msgid "Enter an artist name and the add-on finds their concerts in your sources."
+msgstr "Zadej jméno interpreta a doplněk dohledá jeho koncerty ve tvých zdrojích."
+
+msgctxt "#31092"
+msgid "Concerts are searched gradually in the background. Click to load the next batch now."
+msgstr "Koncerty se prohledávají postupně na pozadí. Kliknutím načteš další dávku hned."
+
+msgctxt "#31093"
+msgid "Change the music genres and Last.fm key the concert catalog is built from."
+msgstr "Změníš hudební žánry a klíč Last.fm, ze kterých se skládá katalog koncertů."
+
+msgctxt "#31094"
+msgid "Enter a title and the add-on searches for it in all sources."
+msgstr "Zadej název a doplněk ho vyhledá ve všech zdrojích."
+
+msgctxt "#31095"
+msgid "Deletes the saved search history."
+msgstr "Smaže uloženou historii hledání."
+
+msgctxt "#31096"
+msgid "Movies and series you played most recently."
+msgstr "Filmy a seriály, které jsi naposledy přehrával."
+
+msgctxt "#31097"
+msgid "Syncs the list and partly watched videos with your other devices."
+msgstr "Srovná seznam a rozkoukaná videa s ostatními tvými zařízeními."
+
+msgctxt "#31098"
+msgid "Checks right now for new episodes or better streams of followed titles."
+msgstr "Hned zjistí, jestli nevyšly nové díly nebo lepší streamy hlídaných titulů."
+
+msgctxt "#31099"
+msgid "Titles similar to this one."
+msgstr "Tituly, které se podobají tomuto."
+
+msgctxt "#31100"
+msgid "Files downloaded by Home Assistant. Play them right from here."
+msgstr "Soubory, které stáhl Home Assistant. Přehraješ je přímo odsud."
+
+msgctxt "#31101"
+msgid "All titles of the catalog without a genre filter."
+msgstr "Všechny tituly katalogu bez filtru podle žánru."
+
+msgctxt "#31102"
+msgid "Tries to sign in to every source and shows which one does not work."
+msgstr "Zkusí se přihlásit ke každému zdroji a ukáže, který nefunguje."
+
+msgctxt "#31103"
+msgid "The group keeps watching. Click to rejoin it."
+msgstr "Skupina zatím sleduje dál. Kliknutím se k ní vrátíš."
+
+msgctxt "#31104"
+msgid "Group code, your role and the number of connected devices."
+msgstr "Kód skupiny, tvoje role a počet připojených zařízení."
+
+msgctxt "#31105"
+msgid "A closed group accepts no more devices. You can open it again any time."
+msgstr "Zavřená skupina nepřijme další zařízení. Otevřít ji můžeš kdykoli."
+
+msgctxt "#31106"
+msgid "Stops playback for everyone in the group and closes the group."
+msgstr "Zastaví přehrávání všem ve skupině a skupinu zruší."
+
+msgctxt "#31107"
+msgid "Disconnects you from the group. The others keep watching."
+msgstr "Odpojí tě od skupiny. Ostatní sledují dál."
+
+msgctxt "#31108"
+msgid "Creates a group and gives you a code to send to the others. You decide what plays."
+msgstr "Vytvoří skupinu a dá ti kód, který pošleš ostatním. Určuješ, co se přehrává."
+
+msgctxt "#31109"
+msgid "Enter the group code from the leader and you will watch along with the others."
+msgstr "Zadej kód skupiny od vedoucího a budeš sledovat spolu s ostatními."
+
+msgctxt "#31110"
+msgid "A short guide to how watching together works."
+msgstr "Krátký návod, jak společné sledování funguje."

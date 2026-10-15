@@ -3540,3 +3540,163 @@ msgstr "Sorok a kezdőképernyőn"
 msgctxt "#31070"
 msgid "OpenSubtitles is off (Settings → Sources and accounts → OpenSubtitles)."
 msgstr "Az OpenSubtitles ki van kapcsolva (Beállítások → Források és fiókok → OpenSubtitles)."
+
+msgctxt "#31071"
+msgid "Searches movies, series and files at once in all your sources."
+msgstr "Egyszerre keres filmek, sorozatok és fájlok között az összes forrásodban."
+
+msgctxt "#31072"
+msgid "Partly watched movies and series. Pick up exactly where playback stopped."
+msgstr "Félbehagyott filmek és sorozatok. Pontosan onnan folytatod, ahol a lejátszás megszakadt."
+
+msgctxt "#31073"
+msgid "Series and movies you follow. The add-on shows new episodes and a title as soon as it finds a stream."
+msgstr "A figyelt sorozatok és filmek. A kiegészítő mutatja az új részeket, és a címet, amint talál hozzá streamet."
+
+msgctxt "#31074"
+msgid "Movies from catalogs, recommendations and your own picks. Choose a title to see streams from all sources."
+msgstr "Filmek katalógusokból, ajánlásokból és saját válogatásokból. Egy cím kiválasztása után az összes forrás streamjeit látod."
+
+msgctxt "#31075"
+msgid "Series from catalogs, recommendations and your own picks. Choose a season and episode, the add-on finds a stream."
+msgstr "Sorozatok katalógusokból, ajánlásokból és saját válogatásokból. Kiválasztod az évadot és a részt, a kiegészítő megtalálja a streamet."
+
+msgctxt "#31076"
+msgid "Concerts from your storage. Browse by artist, genre or date added."
+msgstr "Koncertek a saját tárhelyedről. Böngészhetsz előadó, műfaj vagy hozzáadás ideje szerint."
+
+msgctxt "#31077"
+msgid "Movies and series on Czech and Slovak TV today. Pick the day, channel and type."
+msgstr "Ma játszott filmek és sorozatok a cseh és szlovák televízióban. Kiválaszthatod a napot, az adót és a típust."
+
+msgctxt "#31078"
+msgid "Watch together: several people on different devices play the same thing at the same moment."
+msgstr "Közös nézés: több ember különböző eszközökön ugyanazt játssza le ugyanabban a pillanatban."
+
+msgctxt "#31079"
+msgid "Your saved titles and what you played most recently."
+msgstr "A mentett címeid és amit utoljára lejátszottál."
+
+msgctxt "#31080"
+msgid "Videos from your own storage, browse them by folder."
+msgstr "Videók a saját tárhelyedről, mappánként böngészhetők."
+
+msgctxt "#31081"
+msgid "Files downloaded to the device or to Home Assistant."
+msgstr "Az eszközre vagy a Home Assistantba letöltött fájlok."
+
+msgctxt "#31082"
+msgid "Sets up sources and accounts step by step, so you can start watching right away."
+msgstr "Lépésről lépésre beállítja a forrásokat és a fiókokat, hogy azonnal nézhess."
+
+msgctxt "#31083"
+msgid "Sources, accounts, playback, sync and look of the add-on."
+msgstr "A kiegészítő forrásai, fiókjai, lejátszása, szinkronizálása és megjelenése."
+
+msgctxt "#31084"
+msgid "Tips based on what you have already watched."
+msgstr "Tippek az alapján, amit már megnéztél."
+
+msgctxt "#31085"
+msgid "What other Nokturno users are watching this week."
+msgstr "Amit a többi Nokturno-felhasználó nézett ezen a héten."
+
+msgctxt "#31086"
+msgid "Your own title picks by genre, year or rating that you put together yourself."
+msgstr "Saját címválogatások műfaj, év vagy értékelés szerint, amelyeket te állítasz össze."
+
+msgctxt "#31087"
+msgid "Picks a random title and offers to play it right away."
+msgstr "Véletlenszerű címet választ, és rögtön felajánlja a lejátszást."
+
+msgctxt "#31088"
+msgid "Concerts that were added to the catalog most recently."
+msgstr "A katalógusba legutóbb felkerült koncertek."
+
+msgctxt "#31089"
+msgid "Concerts grouped by music genre."
+msgstr "Zenei műfaj szerint csoportosított koncertek."
+
+msgctxt "#31090"
+msgid "Artists sorted by the first letter of the name."
+msgstr "Az előadók a név első betűje szerint rendezve."
+
+msgctxt "#31091"
+msgid "Enter an artist name and the add-on finds their concerts in your sources."
+msgstr "Add meg az előadó nevét, és a kiegészítő megkeresi a koncertjeit a forrásaidban."
+
+msgctxt "#31092"
+msgid "Concerts are searched gradually in the background. Click to load the next batch now."
+msgstr "A koncertek keresése fokozatosan, a háttérben zajlik. Kattintással rögtön betöltheted a következő adagot."
+
+msgctxt "#31093"
+msgid "Change the music genres and Last.fm key the concert catalog is built from."
+msgstr "Megváltoztathatod a koncertkatalógus alapjául szolgáló zenei műfajokat és a Last.fm kulcsot."
+
+msgctxt "#31094"
+msgid "Enter a title and the add-on searches for it in all sources."
+msgstr "Add meg a címet, és a kiegészítő megkeresi az összes forrásban."
+
+msgctxt "#31095"
+msgid "Deletes the saved search history."
+msgstr "Törli a mentett keresési előzményeket."
+
+msgctxt "#31096"
+msgid "Movies and series you played most recently."
+msgstr "A legutóbb lejátszott filmek és sorozatok."
+
+msgctxt "#31097"
+msgid "Syncs the list and partly watched videos with your other devices."
+msgstr "Szinkronizálja a listát és a félbehagyott videókat a többi eszközöddel."
+
+msgctxt "#31098"
+msgid "Checks right now for new episodes or better streams of followed titles."
+msgstr "Azonnal ellenőrzi, megjelentek-e új részek vagy jobb streamek a figyelt címekhez."
+
+msgctxt "#31099"
+msgid "Titles similar to this one."
+msgstr "Ehhez hasonló címek."
+
+msgctxt "#31100"
+msgid "Files downloaded by Home Assistant. Play them right from here."
+msgstr "A Home Assistant által letöltött fájlok. Innen közvetlenül lejátszhatod őket."
+
+msgctxt "#31101"
+msgid "All titles of the catalog without a genre filter."
+msgstr "A katalógus összes címe műfajszűrő nélkül."
+
+msgctxt "#31102"
+msgid "Tries to sign in to every source and shows which one does not work."
+msgstr "Megpróbál bejelentkezni minden forrásba, és megmutatja, melyik nem működik."
+
+msgctxt "#31103"
+msgid "The group keeps watching. Click to rejoin it."
+msgstr "A csoport közben tovább néz. Kattintással visszatérhetsz hozzá."
+
+msgctxt "#31104"
+msgid "Group code, your role and the number of connected devices."
+msgstr "A csoport kódja, a szereped és a csatlakoztatott eszközök száma."
+
+msgctxt "#31105"
+msgid "A closed group accepts no more devices. You can open it again any time."
+msgstr "A lezárt csoport nem fogad több eszközt. Bármikor újra megnyithatod."
+
+msgctxt "#31106"
+msgid "Stops playback for everyone in the group and closes the group."
+msgstr "Leállítja a lejátszást a csoport minden tagjának, és megszünteti a csoportot."
+
+msgctxt "#31107"
+msgid "Disconnects you from the group. The others keep watching."
+msgstr "Leválaszt a csoportról. A többiek tovább néznek."
+
+msgctxt "#31108"
+msgid "Creates a group and gives you a code to send to the others. You decide what plays."
+msgstr "Létrehoz egy csoportot, és ad egy kódot, amelyet elküldhetsz a többieknek. Te döntöd el, mi megy."
+
+msgctxt "#31109"
+msgid "Enter the group code from the leader and you will watch along with the others."
+msgstr "Add meg a vezetőtől kapott csoportkódot, és a többiekkel együtt nézed."
+
+msgctxt "#31110"
+msgid "A short guide to how watching together works."
+msgstr "Rövid útmutató a közös nézés működéséhez."
