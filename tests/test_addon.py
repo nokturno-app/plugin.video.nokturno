@@ -597,6 +597,15 @@ class TestFillInfo(unittest.TestCase):
         default.fill_info_snapshot(li, snap)
         self.assertEqual(self.calls(li, "setPremiered"), [("2026-09-16",)])
 
+    def test_dil_z_tmdb_ma_vlastni_popis(self):
+        """P19: díly z TMDB nesou popis v `description`, ne `overview` – dřív se ukázal popis seriálu."""
+        li = xbmcgui.ListItem()
+        meta = {"id": "tt1", "name": "Seriál", "description": "O seriálu"}
+        video = {"id": "tt1:1:2", "season": 1, "episode": 2, "description": "O dílu"}
+        default.fill_info(li, meta, "series", video=video)
+        self.assertEqual(self.calls(li, "setPlot"), [("O dílu",)])
+        self.assertEqual(default.snapshot(meta, "series", video)["plot"], "O dílu")
+
     def test_bez_tmdb_udaju_se_nic_nenastavi(self):
         li = xbmcgui.ListItem()
         default.fill_info(li, {"id": "tt1", "name": "Film"})
@@ -6674,7 +6683,7 @@ class TestHlidaneSluzba(unittest.TestCase):
     def run_tick(self):
         with mock.patch.object(service, "rpc_directory") as rpc, \
                 mock.patch.object(service.threading, "Thread") as thread:
-            thread.side_effect = lambda target, daemon: mock.Mock(start=target)
+            thread.side_effect = lambda target, **kw: mock.Mock(start=target)
             self.checker.tick()
         return rpc
 
@@ -6724,7 +6733,7 @@ class TestStahovaniZTraktu(unittest.TestCase):
         with mock.patch.object(service, "get_trakt", return_value=trakt), \
                 mock.patch.object(service.trakt_pull, "pull", return_value=n) as pull, \
                 mock.patch.object(service.threading, "Thread") as thread:
-            thread.side_effect = lambda target, daemon, name: mock.Mock(start=target)
+            thread.side_effect = lambda target, **kw: mock.Mock(start=target)
             self.puller.tick()
         return pull
 
@@ -6824,7 +6833,7 @@ class TestAktualizaceDoplnku(unittest.TestCase):
         self.assertEqual(stats.events, ["stop"])
         self.assertTrue(stats.data["stopped"])
         with mock.patch.object(service.threading, "Thread",
-                               lambda target, daemon: type("T", (), {"start": lambda self: target()})()):
+                               lambda target, **kw: type("T", (), {"start": lambda self: target()})()):
             service.service_started(stats)
         self.assertEqual(stats.events, ["stop", "start"])
         self.assertNotIn("stopped", stats.data)
@@ -7603,3 +7612,43 @@ class TestHlavniMenu(unittest.TestCase):
         self.assertEqual(order[:4], ["series", "concerts", "tv", "favourites"])   # za předchůdcem Seriály
         self.assertEqual(order.index("continue"), order.index("search") + 1)
         self.assertEqual(hidden, set())
+
+
+class TestSluzbaBezVlaken(unittest.TestCase):
+    """P12: „can't start new thread“ v ticku nesmí shodit službu ani nechat zámek zamčený."""
+
+    def test_zamek_se_uvolni(self):
+        lock = threading.Lock()
+        lock.acquire()
+        with mock.patch.object(threading.Thread, "start", side_effect=RuntimeError("can't start new thread")):
+            self.assertFalse(service.start_thread(lambda: None, lock=lock))
+        self.assertTrue(lock.acquire(blocking=False))
+
+    def test_bezne_vlakno_bezi(self):
+        hotovo = threading.Event()
+        self.assertTrue(service.start_thread(hotovo.set))
+        self.assertTrue(hotovo.wait(2))
+
+
+class TestPrerusenyStream(unittest.TestCase):
+    """P10 (Sony BRAVIA, 10.13.3): „Ended“ po přerušeném streamu uprostřed filmu ho označil
+    jako zhlédnutý – zmizel z Pokračovat ve sledování a pozice se ztratila."""
+
+    def setUp(self):
+        reset_kodi()
+
+    def konec(self, key, position, total):
+        player = service.Player(store=default.STORE, stats=None)
+        player.item, player.started = {"id": key}, time.time() - 600
+        player.position, player.total = position, total
+        with mock.patch.object(service, "get_trakt", return_value=None):
+            player.onPlayBackEnded()
+        return dict(default.STORE.load("watched", {}).get(key) or {})
+
+    def test_preruseny_stream_drzi_pozici(self):
+        entry = self.konec("tt9000001", 3000, 7200)
+        self.assertFalse(entry.get("playcount"))
+        self.assertEqual(int(entry.get("resume") or 0), 3000)
+
+    def test_konec_filmu_je_zhlednuto(self):
+        self.assertTrue(self.konec("tt9000002", 7190, 7200).get("playcount"))

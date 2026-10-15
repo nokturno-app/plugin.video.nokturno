@@ -99,6 +99,7 @@ WATCH_NOTICE_EVERY = 60     # oznámení nových dílů, i těch, co přišly sy
 WATCH_NOTICE_MAX = 3        # víc toastů naráz je šum; zbytek je vidět v menu Hlídané
                                                       # (refresh_accounts_after_test) — obnovit hned
 WATCHED_PCT = 0.90
+ENDED_SLACK = 60    # s – „Ended“ dál od konce než tohle je přerušený stream, ne konec filmu
 MIN_RESUME = 90  # s – po takové době přehrávání patří titul do rozkoukaných
 SAVE_EVERY = 30  # s – jak často se za běhu přepisuje pozice rozkoukaného
 POLL = 5
@@ -128,6 +129,20 @@ _STARTED_AT = time.time()   # MESSAGE_DELAY se počítá odsud, ne od okamžiku,
 
 def log(msg, level=xbmc.LOGINFO):
     xbmc.log(f"[plugin.video.nokturno/service] {msg}", level)
+
+
+def start_thread(target, *args, name=None, lock=None):
+    """Spustí vlákno na pozadí. „can't start new thread“ (Android i Linux, 10.13.3: zařízení
+    došla vlákna) nesmí shodit hlavní smyčku služby – úloha se vynechá a zkusí se příště.
+    `lock` zamčený pro tuhle úlohu se uvolní, jinak by tick už nikdy neproběhl."""
+    try:
+        threading.Thread(target=target, args=args, name=name, daemon=True).start()
+        return True
+    except RuntimeError as e:
+        if lock is not None:
+            lock.release()
+        log(f"vlákno {name or target.__name__} nejde spustit: {e}", xbmc.LOGWARNING)
+        return False
 
 
 def refresh_tmdbhelper_player():
@@ -263,7 +278,7 @@ class Player(xbmc.Player):
                                        "total": total})
         log(f"sleduji {item.get('id')}")
         self.trakt_scrobble("start", 0)
-        threading.Thread(target=self.apply_tracks, args=(item,), name="nokturno-tracks", daemon=True).start()
+        start_thread(self.apply_tracks, item, name="nokturno-tracks")
 
     def apply_tracks(self, item):
         """Zvuk a titulky podle preferovaného jazyka (Nastavení → Přehrávání).
@@ -549,8 +564,11 @@ class Player(xbmc.Player):
 
     def onPlayBackEnded(self):
         self.sw_event("stopped")
-        # na konci videa getTime už nemusí jít – bereme celou délku
-        if self.item and self.total > 0:
+        # na konci videa getTime už nemusí jít – bereme celou délku, ale jen když poslední známá
+        # pozice byla u konce. „Ended“ chodí i po přerušeném streamu uprostřed filmu (Sony BRAVIA
+        # 10.13.3: částečný přenos, chyby MediaCodec) – film se pak označil jako zhlédnutý,
+        # zmizel z Pokračovat ve sledování a pozice se ztratila
+        if self.item and self.total > 0 and self.total - self.position <= ENDED_SLACK:
             self.position = self.total
         self.finish()
 
@@ -912,7 +930,7 @@ class AccountsChecker:
                 self.next = min(self.next, time.time() + ACCOUNTS_RETRY)
             self.warn_subscription()
 
-        threading.Thread(target=run, daemon=True).start()
+        start_thread(run)
 
     @staticmethod
     def requested():
@@ -1009,7 +1027,7 @@ class WatchChecker:
                 self.lock.release()
             self.announce()
 
-        threading.Thread(target=run, daemon=True).start()
+        start_thread(run, lock=self.lock)
 
     @staticmethod
     def requested():
@@ -1092,7 +1110,7 @@ class TraktPuller:
             finally:
                 self.lock.release()
 
-        threading.Thread(target=run, daemon=True, name="nokturno-trakt").start()
+        start_thread(run, name="nokturno-trakt", lock=self.lock)
 
 
 SUB_STATE = "substate"   # substate.json v profilu: {"last_warned": "YYYY-MM-DD"}
@@ -1202,7 +1220,7 @@ class Syncer:
                     self._log_vysledek("", ok, pushed, pulled, why)
             finally:
                 self.lock.release()
-        threading.Thread(target=run, daemon=True).start()
+        start_thread(run, lock=self.lock)
 
 
 class KodiMarks:
@@ -1565,7 +1583,7 @@ def prefetch_next_later():
         if monitor.waitForAbort(15) or QUITTING.is_set():
             return   # Kodi končí — nezačínat hledání, na které by pak čekalo
         warm_caches(monitor, "next")
-    threading.Thread(target=run, daemon=True).start()
+    start_thread(run)
 
 
 # --- statistiky ---------------------------------------------------------------------
@@ -1592,7 +1610,7 @@ def service_started(stats):
         if stats.send_event(COLLECT_URL, "start", ADDON.getAddonInfo("version"), "kodi"):
             stats.data.pop("stopped", None)
             stats._save()
-    threading.Thread(target=run, daemon=True).start()
+    start_thread(run)
 
 
 def service_stopped(stats):
@@ -1658,7 +1676,7 @@ def _show_pending_message(stats):
                 if stats.last_message is msg:
                     stats.last_message = None
 
-    threading.Thread(target=ukaz, name="nokturno-message", daemon=True).start()
+    start_thread(ukaz, name="nokturno-message")
 
 
 _MESSAGE_SHOWING = threading.Lock()
@@ -1772,7 +1790,7 @@ class CrashSender:
             finally:
                 self._busy.release()
 
-        threading.Thread(target=run, daemon=True, name="nokturno-crash").start()
+        start_thread(run, name="nokturno-crash", lock=self._busy)
 
 
 def capture_service_crash(where, exc):
