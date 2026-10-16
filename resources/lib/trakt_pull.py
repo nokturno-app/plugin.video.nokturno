@@ -18,11 +18,13 @@ se objeví v Pokračovat ve sledování a Naposledy zhlédnuté.
 - **Watchlist = Můj seznam** (`mirror_watchlist`). Týž dotaz `last_activities` řekne
   o změně Watchlistu (`watchlisted_at`); deník Mého seznamu (`favlog`) o změně u nás.
   Jen když se něco z toho pohnulo, stáhne se Watchlist a obě strany se srovnají.
+- Seriál, který Trakt z Watchlistu vyhodí sám po zhlédnutém dílu, v Mém seznamu zůstane (`favprune`); Watchlist se proto zrcadlí až po historii.
 """
 import calendar
 import re
 import time
 
+from favprune import started_since_added
 from store import WATCHED_MAX
 
 STATE = "trakt_pull"     # trakt_pull.json: {"activities": {...}, "history_at": ISO}
@@ -157,6 +159,10 @@ def mirror_watchlist(store, trakt):
     if not first:
         for key in prev:
             if key not in remote and key in favs and key not in local:
+                if prev[key] == "series" and started_since_added(store, key):
+                    # Trakt bere seriál z Watchlistu sám po prvním zhlédnutém dílu; z Mého
+                    # seznamu odejde až po všech vydaných dílech (favprune)
+                    continue
                 store.toggle_favourite(key)
                 n += 1
     wl = {k: v["type"] for k, v in remote.items() if k not in drop}
@@ -172,7 +178,28 @@ def pull(store, trakt, now=None):
     state = store.reload(STATE, {}) or {}
     raw = trakt.last_activities()
     act, wl = _activities(raw), _watchlist(raw)
+    n = 0
+    if act != state.get("activities"):
+        start = state.get("history_at") or _iso(now - FIRST_DAYS * 86400)
+        events = []
+        for page in range(1, MAX_PAGES + 1):
+            chunk = trakt.history(start, page=page)
+            events += chunk
+            if len(chunk) < 100:
+                break
+        playback = trakt.playback()
+        # od nejstaršího, ať novější zhlédnutí téhož titulu vyhraje
+        events.sort(key=lambda e: _epoch(e.get("watched_at")))
+        with store.updating("watched", {}) as data:
+            n = apply_history(data, events, now) + apply_playback(data, playback, now)
+            if n:
+                store._trim(data, WATCHED_MAX)
+        newest = max([_epoch(e.get("watched_at")) for e in events] or [0])
+        state = dict(state, activities=act, history_at=_iso(newest + 1) if newest else start)
+        store.save(STATE, state)
     mirrored = 0
+    # Watchlist až po historii: díl zhlédnutý jinde (Stremio) musí být v `watched` dřív,
+    # než se rozhodne o seriálu, který kvůli němu Trakt z Watchlistu vyhodil
     if "wl" not in state or wl != state.get("watchlist") or _local_changes(store, state.get("wl_ts", 0)):
         mirrored = mirror_watchlist(store, trakt)
         # po vlastním zápisu na Trakt se `watchlisted_at` posune — přečíst znovu,
@@ -180,22 +207,4 @@ def pull(store, trakt, now=None):
         wl = _watchlist(trakt.last_activities())
         state = dict(store.reload(STATE, {}) or {}, watchlist=wl)
         store.save(STATE, state)
-    if act == state.get("activities"):
-        return mirrored
-    start = state.get("history_at") or _iso(now - FIRST_DAYS * 86400)
-    events = []
-    for page in range(1, MAX_PAGES + 1):
-        chunk = trakt.history(start, page=page)
-        events += chunk
-        if len(chunk) < 100:
-            break
-    playback = trakt.playback()
-    # od nejstaršího, ať novější zhlédnutí téhož titulu vyhraje
-    events.sort(key=lambda e: _epoch(e.get("watched_at")))
-    with store.updating("watched", {}) as data:
-        n = apply_history(data, events, now) + apply_playback(data, playback, now)
-        if n:
-            store._trim(data, WATCHED_MAX)
-    newest = max([_epoch(e.get("watched_at")) for e in events] or [0])
-    store.save(STATE, dict(state, activities=act, history_at=_iso(newest + 1) if newest else start))
     return n + mirrored

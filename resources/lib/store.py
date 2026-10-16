@@ -483,6 +483,21 @@ class Store:
                 self._trim(log, 1000)
             return added
 
+    def remove_favourite(self, key):
+        """Odebere z Mého seznamu, jen když tam je — na rozdíl od `toggle_favourite`
+        nikdy nepřidá (automatické odebírání zhlédnutých běží ve službě i v pluginu
+        souběžně a druhý přepínač by položku vrátil). Vrací True, když odebral."""
+        with self._lock:
+            key = str(key)
+            with self.updating("favourites", []) as favs:
+                if key not in favs:
+                    return False
+                favs.remove(key)
+            with self.updating("favlog", {}) as log:
+                log[key] = {"on": False, "ts": int(time.time())}
+                self._trim(log, 1000)
+            return True
+
     # --- stahování ------------------------------------------------------------------
     def downloads(self):
         with self._lock:
