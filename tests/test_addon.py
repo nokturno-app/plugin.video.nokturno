@@ -3831,6 +3831,16 @@ class TestAudit614Beta2(unittest.TestCase):
             self.assertEqual(adopt.call_count, 8)
 
     # 5. zahřívání dalšího dílu jen u čerstvě sledovaných seriálů
+    def test_next_episode_bez_luny_najde_dil_pres_zaloznizdroje(self):
+        """Vypnutá Luna (apis["luna"] None) nesmí vyřadit seriál z Pokračovat ve sledování."""
+        meta = {"videos": [{"season": 2, "episode": 5, "id": "tt1:2:5", "released": "2020-01-01T00:00:00Z"}]}
+        engine = mock.Mock()
+        engine._meta_for.return_value = meta
+        apis = {"luna": None, "sosac": None, "engine": engine}
+        found = default.next_episode(apis, {"series": "tt1", "season": 2, "episode": 4})
+        self.assertIsNotNone(found)
+        self.assertEqual(found[0]["episode"], 5)
+
     def test_prefetch_jen_cerstve_serialy_a_nejvys_pet(self):
         now = int(time.time())
         rows = [(f"tt{i}:1:1", {"playcount": 1, "ts": now - i * 3600}) for i in range(1, 9)]
@@ -5107,11 +5117,7 @@ class TestVydaneDily(unittest.TestCase):
         meta = {"videos": [{"season": 3, "episode": 1, "released": "2026-09-16", "id": "tt1:3:1"},
                            {"season": 3, "episode": 2, "released": "2099-01-01", "id": "tt1:3:2"}]}
 
-        class Api:
-            def meta(self, _ctype, _id):
-                return meta
-
-        with mock.patch.object(default, "api_for", lambda _apis, _id: Api()):
+        with mock.patch.object(default, "meta_for", lambda _apis, _type, _id: meta):
             # po S03E01 není co nabídnout — S03E02 ještě nevyšla
             self.assertIsNone(default.next_episode(None, {"series": "tt1", "season": 3, "episode": 1}))
             # po S02E13 je naopak S03E01 na řadě

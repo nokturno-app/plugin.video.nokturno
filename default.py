@@ -7060,7 +7060,8 @@ def next_episode(apis, snap):
     if not series_id or snap.get("season") is None:
         return None
     try:
-        meta = api_for(apis, series_id).meta("series", series_id)
+        # meta_for má záložní zdroje (TMDB, Cinemeta) — bez Luny seriál z Pokračovat nezmizí
+        meta = meta_for(apis, "series", series_id)
     except Errors:
         return None
     videos = aired_videos(meta.get("videos") or [], time.strftime("%Y-%m-%d"))
