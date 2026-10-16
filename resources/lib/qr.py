@@ -233,23 +233,28 @@ def encode(text, mask=None):
 
 
 def to_png(matrix, scale=10, border=4):
-    """PNG (bajty) — černobílý, 8bitová šeď, bez závislostí."""
+    """PNG (bajty) — černobílý, RGBA 8 bitů na kanál, bez závislostí.
+
+    Šedá PNG (typ 0) se na některých zařízeních v Kodi nevykreslila (Google TV, Kodi 21.3,
+    okno „Nastavit z mobilu“ ukázalo adresu, ale ne QR ani podklad); RGBA (typ 6) kreslí
+    všude, `_solid_rgba_png` v default.py na ní stojí také."""
     size = (len(matrix) + 2 * border) * scale
+    white, black = b"\xff\xff\xff\xff", b"\x00\x00\x00\xff"
     rows = []
-    blank = b"\x00" + b"\xff" * size
+    blank = b"\x00" + white * size
     for _ in range(border * scale):
         rows.append(blank)
     for line in matrix:
-        pixels = b"\xff" * (border * scale)
+        pixels = white * (border * scale)
         for dark in line:
-            pixels += (b"\x00" if dark else b"\xff") * scale
-        pixels += b"\xff" * (border * scale)
+            pixels += (black if dark else white) * scale
+        pixels += white * (border * scale)
         rows.extend([b"\x00" + pixels] * scale)
     for _ in range(border * scale):
         rows.append(blank)
 
     def chunk(kind, body):
         return struct.pack(">I", len(body)) + kind + body + struct.pack(">I", zlib.crc32(kind + body) & 0xFFFFFFFF)
-    header = struct.pack(">IIBBBBB", size, size, 8, 0, 0, 0, 0)
+    header = struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0)
     return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header)
             + chunk(b"IDAT", zlib.compress(b"".join(rows), 9)) + chunk(b"IEND", b""))
