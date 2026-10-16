@@ -3702,3 +3702,11 @@ msgstr "Zadej kód skupiny od vedoucího a budeš sledovat spolu s ostatními."
 msgctxt "#31110"
 msgid "A short guide to how watching together works."
 msgstr "Krátký návod, jak společné sledování funguje."
+
+msgctxt "#31111"
+msgid "Remove watched titles from My list"
+msgstr "Odebírat zhlédnuté z Mého seznamu"
+
+msgctxt "#31112"
+msgid "A movie leaves My list once you finish it. A TV show only after you have watched every episode released so far – a new episode does not bring it back."
+msgstr "Film z Mého seznamu zmizí, jakmile ho dokoukáš. Seriál až po zhlédnutí všech dosud vydaných dílů – nový díl ho zpátky nepřidá."

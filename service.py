@@ -60,6 +60,7 @@ from trend_api import CATALOG_ID as TREND_CATALOG_ID  # noqa: E402
 from tracks import SUBS_WHEN_NEEDED, pick_audio, pick_subtitle, track_lang  # noqa: E402
 from trakt_api import TraktApi, TraktError, pick_keys  # noqa: E402
 import trakt_pull  # noqa: E402
+import favprune  # noqa: E402
 from dash_api import DashApi  # noqa: E402
 from webshare_api import WebshareApi  # noqa: E402
 import kodi_marks  # noqa: E402 – vedle service.py, čte videodatabázi Kodi
@@ -475,7 +476,23 @@ class Player(xbmc.Player):
         self.store.set_watched(self.item.get("id"), True)
         self.done = True
         log(f"zhlédnuto {self.item.get('id')}")
+        self.prune_mylist()
         xbmcgui.Window(10000).setProperty(SYNC_PROP, "1")   # zhlédnuto/pozice → do HA hned
+
+    def prune_mylist(self):
+        """Zhlédnutý film pryč z Mého seznamu. Seriál potřebuje metadata — dožene ho
+        `prefetch` po dokoukání dílu (`finish` → `prefetch_next_later`)."""
+        addon = fresh_addon()
+        if addon is None or addon.getSetting("fav_drop_watched") == "false":
+            return
+        try:
+            removed = favprune.prune(self.store, only=[self.item.get("id")])
+        except Exception as e:  # noqa: BLE001 – nesmí shodit přehrávání
+            log(f"Můj seznam: {e}", xbmc.LOGWARNING)
+            return
+        if removed:
+            log(f"z Mého seznamu (zhlédnuto): {', '.join(removed)}")
+            xbmcgui.Window(10000).setProperty(TRAKT_PULL_PROP, "1")
 
     def save_resume(self):
         item_id = self.item.get("id")

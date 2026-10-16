@@ -5885,7 +5885,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 139)   # +2 menu_edit_action, menu_reset_action (hlavní menu), +1 sync_concerts (10.3.0), +1 tmdb_check, +3 mylist1–3_enabled, +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs, +2 hide_dv, hide_hdr (DV/HDR filtr), +2 hide_dv_only, hide_av1
+        self.assertEqual(len(volby), 140)   # +1 fav_drop_watched (zhlédnuté pryč z Mého seznamu), +2 menu_edit_action, menu_reset_action (hlavní menu), +1 sync_concerts (10.3.0), +1 tmdb_check, +3 mylist1–3_enabled, +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs, +2 hide_dv, hide_hdr (DV/HDR filtr), +2 hide_dv_only, hide_av1
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):
@@ -7765,3 +7765,66 @@ class TestSluzbaTitulku(unittest.TestCase):
             default.router("?action=subs_download&id=11")
         stahni.assert_called_once_with({}, ["os:11"])
         self.assertEqual([url for _h, url, _li, _f in xbmcplugin.items], ["/tmp/nokturno-11.cze.srt"])
+
+
+class TestMujSeznamZhlednute(unittest.TestCase):
+    """Zhlédnuté se po přidání do Mého seznamu samy odeberou (jádro `favprune`)."""
+
+    def setUp(self):
+        reset_kodi()
+        self.store = default.STORE
+        for name in ("favourites", "favlog", "watched", "items"):
+            self.store.save(name, [] if name == "favourites" else {})
+
+    def fav(self, key, typ="movie"):
+        self.store.save("favourites", self.store.favourites() + [key])
+        log = self.store.load("favlog", {})
+        log[key] = {"on": True, "ts": 1}
+        self.store.save("favlog", log)
+        self.store.remember_item(key, {"type": typ})
+
+    def play(self, key):
+        player = service.Player(store=self.store, stats=None)
+        player.item = {"id": key}
+        player.mark_watched()
+
+    def test_sluzba_film_pryc_a_trakt(self):
+        self.fav("tt_p34")
+        self.play("tt_p34")
+        self.assertEqual(self.store.favourites(), [])
+        self.assertEqual(xbmcgui.Window(10000).getProperty("nokturno.trakt_pull"), "1")
+
+    def test_sluzba_vypnuto_film_zustane(self):
+        self.fav("tt_p34")
+        with mock.patch.dict(xbmcaddon.settings, {"fav_drop_watched": "false"}):
+            self.play("tt_p34")
+        self.assertEqual(self.store.favourites(), ["tt_p34"])
+
+    def test_sluzba_serial_zustane(self):
+        self.fav("tt9", "series")
+        self.play("tt9:1:1")
+        self.assertEqual(self.store.favourites(), ["tt9"])
+
+    def test_set_watched_film_pryc(self):
+        self.fav("tt_p34")
+        with mock.patch.object(default, "get_trakt", return_value=None):
+            default.set_watched("tt_p34", True)
+        self.assertEqual(self.store.favourites(), [])
+
+    def prefetch_serial(self, second_seen):
+        class FakeEng:
+            def episodes(self, sid, season=None):
+                return [{"id": f"tt9:1:{n}", "season": 1, "episode": n, "released": "2020-01-01"} for n in (1, 2)]
+        self.fav("tt9", "series")
+        self.store.save("watched", {"tt9:1:1": {"playcount": 1, "resume": 0, "ts": 50},
+                                    "tt9:1:2": {"playcount": 1 if second_seen else 0, "resume": 0, "ts": 60}})
+        with mock.patch.object(default, "next_episode", return_value=None):
+            default.prefetch({"engine": FakeEng()}, "next")
+
+    def test_prefetch_serial_dokoukany_pryc(self):
+        self.prefetch_serial(True)
+        self.assertEqual(self.store.favourites(), [])
+
+    def test_prefetch_serial_nedokoukany_zustane(self):
+        self.prefetch_serial(False)
+        self.assertEqual(self.store.favourites(), ["tt9"])

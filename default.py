@@ -75,6 +75,7 @@ from sync import sync_once  # noqa: E402
 import kodi_settings  # noqa: E402
 import watch as watch_lib  # noqa: E402
 import setsync  # noqa: E402
+import favprune  # noqa: E402
 import syncbox  # noqa: E402
 from streams import estimate_rank, langs_from_name, parse_stream, subs_from_name, video_tags  # noqa: E402
 from tracks import FILE_CODES, SUBTITLE_FALLBACK, decode_subtitle, subtitle_format, subtitle_lang  # noqa: E402
@@ -4829,6 +4830,7 @@ def prefetch(apis, kind):
     běžná cesta (`pick_title`) započítala zobrazení do statistik.
     """
     if kind == "next":
+        prune_mylist(apis=apis)
         seen = set()
         fresh_since = time.time() - PREFETCH_DAYS * 86400
         for key, entry in STORE.recently_watched(PREFETCH_SCAN):
@@ -6644,9 +6646,28 @@ def history_clear(kind):
 
 # --- zhlédnuto, Můj seznam, Pokračovat ----------------------------------------------
 
+def prune_mylist(keys=None, apis=None):
+    """Zhlédnuté pryč z Mého seznamu (jádro `favprune`). Bez `apis` jen filmy a díly —
+    seriál potřebuje metadata, dožene ho `prefetch` ze služby."""
+    if not on("fav_drop_watched"):
+        return []
+    try:
+        removed = favprune.prune(STORE, engine_of(apis) if apis else None, keys)
+    except Exception as e:  # noqa: BLE001 – úklid seznamu nesmí shodit zhlédnutí ani zahřívání
+        log_error(f"Můj seznam: {e}")
+        return []
+    if removed:
+        xbmc.log(f"[{ADDON_ID}] z Mého seznamu (zhlédnuto): {', '.join(removed)}", xbmc.LOGINFO)
+        request_sync()
+        xbmcgui.Window(10000).setProperty("nokturno.trakt_pull", "1")   # odebrání i na Trakt Watchlist
+    return removed
+
+
 def set_watched(key, watched):
     """Zhlédnuto/nezhlédnuto do evidence, do HA (synchronizace) i do Traktu."""
     STORE.set_watched(key, watched)
+    if watched:
+        prune_mylist([key])
     request_sync()
     trakt = get_trakt()
     if trakt and trakt.logged_in():
@@ -6658,7 +6679,10 @@ def set_watched(key, watched):
 
 
 def toggle_watched(key):
-    set_watched(key, not STORE.playcount(key))
+    watched = not STORE.playcount(key)
+    set_watched(key, watched)
+    if watched and split_episode_id(key)[1] is not None:
+        prune_mylist([key], get_apis())   # ručně označený poslední díl → seriál pryč hned
     xbmc.executebuiltin("Container.Refresh")
 
 

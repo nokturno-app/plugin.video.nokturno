@@ -3700,3 +3700,11 @@ msgstr "Add meg a vezetőtől kapott csoportkódot, és a többiekkel együtt n�
 msgctxt "#31110"
 msgid "A short guide to how watching together works."
 msgstr "Rövid útmutató a közös nézés működéséhez."
+
+msgctxt "#31111"
+msgid "Remove watched titles from My list"
+msgstr "Megnézett címek eltávolítása a Saját listából"
+
+msgctxt "#31112"
+msgid "A movie leaves My list once you finish it. A TV show only after you have watched every episode released so far – a new episode does not bring it back."
+msgstr "A film lekerül a Saját listáról, amint végignézed. A sorozat csak akkor, ha minden eddig megjelent részt megnéztél – egy új rész nem teszi vissza."

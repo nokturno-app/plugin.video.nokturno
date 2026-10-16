@@ -3702,3 +3702,11 @@ msgstr ""
 msgctxt "#31110"
 msgid "A short guide to how watching together works."
 msgstr ""
+
+msgctxt "#31111"
+msgid "Remove watched titles from My list"
+msgstr ""
+
+msgctxt "#31112"
+msgid "A movie leaves My list once you finish it. A TV show only after you have watched every episode released so far – a new episode does not bring it back."
+msgstr ""

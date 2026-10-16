@@ -1000,6 +1000,11 @@
           <default>false</default>
           <control type="toggle"/>
         </setting>
+        <setting id="fav_drop_watched" type="boolean" label="31111" help="31112">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
       </group>
       <group id="downloads" label="30071">
         <setting id="download_dir" type="path" label="30087" help="30323">
