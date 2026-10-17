@@ -109,6 +109,8 @@ MESSAGE_DELAY = 30       # po startu Kodi nechat doběhnout skin, než může p�
 WARM_DELAY = 180          # po startu Kodi nechat nejdřív doběhnout skin a widgety
 WARM_EVERY = int(2.5 * 3600)   # pod TTL žebříčků Sosáče (3 h); s WARM_PROP se cache obnoví i před vypršením
 WARM_PROP = "nokturno.warm"    # plugin při zahřívání cache API jen zapisuje, nečte (viz default.warming)
+HOME_TILES_EVERY = 45     # s: jak často hlídání zkontroluje dlaždice na domovské obrazovce
+HOME_TILES_TRIES = 4      # kolikrát za sebou je nechá načíst znovu
 WARM_RETRY = 10 * 60      # když se zrovna přehrává, zahřívání počká
 VERIFY_TRIGGER_PROP = "nokturno.verify.trigger"   # stejný literál jako v default.py; hodnota = id katalogu
 VERIFY_MANUAL_PROP = "nokturno.verify.manual"     # stejný literál jako v default.py; „cíl:počet“
@@ -1415,6 +1417,29 @@ def warm_caches(monitor, what="all"):
         log(f"zahřívání cache: {e}", xbmc.LOGWARNING)
 
 
+def home_tiles_watch(monitor):
+    """Vlákno: dlaždice Nokturna na domovské obrazovce skinu Estuary Nokturno se někdy při startu nenačtou
+    (jednorázová chyba widgetu) a skin je znovu nezkouší. Zůstanou-li prázdné, zvedne se `nokturno.home.rev`,
+    který je v jejich adrese, a načtou se znovu. Nejvýš HOME_TILES_TRIES pokusů za sebou."""
+    tries = 0
+    while not monitor.waitForAbort(HOME_TILES_EVERY):
+        try:
+            if xbmc.getSkinDir() != "skin.estuary.nokturno" or xbmc.Player().isPlaying():
+                continue
+            if not xbmc.getCondVisibility("Window.IsActive(home) + String.IsEqual(Container(9000).ListItem.Property(id),nokturno)"):
+                continue
+            if not xbmc.getCondVisibility("Integer.IsEqual(Container(30100).NumItems,0) + !Container(30100).IsUpdating"):
+                tries = 0
+                continue
+            if tries >= HOME_TILES_TRIES:
+                continue
+            tries += 1
+            xbmcgui.Window(10000).setProperty("nokturno.home.rev", str(int(time.time())))
+            log(f"dlaždice domovské obrazovky prázdné, načítám znovu ({tries}/{HOME_TILES_TRIES})")
+        except Exception as e:  # noqa: BLE001 – hlídání nesmí nikdy nic shodit
+            log(f"hlídání dlaždic: {e}", xbmc.LOGWARNING)
+
+
 def warmer(monitor):
     """Vlákno: první zahřátí chvíli po startu, pak každé tři hodiny; ne během přehrávání."""
     if monitor.waitForAbort(WARM_DELAY):
@@ -1861,6 +1886,7 @@ def main():
     player.sw.start()
     Downloader(store, monitor).start()
     threading.Thread(target=warmer, args=(monitor,), daemon=True).start()
+    threading.Thread(target=home_tiles_watch, args=(monitor,), daemon=True).start()
     threading.Thread(target=verify_worker, args=(monitor,), daemon=True, name="nokturno-verify").start()
     syncer = Syncer(store)
     accounts_checker = AccountsChecker(store)

@@ -34,7 +34,7 @@ from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
-VERSION = "1.0.3"
+VERSION = "1.0.4"
 P_ID = "plugin.video.nokturno"
 PLUGIN_MIN = "10.14.0~beta2"   # nejnižší doplněk, který zná všechny akce v ROWS
 ADDON_ID = "skin.estuary.nokturno"
@@ -92,7 +92,7 @@ def url(**q):
 TREND = lambda t: url(action="catalog", type=t, catalog="nejsledovanejsi", src="trend")
 # řady pod položkou Nokturno: (typ, nadpis, adresa); "cat" = dlaždice složek, "poster" = plakáty
 ROWS = [
-    ("cat", "$LOCALIZE[31700]", P + "?home=1"),
+    ("cat", "$LOCALIZE[31700]", P + "?home=1&amp;rev=$INFO[Window(home).Property(nokturno.home.rev)]"),   # rev: služba při prázdných dlaždicích zvedne a načtou se znovu
     ("poster", A(30063), url(action="continue")),
     ("poster", f"{A(30012)} – {A(30393)}", TREND("movie")),
     ("poster", f"{A(30013)} – {A(30393)}", TREND("series")),
@@ -586,7 +586,8 @@ def addon_xml(src):
 		<description lang="cs_CZ">Estuary, jak ho znáš, jen v barvách Nokturna. Položka Nokturno nahoře v hlavní nabídce ukáže menu Nokturna jako dlaždice, Pokračovat ve sledování, nejsledovanější filmy a seriály týdne a katalogy z Nokturna (sezónní i tvoje vlastní katalogy vybrané v Nastavení vzhledu).</description>
 		<description lang="sk_SK">Estuary, ako ho poznáš, len vo farbách Nokturna. Položka Nokturno hore v hlavnej ponuke ukáže menu Nokturna ako dlaždice, Pokračovať v sledovaní, najsledovanejšie filmy a seriály týždňa a katalógy z Nokturna (sezónne aj tvoje vlastné katalógy vybrané v Nastaveniach vzhľadu).</description>
 		<description lang="hu_HU">Az ismert Estuary, csak Nokturno színekben. A főmenü tetején lévő Nokturno elem csempékként mutatja a Nokturno menüt, a Megtekintés folytatását, a hét legnézettebb filmjeit és sorozatait, valamint a Nokturno katalógusait (szezonális és a Felület beállításaiban kiválasztott saját katalógusok).</description>
-		<news>1.0.0 – první vydání: barvy Nokturna, Nokturno na prvním místě hlavní nabídky.</news>
+		<news>1.0.4 – Údaje o titulu dole (datum, stopáž, kodek, rozlišení, zvuk) jsou v kulatých odznacích. Dlaždice na domovské obrazovce se samy načtou znovu, když se nenačtou při startu.
+			1.0.0 – první vydání: barvy Nokturna, Nokturno na prvním místě hlavní nabídky.</news>
 	</extension>
 </addon>
 """
@@ -766,6 +767,78 @@ def nokturno_menu(home, includes):
     return sub1(home, '<control type="group" id="5000">', group)
 
 
+# Spodní lišta s údaji o titulu (MediaFlags): datum a všechny vlajky jako kulaté odznaky se stejným
+# rámem jako stopáž. Estuary kreslí kodeky z hotových hranatých obrázků, tady je nahradí text.
+FLAG_FIELDS = [   # (šířka, údaj, {hodnoty → text}, text pro ostatní hodnoty)
+    (125, "VideoCodec", {"hevc|hev1|hvc1": "H.265", "h264|avc1|avc": "H.264", "mpeg2video|mpeg2": "MPEG-2",
+                         "mpeg4|mp4v|xvid|divx|dx50": "MPEG-4", "vc1|wvc1|vc-1": "VC-1"}, "$UPPER[{v}]"),
+    (115, "VideoResolution", {"4K": "4K", "8K": "8K", "sd|SD": "SD"}, "$INFO[{i},,p]"),
+    (105, "HdrType", {"dolbyvision": "DV", "hdr10": "HDR10", "hdr10plus": "HDR10+", "hlg": "HLG"}, "$UPPER[{v}]"),
+    (130, "VideoAspect", {}, "$INFO[{i},,:1]"),
+    (150, "AudioCodec", {"ac3": "DD", "eac3": "DD+", "truehd": "TrueHD", "dtshd_ma": "DTS-HD MA", "dtshd_hra": "DTS-HD",
+                         "dts|dca": "DTS", "aac|aac_latm": "AAC", "mp3|mp3float": "MP3"}, "$UPPER[{v}]"),
+    (100, "AudioChannels", {"1": "1.0", "2": "2.0", "3": "2.1", "6": "5.1", "7": "6.1", "8": "7.1"}, "$INFO[{i}]"),
+]
+
+
+def flag_pill(width, labels, visible, icon=None):
+    """Odznak s kulatými konci: rám `flags/pill.png` (9 dílů, tažený jen do šířky) a text; `labels` = [(text, podmínka)]."""
+    text = "".join(f"""
+						<control type="label">
+							<left>{34 if icon else 0}</left>
+							<width>{width - (34 if icon else 0)}</width>
+							<height>60</height>
+							<align>center</align>
+							<aligny>center</aligny>
+							<font>font_flag</font>
+							<label>{label}</label>{f"<visible>{cond}</visible>" if cond else ""}
+						</control>""" for label, cond in labels)
+    ico = f"""
+						<control type="image">
+							<left>20</left>
+							<top>16</top>
+							<width>28</width>
+							<height>28</height>
+							<texture colordiffuse="white">{icon}</texture>
+						</control>""" if icon else ""
+    return f"""
+				<control type="group">
+					<width>{width}</width>
+					<visible>{visible}</visible>{ico}{text}
+					<control type="image">
+						<width>{width}</width>
+						<height>60</height>
+						<texture border="30">flags/pill.png</texture>
+					</control>
+				</control>"""
+
+
+def flags_xml():
+    pre = "$PARAM[infolabel_prefix]ListItem."
+    out = flag_pill(225, [(f"$INFO[{pre}Premiered]", "")], f"!String.IsEmpty({pre}Premiered)", "lists/year.png")
+    out += flag_pill(130, [(f"$INFO[{pre}Duration]", "")], f"!String.IsEmpty({pre}Duration)")
+    for width, field, names, other in FLAG_FIELDS:
+        info = pre + field
+        is_ = lambda v: "String.IsEqual(%s,%s)" % (info, v)
+        labels = [(text, "[" + " | ".join(is_(x) for x in key.split("|")) + "]") for key, text in names.items()]
+        rest = " + ".join("!" + c for _, c in labels)
+        labels.append((other.format(i=f"{info}", v=f"$INFO[{info}]"), rest))
+        out += flag_pill(width, labels, f"!String.IsEmpty({info})")
+    return out
+
+
+def round_flags(out):
+    pill = Image.new("LA", (480, 240), (255, 0))
+    ImageDraw.Draw(pill).rounded_rectangle((8, 40, 471, 199), radius=80, outline=(255, 255), width=8)
+    pill.resize((120, 60), Image.LANCZOS).save(out / "media/flags/pill.png")
+    f = out / "xml/Includes.xml"
+    t = f.read_text(encoding="utf-8")
+    a = t.index('\t\t\t\t<control type="group">\n\t\t\t\t\t<top>10</top>\n\t\t\t\t\t<width>200</width>')
+    b = t.index("\t\t\t</control>\n\t\t\t<control type=\"grouplist\">\n\t\t\t\t<visible>Container.Content(albums)", a)
+    assert t.count('<top>10</top>\n\t\t\t\t\t<width>200</width>') == 1
+    f.write_text(t[:a] + flags_xml().lstrip("\n") + "\n" + t[b:], encoding="utf-8")
+
+
 def build(src, out):
     if out.exists():
         shutil.rmtree(out)
@@ -871,6 +944,7 @@ def build(src, out):
              '<value condition="[String.IsEqual(ListItem.DBtype,tvshow) | String.IsEqual(ListItem.DBType,season)] + !String.IsEmpty(ListItem.Property(TotalEpisodes)) | String.IsEqual(ListItem.DBtype,set)">lists/played-total.png</value>')
     f.write_text(t, encoding="utf-8")
     round_cards(out)
+    round_flags(out)
 
     home = out / "xml/Home.xml"
     home.write_text(nokturno_menu(home.read_text(encoding="utf-8"),
