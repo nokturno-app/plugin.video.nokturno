@@ -3132,8 +3132,6 @@ class Engine:
             primary_label = "Sosáč" if is_sosac_id(base_id) else "Luna"
 
             def primary(chyby):
-                if str(base_id).startswith("tmdb:"):
-                    return []   # titul bez IMDb id: Luna i Sosáč ho neznají, hledá se jen podle názvu
                 if accounts_lib.paused_for(self.store, "sosac" if is_sosac_id(base_id) else "luna") > 0:
                     necachovat.add(primary_label)
                     return []   # uspání je volba uživatele, ne výpadek — nejde do failures
