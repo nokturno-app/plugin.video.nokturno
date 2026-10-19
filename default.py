@@ -8575,8 +8575,11 @@ def main(query):
         # do cache; když Kodi končí, nezačaté se zruší.
         release_enrich(cancel=should_stop())
         release_probe_pool()
-        if should_stop():
-            cancel_background()   # fronta hlaviček a opozdilých zdrojů — Kodi by na ni čekalo
+        # nezačaté úlohy na pozadí (hlavně fronta hlaviček) se ruší vždy, ne jen při vypínání:
+        # Kodi na vlákna pluginu po doběhnutí čeká, další klik do doplňku mezitím selže
+        # a čtení se během přehrávání pere o linku a CPU (obývák 2026-10-19: přes 100 s
+        # „waiting on thread", pak zamrzlé Kodi). Rozběhnuté doběhnou na vlastní timeout.
+        cancel_background()
 
 
 if __name__ == "__main__":

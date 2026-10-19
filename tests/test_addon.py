@@ -3612,6 +3612,14 @@ class TestPreruseniPriKonciKodi(unittest.TestCase):
                 default.main("action=x")
             release.assert_called_once_with(cancel=True)
 
+    def test_konec_pluginu_zrusi_frontu_na_pozadi(self):
+        """Nezačaté hlavičky na pozadí se ruší i bez vypínání — Kodi by na ně čekalo
+        a další klik do doplňku by mezitím selhal (obývák 2026-10-19)."""
+        with mock.patch.object(default, "router"), mock.patch.object(default, "release_enrich"), \
+                mock.patch.object(default, "cancel_background") as cancel:
+            default.main("action=favourites")
+        cancel.assert_called_once_with()
+
     def test_router_zavre_prehrani_titulu_jako_prehrani(self):
         """`action=title` s handle ≥ 0 je Přehrát v detailu — Kodi čeká `setResolvedUrl`,
         ne `endOfDirectory`, a to i po přerušení."""
