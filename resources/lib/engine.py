@@ -90,6 +90,9 @@ STREAMS_CACHE_TTL = 259200    # 72 h – výsledek jednoho zdroje k titulu (`src
 # Zdroj, který neodpověděl, se 10 minut nezkouší znovu (prázdný záznam `src1:…:p`) — jinak by se
 # při dalším otevření titulu čekalo až 20 s na tentýž zdroj. Výpadek se opraví sám za 10 minut.
 STREAMS_PARTIAL_TTL = 600
+# Titul, ke kterému žádný zdroj nic nenašel, se 20 minut znovu nehledá (záznam `src1:…:n` u každého
+# zdroje, který čistě odpověděl prázdnem). Zdroj s výpadkem se nezapisuje – výpadek není „nic“.
+EMPTY_CACHE_TTL = 1200
 # S volbou `stale_streams` se výsledek zdroje starší než 72 h, ale ne než tohle, použije hned a celý
 # seznam se na pozadí obnoví. Konec lhůty drží i `Store.prune_cache`, který staré soubory maže.
 STREAMS_STALE_TTL = 14 * 86400
@@ -1306,12 +1309,17 @@ class Engine:
             merged = self._by_year(self._merge(luna_metas, sosac_metas), want_year)
             if limit:
                 merged = merged[: int(limit)]
-            return {"pairs": [[m, alt] for m, alt in merged], "mixed": bool(luna_metas) and bool(sosac_metas)}
+            return {"pairs": [[m, alt] for m, alt in merged], "mixed": bool(luna_metas) and bool(sosac_metas),
+                    "at": time.time()}
 
         ttl = 0 if force else SEARCH_CACHE_TTL
         tail = f"{ctype}:{query}:{int(limit) if limit else ''}:{want_year or ''}"
         ok = lambda data: bool(data and data.get("pairs")) and not errors  # noqa: E731
-        bare = self.store.cached_if(f"searchbare:{tail}", ttl, _fetch_bare, ok=ok)
+        # prázdný výsledek bez chyby zdroje se pamatuje (`EMPTY_CACHE_TTL`), s chybou ne
+        ok_bare = lambda data: bool(data) and not errors  # noqa: E731
+        bare = self.store.cached_if(f"searchbare:{tail}", ttl, _fetch_bare, ok=ok_bare)
+        if ttl and not bare["pairs"] and time.time() - float(bare.get("at") or 0) > EMPTY_CACHE_TTL:
+            bare = self.store.cached_if(f"searchbare:{tail}", ttl, _fetch_bare, ok=ok_bare, fresh=True)
         short = _title_head(query)
         if not bare["pairs"] and short:
             # „Cizinka: Krev dvojí krve“ (přeslechnutý podtitul z hlasového hledání) nenajde
@@ -2561,6 +2569,7 @@ class Engine:
                 "_tracks": info.get("audio") or [],
                 "_media": info,
                 "_direct": True,
+                "_no_download": not f.get("download"),
             })
             # rozlišení z API přebíjí název, jako hlavička u ostatních zdrojů v `_fill_audio`:
             # „1080p.UHD.BluRay" by podle názvu vyšlo jako 4K
@@ -3233,6 +3242,10 @@ class Engine:
                             hit = shared.peek_cached(key + ":p", STREAMS_PARTIAL_TTL)
                             if hit is not None:
                                 timings["částečná cache"] = True
+                            if hit is None:
+                                hit = shared.peek_cached(key + ":n", EMPTY_CACHE_TTL)
+                                if hit is not None:
+                                    timings["prázdno z cache"] = True
                             if hit is None and stale:
                                 hit = shared.peek_cached(key, STREAMS_STALE_TTL)
                                 stara = stara or hit is not None
@@ -3368,6 +3381,10 @@ class Engine:
                     self._save_source(key, [])
                 for key in list(vadne):
                     self._save_source(key + ":p", [], STREAMS_PARTIAL_TTL)
+            else:
+                # nikde nic — čistá prázdná odpověď zdroje se 20 minut neopakuje; výpadky (`vadne`) ne
+                for key in list(prazdne - vadne):
+                    self._save_source(key + ":n", [], EMPTY_CACHE_TTL)
             for stream in found:
                 parse_stream(stream)
                 # bez kvality v názvu („Matrix (1999).mkv") by soubor spadl na konec seznamu,
@@ -3609,8 +3626,9 @@ class Engine:
         netloc = host if ":" in host else (f"{host}:{parts.port}" if parts.port else host)
         return urllib.parse.urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
 
-    def resolve(self, url, prefer_external=False):
-        """Přímé HTTP URL pro externí přehrávač (Sosáč vrací `streamuj:` odkazy)."""
+    def resolve(self, url, prefer_external=False, download=False):
+        """Přímé HTTP URL pro externí přehrávač (Sosáč vrací `streamuj:` odkazy).
+        `download=True`: odkaz ke stažení (CZtor ho vydává zvlášť a smí odmítnout)."""
         if not url:
             raise NokturnoError("Chybí odkaz na stream.")
         if url.startswith("ws:"):
@@ -3670,7 +3688,7 @@ class Engine:
             if self.cz is None:
                 raise NokturnoError("CZtor není zapnutý nebo spárovaný.")
             try:
-                return self.cz.resolve(url)
+                return self.cz.resolve(url, purpose="download" if download else "play")
             except CztorError as err:
                 raise NokturnoError(f"CZtor: {err}") from err
         if url.startswith("dav:"):

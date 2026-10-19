@@ -7726,6 +7726,9 @@ def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, d
                                     refresh=fresh)
         finally:
             bar.close()
+        if download:
+            # CZtor stahování povoluje jen u části streamů (`allow_download`) — ostatní se ke stažení nenabízí
+            found = [s for s in found if not s.get("_no_download")]
         if errors:
             notify(skipped_notice(errors), xbmcgui.NOTIFICATION_WARNING, 7000)
         return found, errors
@@ -8009,7 +8012,8 @@ def download_stream(apis, url, name, key, ctype, series_id=None, alt=None):
     import hashlib
     dl_id = f"dl:{key}:{hashlib.sha1(url.encode('utf-8')).hexdigest()[:8]}"
     # rozklíčovat jen kvůli příponě, když ji název nemá (Luna/Sosáč mají místo názvu popisek)
-    link = None if name.lower().endswith(VIDEO_EXTS) else resolve_url(apis, url)
+    # u CZtor se přehrávací adresa nevolá jen kvůli příponě — adresa ke stažení se bere až ve službě
+    link = None if name.lower().endswith(VIDEO_EXTS) or url.startswith("cz:") else resolve_url(apis, url)
     enqueue_download(url, name, dl_id, dest_name=name, link=link)
 
 

@@ -776,8 +776,10 @@ def resolve_internal(url, store):
         return FastshareApi(s("fs_username"), addon.getSetting("fs_password") if addon else "", cache=store,
                             provider=provider).request(url)
     if url.startswith("cz:"):
-        # tokeny párování drží úložiště doplňku (sdílené s pluginem), `playback_url` hraje bez hlaviček
-        return CztorApi(store, device_name=f"Nokturno ({xbmc.getInfoLabel('System.FriendlyName') or 'Kodi'})").resolve(url), {}
+        # tokeny párování drží úložiště doplňku (sdílené s pluginem), adresa hraje bez hlaviček;
+        # adresa ke stažení se bere až teď (POST /play, purpose download); CZtor ji smí odmítnout
+        return CztorApi(store, device_name=f"Nokturno ({xbmc.getInfoLabel('System.FriendlyName') or 'Kodi'})").resolve(
+            url, purpose="download"), {}
     if url.startswith("pt:"):
         # odkaz CDN je podepsaný a nedrží na IP, hlavičky nechce; s účtem Premium vyjde původní soubor
         return PrehrajtoApi(s("pt_email"), addon.getSetting("pt_password") if addon else "", cache=store).request(url)

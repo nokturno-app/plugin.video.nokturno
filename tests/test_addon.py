@@ -3356,7 +3356,8 @@ class TestFrontaAZahrivani(unittest.TestCase):
         with mock.patch.object(service.CztorApi, "resolve", return_value="https://cdn.giganthost/a.mkv") as res:
             self.assertEqual(service.resolve_internal("cz:movie:1:2", default.STORE),
                              ("https://cdn.giganthost/a.mkv", {}))
-        res.assert_called_once_with("cz:movie:1:2")
+        # adresa ke stažení se bere zvlášť (POST /play, purpose download), CZtor ji smí odmítnout
+        res.assert_called_once_with("cz:movie:1:2", purpose="download")
 
     def test_sluzba_rozklicuje_prehrajto(self):
         # stejná díra jako u CZtoru: `pt:` služba stahování neznala a skončila „unknown url type: pt“
