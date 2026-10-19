@@ -6928,9 +6928,37 @@ def _watch_li(label, key, poster):
     return li
 
 
+def prune_watched_wants():
+    """Zhlédnuté pryč z Hlídaných: film i díl, a díl i tehdy, když je zhlédnutý některý
+    z dalších (obývák 2026-10-19: 2x03 zhlédnutý, v Hlídaných dál „lze pustit“)."""
+    seen = STORE.load("watched", {})
+    done_eps = {}
+    for key, rec in seen.items():
+        base, season, episode = split_episode_id(key)
+        if season is not None and int((rec or {}).get("playcount") or 0):
+            done_eps[base] = max(done_eps.get(base, (0, 0)), (season, episode))
+
+    def done(key):
+        if int((seen.get(key) or {}).get("playcount") or 0):
+            return True
+        base, season, episode = split_episode_id(key)
+        return season is not None and done_eps.get(base, (0, 0)) >= (season, episode)
+
+    rows = dict(watch_lib.wanted(STORE))
+    rows.update(watch_lib.results(STORE))
+    gone = [wid for wid, rec in rows.items() if done(wid) or done(rec.get("found_id") or wid)]
+    for wid in gone:
+        watch_lib.unwant(STORE, wid)
+    if gone:
+        xbmc.log(f"[{ADDON_ID}] z Hlídaných (zhlédnuto): {', '.join(gone)}", xbmc.LOGINFO)
+        request_sync()
+    return gone
+
+
 def list_watch():
     """Sledované seriály (nové díly nahoře) a hlídané tituly."""
     set_content("movies")
+    prune_watched_wants()
     check_now = (L(30918, "Zkontrolovat teď"), runplugin(action="watch_check_now"))
     items = sorted(watch_lib.series(STORE).items(),
                    key=lambda kv: (not kv[1].get("new"), (kv[1].get("title") or "").lower()))
@@ -6957,6 +6985,7 @@ def list_watch():
         ctx = ([(L(30907, "Označit nový díl jako viděný"), runplugin(action="watch_seen", id=sid))] if new else [])
         if avail and avail.get("id"):
             ctx.append(watch_episode_context(sid, avail["id"], item.get("alt")))
+        ctx += episodes_context(sid, (new or avail or item.get("latest") or {}).get("season"), item.get("alt"))
         li.addContextMenuItems(ctx + [(L(30902, "Přestat hlídat nové díly"),
                                        runplugin(action="watch_series", id=sid)), check_now])
         xbmcplugin.addDirectoryItem(HANDLE, build_url(action="watch_open", id=sid, alt=item.get("alt")), li,
@@ -6987,8 +7016,10 @@ def list_watch():
         ctx.append(check_now)
         target = rec.get("found_id") or wid
         li = _watch_li(label, target, rec.get("poster"))
-        li.addContextMenuItems(ctx)
         _sid, season, _ep = split_episode_id(target)
+        if season is not None:
+            ctx += episodes_context(rec.get("series") or _sid, season, rec.get("alt"))
+        li.addContextMenuItems(ctx)
         if season is not None:
             # hlídaný díl — rovnou výběr streamu
             xbmcplugin.addDirectoryItem(HANDLE, build_url(action="title", type="series", id=target,

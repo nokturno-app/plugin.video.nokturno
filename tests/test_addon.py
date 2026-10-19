@@ -6671,6 +6671,19 @@ class TestHlidane(unittest.TestCase):
         self.assertFalse(default.watch_lib.is_wanted(default.STORE, "tt2:2:2"))
         self.assertFalse(default.watch_lib.is_flagged(default.STORE, "tt2:2:2"))
 
+    def test_zhlednuty_dil_zmizi_z_hlidanych(self):
+        """2x03 zhlédnutý (nebo zhlédnutý až další díl) — v Hlídaných nemá dál svítit
+        „lze pustit“ (obývák 2026-10-19). Nezhlédnutý zůstane a menu vede na díly."""
+        for wid in ("tt2:2:3", "tt2:2:5", "tt3:1:1"):
+            default.watch_lib.want(default.STORE, wid, {"title": wid, "type": "series", "series": wid[:3]})
+        default.STORE.save("trakt_list", {"tt2:2:3": {"id": "tt2:2:3", "streams": 7, "checked": "x"}})
+        default.STORE.set_watched("tt2:2:4", True)
+        default.list_watch()
+        self.assertEqual(set(default.watch_lib.wanted(default.STORE)), {"tt2:2:5", "tt3:1:1"})
+        self.assertNotIn("tt2:2:3", default.watch_lib.results(default.STORE))
+        dil = next(li for _h, u, li, _f in xbmcplugin.items if "tt3%3A1%3A1" in u or "tt3:1:1" in u)
+        self.assertIn(default.L(30979, "Seznam dílů"), [c[0] for c in dil.context])
+
     def test_akce_nectou_videodatabazi(self):
         for action in ("watch_series", "want", "watch_episode", "watch_flag", "watch_seen", "watch_check", "watch_check_now"):
             self.assertIn(action, default.MARKS_SKIP)
