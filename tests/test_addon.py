@@ -4815,7 +4815,9 @@ class TestReuseInvoker(unittest.TestCase):
         korene = ET.parse(ROOT / "addon.xml").getroot()
         meta = korene.find("./extension[@point='xbmc.addon.metadata']")
         self.assertIsNotNone(meta)
-        self.assertEqual((meta.findtext("reuselanguageinvoker") or "").strip(), "true")
+        # od 11.4.1 vypnuto (pády Kodi na CoreELEC, viz komentář v addon.xml); tělo
+        # default.py zůstává idempotentní, kdyby se přepínač vracel
+        self.assertEqual((meta.findtext("reuselanguageinvoker") or "").strip(), "false")
         plugin = korene.find("./extension[@point='xbmc.python.pluginsource']")
         self.assertIsNone(plugin.find("reuselanguageinvoker"),
                           "v pluginsource je přepínač k ničemu")

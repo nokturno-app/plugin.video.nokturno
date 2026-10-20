@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="11.4.0" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="11.4.1" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -16,8 +16,13 @@
          `xbmc.python.pluginsource` si toho Kodi nevšimne (ověřeno na Office 2026-09-20,
          stejné místo mají youtube i themoviedb.helper). Podmínka: importované moduly si
          drží stav mezi spuštěními, tělo default.py se spouští znovu — viz
-         dokumentace.md § Reuse invoker. -->
-    <reuselanguageinvoker>true</reuselanguageinvoker>
+         dokumentace.md § Reuse invoker.
+         VYPNUTO od 11.4.1: CoreELEC v obýváku od zapnutí (9.0.0) padal skoro denně
+         (SIGSEGV v PyDict_SetItem ve vlákně Pythonu, 8× za 10 dní). S reuse sdílí kliky
+         jeden interpret i s vlákny na pozadí, která po sobě plugin nechává; Kodi pak
+         spouští další klik a ukončuje interpret, zatímco v něm vlákna běží. Zapnout
+         znovu až s doloženým koncem pádů i se zapnutým reuse. -->
+    <reuselanguageinvoker>false</reuselanguageinvoker>
     <summary lang="en_GB">Player and search tool for your own storage, optionally also for third-party storage services</summary>
     <summary lang="cs_CZ">Přehrávač a vyhledávač nad vlastním úložištěm, volitelně i nad úložišti třetích stran</summary>
     <summary lang="sk_SK">Prehrávač a vyhľadávač nad vlastným úložiskom, voliteľne aj nad úložiskami tretích strán</summary>
@@ -43,7 +48,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>11.4.0 – Zhlédnuté filmy a díly samy zmizí z Hlídaných. Z hlídaného dílu i seriálu se kontextovou nabídkou dostaneš na seznam dílů nebo všechny série.
+    <news>11.4.1 – Kodi by už nemělo zamrzat a padat při procházení doplňku a po zrušeném hledání.
+11.4.0 – Zhlédnuté filmy a díly samy zmizí z Hlídaných. Z hlídaného dílu i seriálu se kontextovou nabídkou dostaneš na seznam dílů nebo všechny série.
 11.3.1 – Po spuštění přehrávání už doplněk na pozadí nedočítá údaje o ostatních streamech – Kodi se při přehrávání méně zasekává a další klik do doplňku hned funguje.
 11.2.6 – Přehrávání z CZtoru funguje i po změně jejich rozhraní. Stáhnout jde jen to, co CZtor ke stažení povolí – ostatní streamy se ve výběru ke stažení neukážou. Titul, ke kterému se nikde nic nenašlo, se 20 minut znovu neprohledává.
 11.2.4 – Luna najde streamy i u titulů, ke kterým TMDB nezná IMDb id – hlavně u nových seriálů a nových řad.
