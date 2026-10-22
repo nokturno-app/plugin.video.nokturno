@@ -7234,6 +7234,22 @@ class TestKatalogZMobilu(unittest.TestCase):
         self.assertEqual((vals["genres_movie"], vals["keywords"]), ("16", "fairy"))
         self.assertIn(default.mycat.ALPHA, [v for v, _ in fields["sort"]["options"]])
 
+    def test_razeni_ma_vysvetleni(self):
+        """P46: výběr „Zobrazit seřazené podle“ vysvětluje, co která volba znamená (formulář i dialog na TV)."""
+        pole = {f.get("id"): f for f in default.mycat_remote_schema("movie", True)[0]["fields"]}["show"]
+        for v in ("pool", "found", "released"):
+            self.assertIn(default.MYCAT_SHOW_HELP[v][1], pole["help"])
+        with mock.patch.object(xbmcgui.Dialog, "multiselect", return_value=[]), \
+                mock.patch.object(xbmcgui.Dialog, "select",
+                                  side_effect=lambda heading, *a, **k: 1 if heading == "Režim katalogu" else 0) as select:
+            default.mycat_form("movie", {"verify": True, "show": "released"})
+        radky = [c for c in select.call_args_list if c.args[0] == "Zobrazit seřazené podle"]
+        self.assertEqual(len(radky), 1)
+        self.assertTrue(radky[0].kwargs.get("useDetails"))
+        self.assertEqual(radky[0].kwargs.get("preselect"), 2)
+        self.assertEqual([r.label2 for r in radky[0].args[1]],
+                         [default.MYCAT_SHOW_HELP[v][1] for v in ("found", "pool", "released")])
+
     def test_schema_ma_multi_a_auto(self):
         fields = {f.get("id"): f for f in default.mycat_remote_schema("movie", True)[0]["fields"]}
         self.assertEqual(fields["countries"]["type"], "multi")
@@ -7701,6 +7717,38 @@ class TestPokracovatVeSledovani(unittest.TestCase):
             default.list_continue({})
         ids = [params_of(url).get("id") for _h, url, _li, _f in xbmcplugin.items]
         self.assertEqual(ids, ["tt100:1:2"])
+
+
+    def test_bez_vlaken_se_zobrazi_pomaleji(self):
+        """P39: Android bez dalších vláken – Pokračovat se zobrazí (úlohy zpracuje jediné vlákno), nespadne."""
+        reset_kodi()
+        default.STORE.save("watched", {})
+        metas = {}
+        for sid in ("tt101", "tt102"):
+            metas[sid] = {"id": sid, "name": sid, "videos": [
+                {"id": f"{sid}:1:{n}", "season": 1, "episode": n, "title": f"Díl {n}", "released": "2020-01-0" + str(n)}
+                for n in (1, 2)]}
+            default.STORE.remember_item(f"{sid}:1:1", default.snapshot(metas[sid], "series", metas[sid]["videos"][0], sid))
+            default.STORE.set_watched(f"{sid}:1:1", True)
+        puvodni, volani = threading.Thread.start, []
+
+        def start(self_):
+            volani.append(1)
+            if len(volani) > 1:
+                raise RuntimeError("can't start new thread")
+            puvodni(self_)
+
+        def dalsi(apis, snap):
+            time.sleep(0.05)   # první vlákno je zaneprázdněné, druhá úloha si říká o nové
+            meta = metas[snap["series"]]
+            return meta["videos"][1], meta
+
+        with mock.patch.object(default, "next_episode", dalsi), \
+             mock.patch.object(threading.Thread, "start", start):
+            default.list_continue({})
+        ids = sorted(params_of(url).get("id") for _h, url, _li, _f in xbmcplugin.items)
+        self.assertEqual(ids, ["tt101:1:2", "tt102:1:2"])
+        self.assertGreater(len(volani), 1)   # druhé vlákno se opravdu zkusilo založit
 
 
 class TestSmbUloziste(unittest.TestCase):

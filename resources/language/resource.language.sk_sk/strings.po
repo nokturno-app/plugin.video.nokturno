@@ -3710,3 +3710,15 @@ msgstr "Odstraňovať pozreté z Môjho zoznamu"
 msgctxt "#31112"
 msgid "A movie leaves My list once you finish it. A TV show only after you have watched every episode released so far – a new episode does not bring it back."
 msgstr "Film z Môjho zoznamu zmizne, keď ho dopozeráš. Seriál až po pozretí všetkých doteraz vydaných dielov – nový diel ho späť nepridá."
+
+msgctxt "#31113"
+msgid "Titles in the order the catalog selection returned them."
+msgstr "Tituly v poradí, v akom ich vrátil výber katalógu."
+
+msgctxt "#31114"
+msgid "Newest finds first – by when the availability check found the title."
+msgstr "Najnovšie nálezy hore – podľa toho, kedy titul našla kontrola dostupnosti."
+
+msgctxt "#31115"
+msgid "Newest releases first – by the title's release date."
+msgstr "Najnovšie vydania hore – podľa dátumu vydania titulu."

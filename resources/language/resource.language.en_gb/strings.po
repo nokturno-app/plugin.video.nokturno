@@ -3710,3 +3710,15 @@ msgstr ""
 msgctxt "#31112"
 msgid "A movie leaves My list once you finish it. A TV show only after you have watched every episode released so far – a new episode does not bring it back."
 msgstr ""
+
+msgctxt "#31113"
+msgid "Titles in the order the catalog selection returned them."
+msgstr ""
+
+msgctxt "#31114"
+msgid "Newest finds first – by when the availability check found the title."
+msgstr ""
+
+msgctxt "#31115"
+msgid "Newest releases first – by the title's release date."
+msgstr ""

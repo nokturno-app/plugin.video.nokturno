@@ -86,7 +86,7 @@ import kodi_smb  # noqa: E402 – vedle default.py, SMB vlastního úložiště 
 import mylist  # noqa: E402 – vedle default.py, vlastní seznam z JSON
 import kodi_sources  # noqa: E402 – vedle default.py, sdílený výčet zdrojů do statistik
 from engine import AUDIO_PROBE_MAX, DEFAULT_RUNTIME_S, Engine, NokturnoError, release_probe_pool, runtime_minutes  # noqa: E402
-from abort import Aborted, cancel_background, set_host_stop  # noqa: E402
+from abort import Aborted, SparePool, cancel_background, set_host_stop  # noqa: E402
 from hedge import first_success  # noqa: E402
 import keepalive  # noqa: E402
 from crash import CrashReporter  # noqa: E402
@@ -5439,6 +5439,10 @@ MYCAT_TRACK_LABELS = (("", 30762, "Libovolné"), ("CZ", 30112, "Čeština"), ("S
                       ("HU", 30559, "Maďarština"))
 MYCAT_SHOW_LABELS = (("found", 30765, "Nově nalezené"), ("pool", 30764, "Stejně jako výběr"),
                      ("released", 30766, "Nejnovější vydání"))
+# vysvětlení řazení u výběru (dialog na TV, nápověda ve formuláři v prohlížeči)
+MYCAT_SHOW_HELP = {"pool": (31113, "Tituly v pořadí, v jakém je vrátil výběr katalogu."),
+                   "found": (31114, "Nejnovější nálezy nahoře – podle toho, kdy titul našla kontrola dostupnosti."),
+                   "released": (31115, "Nejnovější vydání nahoře – podle data vydání titulu.")}
 # země původu (`mycat.COUNTRIES`, filtr TMDB `with_origin_country`) – jiná věc než jazyk dabingu
 MYCAT_COUNTRIES = (("CZ", 30262, "Česko"), ("SK", 30263, "Slovensko"), ("XC", 31048, "Československo"),
                    ("US", 30264, "USA"),
@@ -5613,9 +5617,13 @@ def mycat_form(ctype, cat=None):
             L(30883, "Kanály zvuku"), [L(30886, "Libovolné"), L(30888, "5.1 a víc")], bool(cat.get("surround")),
             [False, True])
         shows = [v for v, _, _ in MYCAT_SHOW_LABELS]
-        show = None if surround is None else _mycat_pick(
-            L(30774, "Zobrazit seřazené podle"), [L(sid, fb) for _, sid, fb in MYCAT_SHOW_LABELS],
-            cat.get("show") or "found", shows)
+        show = None
+        if surround is not None:
+            current = cat.get("show") or "found"
+            items = [xbmcgui.ListItem(label=L(sid, fb), label2=L(*MYCAT_SHOW_HELP[v])) for v, sid, fb in MYCAT_SHOW_LABELS]
+            idx = dlg.select(L(30774, "Zobrazit seřazené podle"), items,
+                             preselect=shows.index(current) if current in shows else 0, useDetails=True)
+            show = None if idx < 0 else shows[idx]
         if show is None:
             return None
         fields.update(audio=audio, subs=subs, q=q, surround=surround, show=show)
@@ -5792,6 +5800,7 @@ def mycat_remote_schema(kind, new, name_auto=True):
          "options": [(str(v), L(sid, fb) if sid else fb) for v, sid, fb in MYCAT_QUALITY_LABELS]},
         {"id": "surround", "type": "bool", "label": L(30888, "5.1 a víc"), "enable": stream},
         {"id": "show", "type": "choice", "label": L(30774, "Zobrazit seřazené podle"), "enable": stream,
+         "help": " ".join("%s: %s" % (L(sid, fb), L(*MYCAT_SHOW_HELP[v])) for v, sid, fb in MYCAT_SHOW_LABELS),
          "options": [(v, L(sid, fb)) for v, sid, fb in MYCAT_SHOW_LABELS]},
         {"id": "first_batch", "type": "bool", "label": L(30227, "Hned spustit první dávku"), "enable": stream}]
     return [{"id": "catalog", "label": L(30944, "Vlastní katalogy"), "fields": fields}]
@@ -7179,8 +7188,9 @@ def list_continue(apis):
         seen_series.add(snap.get("series"))
         snaps.append(snap)
     # meta každého seriálu je dotaz na síť (Luna 10 min, TMDB 30 dní v cache) — souběžně,
-    # dřív se Pokračovat s deseti seriály otevíralo deset dotazů za sebou
-    with ThreadPoolExecutor(max_workers=6) as pool:
+    # dřív se Pokračovat s deseti seriály otevíralo deset dotazů za sebou;
+    # SparePool přežije „can't start new thread“ (Android) – Pokračovat se zobrazí, jen pomaleji
+    with SparePool(max_workers=6) as pool:
         nalezeno = list(pool.map(lambda s: next_episode(apis, s), snaps))
     for snap, found in zip(snaps, nalezeno):
         if not found:

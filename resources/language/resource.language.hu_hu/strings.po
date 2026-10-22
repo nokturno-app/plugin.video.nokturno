@@ -3708,3 +3708,15 @@ msgstr "Megnézett címek eltávolítása a Saját listából"
 msgctxt "#31112"
 msgid "A movie leaves My list once you finish it. A TV show only after you have watched every episode released so far – a new episode does not bring it back."
 msgstr "A film lekerül a Saját listáról, amint végignézed. A sorozat csak akkor, ha minden eddig megjelent részt megnéztél – egy új rész nem teszi vissza."
+
+msgctxt "#31113"
+msgid "Titles in the order the catalog selection returned them."
+msgstr "A címek abban a sorrendben, ahogy a katalógus kiválasztása visszaadta őket."
+
+msgctxt "#31114"
+msgid "Newest finds first – by when the availability check found the title."
+msgstr "Legújabb találatok elöl – aszerint, hogy az elérhetőség-ellenőrzés mikor találta meg a címet."
+
+msgctxt "#31115"
+msgid "Newest releases first – by the title's release date."
+msgstr "Legújabb megjelenések elöl – a cím megjelenési dátuma szerint."
