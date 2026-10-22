@@ -3722,3 +3722,19 @@ msgstr "Najnovšie nálezy hore – podľa toho, kedy titul našla kontrola dost
 msgctxt "#31115"
 msgid "Newest releases first – by the title's release date."
 msgstr "Najnovšie vydania hore – podľa dátumu vydania titulu."
+
+msgctxt "#31116"
+msgid "Only my storage"
+msgstr "Len v mojom úložisku"
+
+msgctxt "#31117"
+msgid "Searches the query only among files in your own storage."
+msgstr "Hľadá dotaz len medzi súbormi vo vlastnom úložisku."
+
+msgctxt "#31118"
+msgid "Exclude countries (none = no exclusion)"
+msgstr "Vylúčiť krajiny (nič = žiadne)"
+
+msgctxt "#31119"
+msgid "without {}"
+msgstr "bez {}"

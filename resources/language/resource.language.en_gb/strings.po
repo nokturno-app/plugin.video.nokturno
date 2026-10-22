@@ -3722,3 +3722,19 @@ msgstr ""
 msgctxt "#31115"
 msgid "Newest releases first – by the title's release date."
 msgstr ""
+
+msgctxt "#31116"
+msgid "Only my storage"
+msgstr ""
+
+msgctxt "#31117"
+msgid "Searches the query only among files in your own storage."
+msgstr ""
+
+msgctxt "#31118"
+msgid "Exclude countries (none = no exclusion)"
+msgstr ""
+
+msgctxt "#31119"
+msgid "without {}"
+msgstr ""

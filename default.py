@@ -1816,8 +1816,11 @@ def add_snapshot_item(key, snap, extra_context=None):
         api = next((s for s in get_storages() if s.slot == slot), None)
         if api is None:
             return   # úložiště už není v nastavení
+        meta = {"poster": snap["art"].get("poster"), "background": snap["art"].get("fanart"),
+                "landscapePoster": snap["art"].get("landscape"), "logo": snap["art"].get("clearlogo"),
+                "description": snap.get("plot"), "year": snap.get("year")} if snap.get("art") else None
         add_dav_file(api, {"path": path, "name": snap.get("title") or path.rsplit("/", 1)[-1],
-                           "size_h": snap.get("size_h", "")}, extra_context)
+                           "size_h": snap.get("size_h", "")}, extra_context, meta=meta)
         return
     label = strip_year(snap.get("title"), snap.get("year")) or key
     if snap.get("tvshow") and snap.get("season") is not None:
@@ -1854,8 +1857,17 @@ def add_ws_file(f, extra_context=None):
     xbmcplugin.addDirectoryItem(HANDLE, build_url(action="play_ws", ident=f["ident"], name=f["name"]), li, isFolder=False)
 
 
-def add_dav_file(api, f, extra_context=None):
-    """Soubor z vlastního úložiště ve výpisu hledání (a v Pokračovat/Naposledy přes `add_snapshot_item`)."""
+def dav_titles(apis, files, deadline=6.0):
+    """Metadata z TMDB k souborům úložiště podle jejich názvu: `{cesta: meta}`, u dílu seriálu s `season`/`episode`."""
+    found = engine_of(apis).storage_titles([f["path"] for f in files], deadline=deadline)
+    return {path: dict(meta, type=ctype, season=season, episode=episode)
+            for path, (meta, ctype, season, episode) in found.items()}
+
+
+def add_dav_file(api, f, extra_context=None, meta=None):
+    """Soubor z vlastního úložiště ve výpisu hledání (a v Pokračovat/Naposledy přes `add_snapshot_item`).
+    `meta` (z `dav_titles`) doplní plakát, popis, rok, žánr a u dílu seriálu sérii a epizodu;
+    popisek (název souboru) zůstává."""
     key = f"dav:{api.slot}:{f['path']}"
     folder = f["path"].rsplit("/", 1)[0] if "/" in f["path"] else ""
     label = f"{f['name']}  [COLOR FF9A9A9A]{f.get('size_h', '')}[/COLOR]"
@@ -1863,7 +1875,20 @@ def add_dav_file(api, f, extra_context=None):
     tag = li.getVideoInfoTag()
     tag.setMediaType("video")
     tag.setTitle(f["name"])
-    tag.setPlot(f"[COLOR {DAV_COLOR}]{api.name}[/COLOR]  {f.get('size_h', '')}\n{folder}")
+    plot = f"[COLOR {DAV_COLOR}]{api.name}[/COLOR]  {f.get('size_h', '')}\n{folder}"
+    if meta:
+        li.setArt(art_for(meta, None))
+        plot = f"{meta['description']}\n\n{plot}" if meta.get("description") else plot
+        year = str(meta.get("year") or "")[:4]
+        if year.isdigit():
+            tag.setYear(int(year))
+        if meta.get("genres"):
+            tag.setGenres([str(g) for g in meta["genres"]])
+        if meta.get("season") is not None:
+            tag.setTvShowTitle(meta.get("_title") or meta.get("name") or "")
+            tag.setSeason(int(meta["season"]))
+            tag.setEpisode(int(meta.get("episode") or 0))
+    tag.setPlot(plot)
     apply_watched(li, key, list(extra_context or []))   # např. „Odebrat z Pokračovat“ z výpisu
     li.setProperty("IsPlayable", "true")
     xbmcplugin.addDirectoryItem(
@@ -2330,6 +2355,21 @@ def browsing_nokturno():
     změřeno na Office 2026-09-14: klik ve výsledcích = okno 10025 + `plugin.video.nokturno`,
     widget/domovská obrazovka = 10000 + prázdný `Container.PluginName`."""
     return bool(xbmc.getCondVisibility("Window.IsMedia")) and xbmc.getInfoLabel("Container.PluginName") == ADDON_ID
+
+
+def chose_from_start():
+    """Vybral uživatel u rozkoukané položky „Přehrát od začátku“? Kodi předává pluginu čtvrtý
+    argument `resume:true|false` (ScriptRunner) a resume point z `setResolvedUrl` volbu přebije
+    (`CPluginDirectory::GetPluginResult` → STARTOFFSET_RESUME). `resume:false` ale přijde i z
+    `Player.Open` (karta HA, Up Next) — tam se pokračovat má, proto jen když se hraje právě
+    zaměřená rozkoukaná položka (klik v seznamu, widgetu, kontextové menu)."""
+    if len(sys.argv) < 4 or sys.argv[3] != "resume:false":
+        return False
+    if not xbmc.getCondVisibility("ListItem.IsResumable"):
+        return False
+    focused = urllib.parse.urlsplit(xbmc.getInfoLabel("ListItem.FileNameAndPath"))
+    mine = dict(urllib.parse.parse_qsl(sys.argv[2].lstrip("?")))
+    return bool(mine) and dict(urllib.parse.parse_qsl(focused.query)) == mine
 
 
 def format_duration(seconds):
@@ -5488,7 +5528,7 @@ def mycat_labels(kind):
             "countries": {code: L(sid, fb) for code, sid, fb in MYCAT_COUNTRIES},
             "dub": L(30291, "{} dabing"), "subs": L(30292, "titulky {}"), "surround": L(30293, "5.1"),
             "years": L(30294, "posledních {} let"), "year_from": L(30295, "od {}"), "year_to": L(30296, "do {}"),
-            "year_range": L(30297, "{}–{}")}
+            "year_range": L(30297, "{}–{}"), "without": L(31119, "bez {}")}
 
 
 def mycat_auto_name(cat):
@@ -5504,6 +5544,7 @@ def mycat_record(cid, kind, fields, name=None, name_auto=True):
            "keywords": [k for k in fields.get("keywords") or [] if k in mycat.KEYWORDS],
            "join": "or" if fields.get("join") == "or" else "and",
            "countries": mycat.countries_of(fields),
+           "countries_exclude": mycat.countries_exclude_of(dict(fields, countries=mycat.countries_of(fields))),
            "year_from": fields.get("year_from"), "year_to": fields.get("year_to"), "years": fields.get("years"),
            "sort": fields.get("sort") if fields.get("sort") in [s for s, _, _ in MYCAT_SORTS] else "popularity.desc",
            "verify": bool(fields.get("verify")),
@@ -5585,6 +5626,13 @@ def mycat_form(ctype, cat=None):
     if len(chosen) > mycat.MAX_COUNTRIES:
         notify(L(30244, "Země původu (nejvýš 5)"), xbmcgui.NOTIFICATION_WARNING)
     countries = [codes[i] for i in chosen][:mycat.MAX_COUNTRIES]
+    exclude = []
+    if not countries:   # vybrané země mají přednost, vyloučení se pak neptá
+        chosen = dlg.multiselect(L(31118, "Vyloučit země (nic = žádné)"), [L(sid, fb) for _, sid, fb in MYCAT_COUNTRIES],
+                                 preselect=[i for i, c in enumerate(codes) if c in (cat.get("countries_exclude") or [])])
+        if chosen is None:
+            return None
+        exclude = [codes[i] for i in chosen]
     years = year_from = year_to = None
     mode = dlg.select(L(30767, "Roky"), [L(30768, "Bez omezení"), L(30769, "Od–do"), L(30770, "Posledních X let")],
                       preselect=2 if cat.get("years") else 1 if cat.get("year_from") or cat.get("year_to") else 0)
@@ -5602,7 +5650,8 @@ def mycat_form(ctype, cat=None):
     sort = _mycat_pick(L(30953, "Řadit podle"), [L(sid, fb) for _, sid, fb in MYCAT_SORTS], cat.get("sort"), sorts)
     if sort is None:
         return None
-    fields = {"genres": picked, "keywords": keywords, "join": join, "countries": countries, "years": years,
+    fields = {"genres": picked, "keywords": keywords, "join": join, "countries": countries,
+              "countries_exclude": exclude, "years": years,
               "year_from": year_from, "year_to": year_to, "sort": sort, "verify": verify}
     if verify:
         tracks = [v for v, _, _ in MYCAT_TRACK_LABELS]
@@ -5703,7 +5752,7 @@ def mycat_batch(cat_id):
 # --- editor katalogu z mobilu -------------------------------------------------------
 
 MYCAT_FORM_INPUTS = ("kind", "verify", "genres_movie", "genres_series", "keywords", "join", "countries",
-                     "years_mode", "year_from", "year_to", "years", "audio", "subs", "q", "surround")
+                     "countries_exclude", "years_mode", "year_from", "year_to", "years", "audio", "subs", "q", "surround")
 
 
 def _mycat_form_values(cat, kind):
@@ -5715,7 +5764,8 @@ def _mycat_form_values(cat, kind):
     return {"kind": kind, "verify": "1" if cat.get("verify") else "0",
             "genres_movie": genres if kind == "movie" else "", "genres_series": genres if kind == "series" else "",
             "join": cat.get("join") or "and", "keywords": "|".join(cat.get("keywords") or []),
-            "countries": "|".join(mycat.migrate_lang(cat)), "years_mode": years_mode,
+            "countries": "|".join(mycat.migrate_lang(cat)),
+            "countries_exclude": "|".join(cat.get("countries_exclude") or []), "years_mode": years_mode,
             "year_from": num(cat.get("year_from")), "year_to": num(cat.get("year_to")), "years": num(cat.get("years")),
             "sort": cat.get("sort") or "popularity.desc", "audio": cat.get("audio") or "", "subs": cat.get("subs") or "",
             "q": str(mycat.norm_quality(cat.get("q"))), "surround": "true" if cat.get("surround") else "false",
@@ -5738,7 +5788,8 @@ def _mycat_fields_from_form(values):
     keywords = [k for k in multi("genres_" + kind) + multi("keywords") if k in mycat.KEYWORDS][:mycat.MAX_KEYWORDS]
     q = values.get("q")
     return kind, {"genres": genres, "keywords": list(dict.fromkeys(keywords)), "join": values.get("join"),
-                  "countries": multi("countries"), "verify": values.get("verify") == "1",
+                  "countries": multi("countries"), "countries_exclude": multi("countries_exclude"),
+                  "verify": values.get("verify") == "1",
                   "years": year("years", 1, 50) if mode == "last" else None,
                   "year_from": year("year_from") if mode == "range" else None,
                   "year_to": year("year_to") if mode == "range" else None,
@@ -5783,6 +5834,8 @@ def mycat_remote_schema(kind, new, name_auto=True):
         {"id": "join", "type": "choice", "label": L(30973, "Tituly musí mít"),
          "options": [("and", L(30974, "všechny vybrané žánry")), ("or", L(30975, "aspoň jeden vybraný žánr"))]},
         {"id": "countries", "type": "multi", "label": L(30244, "Země původu (nejvýš 5)"), "max": mycat.MAX_COUNTRIES,
+         "options": [(code, L(sid, fb)) for code, sid, fb in MYCAT_COUNTRIES]},
+        {"id": "countries_exclude", "type": "multi", "label": L(31118, "Vyloučit země (nic = žádné)"),
          "options": [(code, L(sid, fb)) for code, sid, fb in MYCAT_COUNTRIES]},
         {"id": "years_mode", "type": "choice", "label": L(30767, "Roky"),
          "options": [("none", L(30768, "Bez omezení")), ("range", L(30769, "Od–do")),
@@ -6424,6 +6477,14 @@ def search_source(apis, ctype, query, want_year, errors):
         errors.extend(SourceFailure(label, err) for label, err in failures)
 
 
+def dav_only_item(apis, raw_query):
+    """„Jen v mém úložišti“ ve společném hledání. Úložiště se při hledání nečte, počet nálezů se neukazuje."""
+    if apis.get("dav"):
+        folder_item(L(31116, "Jen v mém úložišti"), build_url(action="search_run", type="dav", q=raw_query),
+                    icon="DefaultHardDisk.png",
+                    info=L(31117, "Hledá dotaz jen mezi soubory ve vlastním úložišti."))
+
+
 def search_run(apis, kind, query, offset=0):
     # `search_new` prázdný dotaz nepustí dál, ale sem se dá dostat i přímo (crafted plugin://
     # URL, widget) — prázdné `q=` u Sosáče/WebSharu/HellSpy spadne na nerozparsovatelné odpovědi
@@ -6482,6 +6543,7 @@ def search_run(apis, kind, query, offset=0):
                        icon="DefaultMovies.png")
             folder_item(f"{L(30013)} ({len(series)})", build_url(action="search_run", type="series", q=raw_query),
                        icon="DefaultTVShows.png")
+            dav_only_item(apis, raw_query)
             for e in errors:
                 log_error(e)
             xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
@@ -6495,6 +6557,7 @@ def search_run(apis, kind, query, offset=0):
     rate([meta for meta, _alt in merged], ctype)
     for meta, alt in merged:
         add_meta_item(meta, ctype, alt=alt, tag_source=mixed)
+    dav_only_item(apis, raw_query)
     # bez Luny (nebo když zrovna neodpovídá) nabídneme rovnou soubory z WebShare
     # (jinak je má Luna: Search u titulu — tam by šlo o duplicitu)
     luna_down = any(error_label(e) == "Luna" for e in errors)
@@ -6612,8 +6675,11 @@ def list_dav_browse(apis, slot=0, path=""):
                     build_url(action="dav_browse", slot=api.slot, path=prefix + name), icon="DefaultFolder.png")
     if files:
         set_content("movies")
-    for f in sorted(files, key=lambda f: f["name"].casefold()):
-        add_dav_file(api, f)
+    files = sorted(files, key=lambda f: f["name"].casefold())
+    # ponytail: popisy jen prvním 60 souborům složky (bez stránkování), víc až se stránkováním výpisu
+    metas = dav_titles(apis, files[:60])
+    for f in files:
+        add_dav_file(api, f, meta=metas.get(f["path"]))
     if not folders and not files:
         notify(L(30102))
     xbmcplugin.endOfDirectory(HANDLE, cacheToDisc=False)
@@ -6628,8 +6694,10 @@ def list_dav_results(apis, query, offset=0):
     for api in storages:
         if _storage_ok(api, errors):
             rows += [(api, f) for f in api.search(query, limit=10 ** 6)[0]]
-    for api, f in rows[offset:offset + WS_PAGE]:
-        add_dav_file(api, f)
+    page = rows[offset:offset + WS_PAGE]
+    metas = dav_titles(apis, [f for _api, f in page])
+    for api, f in page:
+        add_dav_file(api, f, meta=metas.get(f["path"]))
     if offset + WS_PAGE < len(rows):
         next_page_item(build_url(action="search_run", type="dav", q=query, offset=offset + WS_PAGE))
     if errors:
@@ -7917,7 +7985,12 @@ def play(apis, ctype, item_id, series_id=None, url=None, alt=None, subs="", pref
         tag.setPlaycount(count)
     # SyncWatch: pozici určuje skupina, ne historie tohohle zařízení
     resume, total = STORE.resume(item_id) if not sw else (0, 0)
-    if resume and not count:
+    from_start = bool(resume) and not count and chose_from_start()
+    xbmc.log(f"[{ADDON_ID}] play resume: argv3={sys.argv[3] if len(sys.argv) > 3 else '-'} "
+             f"resumable={xbmc.getCondVisibility('ListItem.IsResumable')} "
+             f"focused={xbmc.getInfoLabel('ListItem.FileNameAndPath')[:120]!r} "
+             f"stored={resume:.0f}/{total:.0f} from_start={from_start}", xbmc.LOGINFO)
+    if resume and not count and not from_start:
         try:
             tag.setResumePoint(resume, total)
         except Exception:  # noqa: BLE001 – Kodi < 20
@@ -7966,9 +8039,18 @@ def play_dav(apis, slot, path, name=""):
     api, path = storage_for(apis, key)
     li = xbmcgui.ListItem(label=name or path, path=api.kodi_url(path))
     li.getVideoInfoTag().setTitle(name or path)
-    STORE.remember_item(key, {"type": "dav", "id": key, "title": name or path, "art": {}})
     mark_playing(key, name, kind="dav", replay=replay)
     xbmcplugin.setResolvedUrl(HANDLE, True, li)
+    # plakát a popis do snímku pro Pokračovat/Naposledy; až po spuštění přehrávání, hledání smí chvíli trvat
+    snap = {"type": "dav", "id": key, "title": name or path, "art": {}}
+    try:
+        meta = dav_titles(apis, [{"path": path}], deadline=4).get(path)
+    except Exception:  # noqa: BLE001 – popis je navíc, snímek se uloží i bez něj
+        meta = None
+    if meta:
+        snap.update(art=art_for(meta, None), plot=meta.get("description") or "",
+                    year=str(meta.get("year") or "")[:4])
+    STORE.remember_item(key, snap)
 
 
 def play_hs(apis, file_id, file_hash, name=""):

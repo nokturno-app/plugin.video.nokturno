@@ -3720,3 +3720,19 @@ msgstr "Legújabb találatok elöl – aszerint, hogy az elérhetőség-ellenőr
 msgctxt "#31115"
 msgid "Newest releases first – by the title's release date."
 msgstr "Legújabb megjelenések elöl – a cím megjelenési dátuma szerint."
+
+msgctxt "#31116"
+msgid "Only my storage"
+msgstr "Csak a saját tárhelyem"
+
+msgctxt "#31117"
+msgid "Searches the query only among files in your own storage."
+msgstr "A keresést csak a saját tárhely fájljai között végzi."
+
+msgctxt "#31118"
+msgid "Exclude countries (none = no exclusion)"
+msgstr "Országok kizárása (semmi = nincs)"
+
+msgctxt "#31119"
+msgid "without {}"
+msgstr "{} nélkül"

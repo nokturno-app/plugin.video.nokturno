@@ -870,6 +870,23 @@ class TestJadroVKodi(unittest.TestCase):
             default.resolve_url({"engine": default.KodiEngine()}, "ws:abc")   # bez účtu
         self.assertIn(default.NokturnoError, default.Errors)
 
+    def test_spolecne_hledani_nabidne_jen_moje_uloziste(self):
+        """2026-10-22: vlastní úložiště se v hledání Filmy/Seriály vůbec nenabízelo; nálezy se nepočítají."""
+        def dav_items():
+            return [params_of(i[1]) for i in xbmcplugin.items
+                    if params_of(i[1]).get("action") == "search_run" and params_of(i[1]).get("type") == "dav"]
+        found = ([({"id": "tt1", "_title": "Film", "name": "Film", "year": 2020}, None)], False)
+        for apis, want in (({"dav": [object()], "ws": None, "luna": None}, 1), ({"ws": None, "luna": None}, 0)):
+            for kind in ("any", "movie"):
+                xbmcplugin.items.clear()
+                with mock.patch.object(default, "_search_merge", return_value=found), \
+                     mock.patch.object(default, "search_source", return_value=found), \
+                     mock.patch.object(default, "add_meta_item"), mock.patch.object(default, "rate"):
+                    default.search_run(apis, kind, "Film 2020")
+                self.assertEqual(len(dav_items()), want, (kind, sorted(apis)))
+                if want:
+                    self.assertEqual(dav_items()[0]["q"], "Film 2020")
+
     def test_hledani_pres_jadro(self):
         """`_search_merge`/`search_source` jsou obálky nad `Engine.search_pairs` — holý katalog
         bez popisů pro volbu Filmy/Seriály, výpadky jako `SourceFailure` pro dialog."""
@@ -1253,6 +1270,49 @@ class TestVyberStreamu(unittest.TestCase):
         self.assertTrue(succeeded)
         resume_calls = [c for c in li.tag.calls if c[0] == "setResumePoint"]
         self.assertEqual(resume_calls, [("setResumePoint", (543.2, 6000.0), {})])
+
+    def _play_resume(self, argv3, focused=None, resumable=True, argv=True):
+        """Přehrání rozkoukané položky s `sys.argv` jako od Kodi; vrací volání setResumePoint."""
+        q = "?action=play&type=movie&id=tt1&url=ws%3A1"
+        old = sys.argv
+        sys.argv = ["plugin://plugin.video.nokturno/", "1", q, argv3] if argv else ["plugin://plugin.video.nokturno/", "1", q]
+        xbmc.cond_visible.clear()
+        xbmc.info_labels.clear()
+        if resumable:
+            xbmc.cond_visible.add("ListItem.IsResumable")
+        xbmc.info_labels["ListItem.FileNameAndPath"] = \
+            "plugin://plugin.video.nokturno/" + (focused if focused is not None else q)
+        if focused == "":
+            xbmc.info_labels.clear()
+        default.STORE.set_resume("tt1", 543.2, 6000.0)
+        try:
+            with mock.patch.object(default, "load_meta", return_value=({"name": "Film", "year": 2020}, None)), \
+                 mock.patch.object(default, "resolve_url", return_value="https://cdn/x.mkv"):
+                default.play({}, "movie", "tt1", url="ws:1")
+        finally:
+            sys.argv = old
+            xbmc.cond_visible.clear()
+            xbmc.info_labels.clear()
+        return [c for c in xbmcplugin.resolved[-1][2].tag.calls if c[0] == "setResumePoint"]
+
+    def test_od_zacatku_v_seznamu_nenastavi_resume_point(self):
+        """2026-10-22: „Přehrát od začátku“ přebíjel resume point z `setResolvedUrl`."""
+        self.assertEqual(self._play_resume("resume:false"), [])
+        self.assertTrue([m for m, _lvl in xbmc.logged if "play resume:" in m and "from_start=True" in m])
+
+    def test_pokracovat_v_seznamu_nastavi_resume_point(self):
+        self.assertEqual(self._play_resume("resume:true"), [("setResumePoint", (543.2, 6000.0), {})])
+
+    def test_player_open_z_ha_pokracuje(self):
+        """`Player.Open` posílá taky `resume:false`, ale žádná zaměřená položka — pokračovat se má."""
+        self.assertEqual(self._play_resume("resume:false", focused=""), [("setResumePoint", (543.2, 6000.0), {})])
+
+    def test_jina_zamerena_polozka_pokracuje(self):
+        other = "?action=play&type=movie&id=tt2&url=ws%3A2"
+        self.assertEqual(self._play_resume("resume:false", focused=other), [("setResumePoint", (543.2, 6000.0), {})])
+
+    def test_bez_ctvrteho_argumentu_pokracuje(self):
+        self.assertEqual(self._play_resume("", argv=False), [("setResumePoint", (543.2, 6000.0), {})])
 
     def test_play_s_neplatnym_ulozenym_streamem_spadne_na_nove_hledani(self):
         """2026-09-16: „Pokračovat ve sledování“ posílá uloženou referenci streamu
@@ -2105,6 +2165,9 @@ class TestMojeUloziste(unittest.TestCase):
 
     def setUp(self):
         reset_kodi()
+        patch = mock.patch.object(default.KodiEngine, "storage_titles", return_value={})   # bez TMDB a sítě
+        patch.start()
+        self.addCleanup(patch.stop)
 
     def test_jedine_uloziste_prvne_ukaze_jeho_jmeno(self):
         storage = FakeStorage(1, "NUC Office", [{"path": "Film.mkv", "name": "Film.mkv"}])
@@ -2126,6 +2189,75 @@ class TestMojeUloziste(unittest.TestCase):
     def test_bez_uloziste_chyba(self):
         with self.assertRaises(default.StorageError):
             default.list_dav_browse({"dav": []})
+
+    META = {"id": "tt1", "name": "Pelíšky", "_title": "Pelíšky", "year": "1999", "poster": "https://img/p.jpg",
+            "description": "Rodinná komedie.", "genres": ["Komedie"]}
+
+    @staticmethod
+    def engine_with(found, calls=None):
+        class Eng:
+            def storage_titles(self, paths, deadline=6.0):
+                if calls is not None:
+                    calls.append((list(paths), deadline))
+                return {p: found[p] for p in paths if p in found}
+        return Eng()
+
+    def test_soubor_s_meta_ma_plakat_popis_rok_a_zanr(self):
+        storage = FakeStorage(1, "NAS", [])
+        f = {"path": "Filmy/Pelisky.1999.mkv", "name": "Pelisky.1999.mkv", "size_h": "4 GB"}
+        default.add_dav_file(storage, f, meta=self.META)
+        li = xbmcplugin.items[-1][2]
+        self.assertEqual(li.art["poster"], "https://img/p.jpg")
+        calls = dict((c[0], c[1]) for c in li.tag.calls)
+        self.assertEqual(calls["setYear"], (1999,))
+        self.assertEqual(calls["setGenres"], (["Komedie"],))
+        self.assertEqual(calls["setTitle"], ("Pelisky.1999.mkv",), "popisek zůstává název souboru")
+        self.assertTrue(calls["setPlot"][0].startswith("Rodinná komedie."))
+        self.assertIn("Pelisky.1999.mkv", li.getLabel())
+        self.assertNotIn("setSeason", calls)
+
+    def test_dil_seriale_nese_serii_a_epizodu(self):
+        storage = FakeStorage(1, "NAS", [])
+        default.add_dav_file(storage, {"path": "Sherlock/S01E02.mkv", "name": "S01E02.mkv"},
+                             meta=dict(self.META, name="Sherlock", _title="Sherlock", season=1, episode=2))
+        calls = dict((c[0], c[1]) for c in xbmcplugin.items[-1][2].tag.calls)
+        self.assertEqual((calls["setTvShowTitle"], calls["setSeason"], calls["setEpisode"]),
+                         (("Sherlock",), (1,), (2,)))
+
+    def test_slozka_dostane_meta_z_jadra(self):
+        asked = []
+        found = {"Film.mkv": (self.META, "movie", None, None)}
+        storage = FakeStorage(1, "NAS", [{"path": "Film.mkv", "name": "Film.mkv"}, {"path": "Jiny.mkv", "name": "Jiny.mkv"}])
+        default.list_dav_browse({"dav": [storage], "engine": self.engine_with(found, asked)}, slot=1)
+        self.assertEqual(asked, [(["Film.mkv", "Jiny.mkv"], 6.0)])
+        arts = {li.getLabel().split()[0]: li.art for _h, _u, li, _f in xbmcplugin.items}
+        self.assertEqual(arts["Film.mkv"]["poster"], "https://img/p.jpg")
+        self.assertNotIn("poster", arts["Jiny.mkv"])
+
+    def test_prehrani_ulozi_snimek_s_plakatem(self):
+        class Storage(FakeStorage):
+            def kodi_url(self, path):
+                return "http://nas/" + path
+        found = {"Filmy/Pelisky.1999.mkv": (self.META, "movie", None, None)}
+        asked = []
+        default.play_dav({"dav": [Storage(1, "NAS", [])], "engine": self.engine_with(found, asked)},
+                         1, "Filmy/Pelisky.1999.mkv", "Pelisky.1999.mkv")
+        self.assertTrue(xbmcplugin.resolved[-1][1])
+        self.assertEqual(asked, [(["Filmy/Pelisky.1999.mkv"], 4)])
+        snap = default.STORE.item("dav:1:Filmy/Pelisky.1999.mkv")
+        self.assertEqual((snap["type"], snap["art"]["poster"], snap["plot"], snap["year"]),
+                         ("dav", "https://img/p.jpg", "Rodinná komedie.", "1999"))
+        # bez nálezu snímek zůstává jako dřív
+        default.play_dav({"dav": [Storage(1, "NAS", [])], "engine": self.engine_with({})}, 1, "x/y.mkv", "y.mkv")
+        self.assertEqual(default.STORE.item("dav:1:x/y.mkv")["art"], {})
+
+    def test_pokracovat_ukaze_plakat_ulozeny_ve_snimku(self):
+        xbmcaddon.settings.update(dav1_url="http://nas.lan/dav/", dav1_username="u", dav1_password="p", dav1_name="NAS")
+        default.add_snapshot_item("dav:1:Filmy/a.mkv", {"type": "dav", "id": "dav:1:Filmy/a.mkv", "title": "a.mkv",
+                                                       "art": {"poster": "https://img/p.jpg"}, "plot": "Popis", "year": "1999"})
+        li = xbmcplugin.items[-1][2]
+        self.assertEqual(li.art["poster"], "https://img/p.jpg")
+        self.assertTrue(dict((c[0], c[1]) for c in li.tag.calls)["setPlot"][0].startswith("Popis"))
 
 
 class TestSluzbaStatistiky(unittest.TestCase):
@@ -7135,7 +7267,7 @@ class TestVlastniKatalogy(unittest.TestCase):
 
     def test_rezim_se_streamem_se_pta_na_dabing_a_spusti_prvni_davku(self):
         # TV, se streamem, roky Posledních X, řazení, dabing CZ, titulky, Full HD, 5.1, zobrazení, ikona Seznam
-        cat = self._vytvor(multiselect=((0,), (), ()), selects=(1, 1, 2, 0, 1, 0, 1, 1, 0, 2), numeric=("3",),
+        cat = self._vytvor(multiselect=((0,), (), (), ()), selects=(1, 1, 2, 0, 1, 0, 1, 1, 0, 2), numeric=("3",),
                            yesno=True)[0]
         self.assertEqual((cat["verify"], cat["years"], cat["audio"], cat["q"], cat["surround"], cat["icon"]),
                          (True, 3, "CZ", 3, True, "DefaultVideoPlaylists.png"))
@@ -7147,7 +7279,7 @@ class TestVlastniKatalogy(unittest.TestCase):
     def test_vlastni_nazev_zustane_pri_uprave(self):
         cat = self._vytvor(name="Moje")[0]
         self.assertEqual((cat["name"], cat["name_auto"]), ("Moje", False))
-        with mock.patch.object(xbmcgui.Dialog, "multiselect", side_effect=[[0], [], []]), \
+        with mock.patch.object(xbmcgui.Dialog, "multiselect", side_effect=[[0], [], [], []]), \
                 mock.patch.object(xbmcgui.Dialog, "select", side_effect=[0, 0, 0, 0]), \
                 mock.patch.object(xbmcgui.Dialog, "input", side_effect=lambda h, d="", **k: d):
             new = default.mycat_form("movie", cat)
@@ -7162,7 +7294,7 @@ class TestVlastniKatalogy(unittest.TestCase):
 
     def test_temata_zvlast_od_zanru(self):
         # žánr Komedie + témata Pohádky, Vánoce, Halloween, Zombie (čtvrté se zahodí)
-        cat = self._vytvor(multiselect=((3,), (0, 1, 2, 14), ()), selects=(1, 0, 0, 0, 0))[0]
+        cat = self._vytvor(multiselect=((3,), (0, 1, 2, 14), (), ()), selects=(1, 0, 0, 0, 0))[0]
         self.assertEqual((cat["genres"], cat["keywords"], cat["countries"]), ([35], ["fairy", "christmas", "halloween"], []))
         self.assertEqual(default.mycat_params(cat), {"with_genres": "35",
                                                      "with_keywords": "3205|329731|358931|351899|207317|3335",
@@ -7190,6 +7322,31 @@ class TestVlastniKatalogy(unittest.TestCase):
         self.assertEqual(dash.calls[0][1]["with_origin_country"], "CZ")
         dalsi = params_of(xbmcplugin.urls()[-1])
         self.assertEqual(dalsi, {"action": "mycat", "type": "movie", "id": cat["id"], "page": "2", "paged": "1"})
+
+    def test_vylouceni_zemi_se_ulozi_a_posle_do_discover(self):
+        """P51: bez vybraných zemí se TV dialog ptá na vyloučené; `list_mycat` je pošle jako pseudoparametr."""
+        codes = [c for c, _, _ in default.MYCAT_COUNTRIES]
+        cat = self._vytvor(multiselect=((3, 7), (), (), (codes.index("JP"), codes.index("KR"))))[0]
+        self.assertEqual((cat["countries"], cat["countries_exclude"]), ([], ["JP", "KR"]))
+        self.assertIn("bez ", cat["name"])
+        xbmcplugin.reset()
+
+        class Dash:
+            calls = []
+
+            def discover(self, ctype, params, page=1):
+                self.calls.append(params)
+                return [{"id": "tt0167331", "name": "Pelíšky", "type": "movie"}], 1
+
+        dash = Dash()
+        default.list_mycat({"dash": dash}, "movie", cat["id"], 1)
+        self.assertEqual(dash.calls[0]["without_origin_country"], "JP|KR")
+
+    def test_vylouceni_zemi_s_vybranymi_zememi_se_zahodi(self):
+        rec = default.mycat_record("k1", "movie", {"countries": ["US"], "countries_exclude": ["JP"]})
+        self.assertEqual((rec["countries"], rec["countries_exclude"]), (["US"], []))
+        rec = default.mycat_record("k1", "movie", {"countries_exclude": ["JP", "xx", "JP"]})
+        self.assertEqual(rec["countries_exclude"], ["JP"])
 
     def test_vypadek_serveru_ohlasi(self):
         cat = self._vytvor()[0]
@@ -7251,6 +7408,17 @@ class TestKatalogZMobilu(unittest.TestCase):
         vals = default._mycat_form_values({"genres": [16], "keywords": ["fairy"]}, "movie")
         self.assertEqual((vals["genres_movie"], vals["keywords"]), ("16", "fairy"))
         self.assertIn(default.mycat.ALPHA, [v for v, _ in fields["sort"]["options"]])
+
+    def test_vylouceni_zemi_na_mobilu(self):
+        fields = {f.get("id"): f for f in default.mycat_remote_schema("movie", True)[0]["fields"]}
+        self.assertEqual(fields["countries_exclude"]["options"], fields["countries"]["options"])
+        self.assertNotIn("max", fields["countries_exclude"])
+        self.assertIn("countries_exclude", default.MYCAT_FORM_INPUTS)
+        vals = default._mycat_form_values({"countries_exclude": ["JP", "KR"]}, "movie")
+        self.assertEqual(vals["countries_exclude"], "JP|KR")
+        kind, pole = default._mycat_fields_from_form(vals)
+        self.assertEqual(pole["countries_exclude"], ["JP", "KR"])
+        self.assertEqual(default.mycat_record("k1", kind, pole)["countries_exclude"], ["JP", "KR"])
 
     def test_razeni_ma_vysvetleni(self):
         """P46: výběr „Zobrazit seřazené podle“ vysvětluje, co která volba znamená (formulář i dialog na TV)."""
