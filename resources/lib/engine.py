@@ -44,7 +44,7 @@ from prehrajto_api import (PrehrajtoApi, PrehrajtoError, PrehrajtoRateLimited,
                                 make_ref as prehrajto_ref)
 from cztor_api import CztorApi, CztorError
 from dash_api import DashApi
-from storage_api import SmbStorage, StorageError, match_texts, open_storage, parse_ref
+from storage_api import SmbStorage, StorageError, guess_title, match_texts, open_storage, parse_ref
 from wikidata_api import local_titles
 from mediainfo import describe as describe_media, fetch_sized, probe as probe_media, quality_from_size
 from opensubtitles_api import BLOK as OSUB_BLOK, OpenSubtitlesApi, OpenSubtitlesError, otisk as osub_otisk
@@ -2612,6 +2612,47 @@ class Engine:
                         "_storage": api.name,
                         "_direct": True,
                     })
+        return out
+
+    def storage_titles(self, paths, deadline=6.0):
+        """{cesta: (meta, ctype, season, episode)} pro soubory z vlastního úložiště — titul podle názvu
+        souboru/složky (`guess_title`), hledání přes `search_pairs` (TMDB → Luna → …). Stejné uhodnutí
+        se ptá jednou (díly seriálu), výsledek i „nic“ se pamatuje 7 dní ve `store`. Co nestihne
+        `deadline`, zůstane bez meta (doběhne do cache na pozadí)."""
+        guesses = {}
+        for path in paths:
+            guess = guess_title(path)
+            if guess:
+                guesses[path] = (guess, "series" if guess["season"] is not None else "movie")
+        jobs = {}   # klíč cache → (ctype, titul, rok)
+        for guess, ctype in guesses.values():
+            key = f"dav:title:{ctype}:{fold(guess['title'])}:{guess['year']}"
+            jobs.setdefault(key, (ctype, guess["title"], guess["year"]))
+        if not jobs:
+            return {}
+
+        def lookup(key, ctype, title, year):
+            failures = []
+
+            def load():
+                pairs, _mixed = self.search_pairs(ctype, title, int(year) if year else None, limit=3,
+                                                  failures=failures)
+                return {"meta": pairs[0][0] if pairs else None}
+            # výpadek zdroje se nepamatuje, ať se zkusí příště znovu; „nic nenalezeno“ ano
+            return self.store.cached_if(key, 7 * 86400, load, ok=lambda _d: not failures)
+
+        pool = BackgroundPool(max_workers=4)
+        futures = {key: pool.submit(lookup, key, *job) for key, job in jobs.items()}
+        gather(pool, list(futures.values()), self.should_stop, deadline=deadline)
+        found = {}
+        for key, future in futures.items():
+            if future.done() and not future.cancelled() and future.exception() is None:
+                found[key] = (future.result() or {}).get("meta")
+        out = {}
+        for path, (guess, ctype) in guesses.items():
+            meta = found.get(f"dav:title:{ctype}:{fold(guess['title'])}:{guess['year']}")
+            if meta:
+                out[path] = (meta, ctype, guess["season"], guess["episode"])
         return out
 
     def _webshare_subtitles(self, meta, video=None, ctype="movie", alt=None):

@@ -127,6 +127,45 @@ def match_texts(path):
     return [name] + [f"{folder} {name}" for folder in reversed(parts[-4:-1])]
 
 
+_EPISODE_RE = re.compile(r"\bS(\d{1,2})E(\d{1,3})\b|\b(\d{1,2})x(\d{2,3})\b", re.I)
+_YEAR_RE = re.compile(r"(?<!\d)(?:19|20)\d{2}(?!\d)")
+_TITLE_END_RE = re.compile(r"\b(?:S\d{1,2}E\d{1,3}|\d{1,2}x\d{2,3}|2160p|1080p|720p|480p|4k|uhd|bluray|bdrip|brrip|"
+                           r"web-?dl|webrip|hdtv|dvdrip|x264|x265|h26[45]|hevc|cz|sk|dabing|titulky)\b", re.I)
+_SEASON_DIR_RE = re.compile(r"^(?:season|series|serie|sezona|s)\s*\d{1,2}$")
+
+
+def _parse_name(text):
+    """(titul, rok, série, díl) z jednoho názvu souboru nebo složky; titul je text před první značkou."""
+    text = re.sub(r"[._]+", " ", text)
+    ep = _EPISODE_RE.search(text)
+    year = next((m for m in _YEAR_RE.finditer(text) if m.start() > 0), None)   # rok na začátku je titul („2012“)
+    ends = [m.start() for m in _TITLE_END_RE.finditer(text)] + ([year.start()] if year else [])
+    title = text[:min(ends) if ends else len(text)].strip(" -([").strip()
+    season = int(ep.group(1) or ep.group(3)) if ep else None
+    episode = int(ep.group(2) or ep.group(4)) if ep else None
+    return title, int(year.group()) if year else None, season, episode
+
+
+def guess_title(path):
+    """Titul podle názvu souboru, případně složky nad ním: `{"title", "year", "season", "episode"}` nebo None.
+    Krátký titul (jen „S01E02.mkv“) se hledá v nejbližší složce, která není série („Season 1“, „S01“)."""
+    parts = [p for p in str(path).split("/") if p]
+    if not parts:
+        return None
+    name = re.sub(r"\.[A-Za-z0-9]{2,4}$", "", parts[-1])
+    title, year, season, episode = _parse_name(name)
+    if len(title) < 2:
+        for folder in reversed(parts[:-1]):
+            if _SEASON_DIR_RE.match(_fold(folder).strip()):
+                continue
+            title, folder_year, _s, _e = _parse_name(folder)
+            year = year or folder_year
+            break
+    if len(title) < 2:
+        return None
+    return {"title": title, "year": year, "season": season, "episode": episode}
+
+
 class _Links(HTMLParser):
     def __init__(self):
         super().__init__()

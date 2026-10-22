@@ -181,6 +181,9 @@ class TmdbApi:
                 "background": IMG_BIG + raw["backdrop_path"] if raw.get("backdrop_path") else "",
                 "description": raw.get("overview") or "",
                 "genres": genres,
+                "origin_country": list(details.get("origin_country") or raw.get("origin_country")
+                                       or [p.get("iso_3166_1") for p in details.get("production_countries") or []
+                                           if p.get("iso_3166_1")]),
                 "imdbRating": raw.get("vote_average") or None,
                 "ratingSource": "tmdb" if raw.get("vote_average") else None,
                 "voteCount": int(raw.get("vote_count") or 0),   # v odpovědi katalogu zdarma, žádný dotaz navíc

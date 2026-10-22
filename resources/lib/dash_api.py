@@ -65,6 +65,9 @@ DISCOVER_PARAMS = {
     "vote_average_gte": re.compile(r"^[0-9](\.[0-9])?$"),
     "vote_count_gte": re.compile(r"^[0-9]{1,5}$"),
 }
+# pseudoparametr jádra (`mycat.params`): položky s některou z těchto zemí původu se vyřadí u klienta; na server ani
+# do TMDB nejde (server by vrátil 400, TMDB discover `without_origin_country` nemá)
+EXCLUDE_RE = re.compile(r"^[A-Z]{2}(\|[A-Z]{2}){0,15}$")
 TV_TTL = 30 * 60
 OS_KEY_TTL = 7 * 86400   # klíč se nemění; při výměně se rozejde nejvýš na týden
 TRAKT_KEY_TTL = 7 * 86400
@@ -269,6 +272,8 @@ class DashApi:
         `DISCOVER_PARAMS` nebo v nečekaném tvaru se zahodí, ať se nic cizího nedostane do adresy."""
         kind = "series" if ctype == "series" else "movie"
         page = page if isinstance(page, int) and 1 <= page <= DISCOVER_MAX_PAGE else 1
+        excl = str((params or {}).get("without_origin_country") or "")
+        excl = set(excl.split("|")) if EXCLUDE_RE.match(excl) else set()
         clean = {k: str(v) for k, v in (params or {}).items()
                  if k in DISCOVER_PARAMS and DISCOVER_PARAMS[k].match(str(v))}
 
@@ -283,7 +288,10 @@ class DashApi:
             return None, 1
         pages = data.get("pages")
         pages = min(pages, DISCOVER_MAX_PAGE) if isinstance(pages, int) and pages > 0 else 1
-        return _clean_items(data.get("items"), ctype), pages
+        items = _clean_items(data.get("items"), ctype)
+        if excl:   # filtr po cache; položka bez `origin_country` projde
+            items = [i for i in items if not excl & set(i.get("origin_country") or [])]
+        return items, pages
 
     def _tmdb_discover(self, kind, clean, page):
         """S vlastním klíčem TMDB se server neptá (soukromí, nezávislost na výpadku). Chyba

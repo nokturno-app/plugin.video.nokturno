@@ -11,6 +11,7 @@ zařízení, která vidí čerstvé cizí výsledky (`foreign_recent`), samo neo
 Výsledky nesou otisk zdrojů (`Engine.verify_fingerprint`), převezme je jen zařízení se stejnými zdroji.
 """
 import datetime
+import json
 import time
 import unicodedata
 import uuid
@@ -115,7 +116,7 @@ BETA1_PRESETS = (
 )
 
 # pole záznamu a jejich výchozí hodnoty (stejná pole ukládá formulář v Kodi)
-FIELD_DEFAULTS = {"genres": [], "keywords": [], "join": "and", "lang": "", "countries": [], "year_from": None,
+FIELD_DEFAULTS = {"genres": [], "keywords": [], "join": "and", "lang": "", "countries": [], "countries_exclude": [], "year_from": None,
                   "year_to": None, "years": None, "sort": "popularity.desc", "verify": False, "q": 0, "audio": "",
                   "subs": "", "surround": False, "show": "found"}
 
@@ -130,7 +131,8 @@ def beta1_untouched(cat):
         have = dict(FIELD_DEFAULTS, **{k: v for k, v in cat.items() if k in FIELD_DEFAULTS})
         return cat.get("kind") == kind and all(have[k] == want[k] for k in ("genres", "keywords", "join", "lang",
                                                "year_from", "year_to", "years", "sort", "verify", "q", "audio",
-                                               "subs", "surround", "show")) and not have["countries"]
+                                               "subs", "surround", "show")) and not have["countries"] \
+            and not have["countries_exclude"]
     return False
 
 
@@ -181,6 +183,17 @@ def countries_of(cat):
     return out[:MAX_COUNTRIES]
 
 
+def countries_exclude_of(cat):
+    """Vyloučené země (platné kódy bez duplicit); s vybranými zeměmi původu nic — výběr má přednost."""
+    if countries_of(cat):
+        return []
+    out = []
+    for c in cat.get("countries_exclude") or []:
+        if c in COUNTRIES and c not in out:
+            out.append(c)
+    return out
+
+
 def migrate_lang(cat):
     """Země ze starého `lang` (původní jazyk), je-li katalog bez `countries`; jinak jeho země. Nic neukládá."""
     have = countries_of(cat)
@@ -191,7 +204,7 @@ def migrate_lang(cat):
 
 def auto_name(cat, labels, default="Vlastní katalog"):
     """Název z parametrů katalogu. Jádro nemá překlady, popisky dodává volající v `labels`:
-    `genres` {id: název}, `keywords` {klíč: název}, `countries` {kód: název}, `qualities` {3: "Full HD", …},
+    `genres` {id: název}, `keywords` {klíč: název}, `countries` {kód: název}, `without` „bez {}“, `qualities` {3: "Full HD", …},
     `dub` „{} dabing“, `subs` „titulky {}“, `surround` „5.1“, `years` „posledních {} let“,
     `year_from`/`year_to`/`year_range` „od {}“/„do {}“/„{}–{}“. Požadavky ověřování se berou jen s `verify`."""
     def lab(key, fallback):
@@ -206,6 +219,9 @@ def auto_name(cat, labels, default="Vlastní katalog"):
     zeme = [(labels.get("countries") or {}).get(c) or c for c in countries_of(cat)[:2]]
     if zeme:
         parts.append(", ".join(zeme))
+    bez = [(labels.get("countries") or {}).get(c) or c for c in countries_exclude_of(cat)[:2]]
+    if bez:
+        parts.append(lab("without", "bez {}").format(", ".join(bez)))
     if cat.get("verify"):
         audio, subs = cat.get("audio") or "", cat.get("subs") or ""
         if audio in TRACKS and audio:
@@ -239,7 +255,9 @@ def delete(store, cid):
 
 
 def params(cat, today=None):
-    """Uložené volby → parametry `DashApi.discover`. `years` (posledních X let) se počítá při každém dotazu."""
+    """Uložené volby → parametry `DashApi.discover`. `years` (posledních X let) se počítá při každém dotazu.
+    `without_origin_country` je pseudoparametr: filtruje až `DashApi.discover` podle `origin_country` položek,
+    na server ani do TMDB nejde (TMDB ho nezná)."""
     genres = [str(g) for g in cat.get("genres") or []]
     keywords = [KEYWORDS[k] for k in cat.get("keywords") or [] if k in KEYWORDS][:MAX_KEYWORDS]
     years = cat.get("years")
@@ -254,6 +272,7 @@ def params(cat, today=None):
     out = {"with_genres": ("|" if cat.get("join") == "or" else ",").join(genres),
            "with_keywords": "|".join(keywords),
            "with_origin_country": "|".join(countries),
+           "without_origin_country": "|".join(countries_exclude_of(cat)),
            "with_original_language": "|".join(langs) or cat.get("lang") or "",
            "sort_by": "popularity.desc" if cat.get("sort") == ALPHA else cat.get("sort") or "",
            "year_from": year_from, "year_to": year_to}
@@ -373,7 +392,8 @@ def refresh(engine, store, dash, cid, size=1, verify=True, should_stop=None):
     name, csig, now = INDEX + cid, sig(cat), _now()
     src = engine.verify_fingerprint()
     index = store.reload(name, {})
-    stale = index.get("sig") != csig or now - int(index.get("pool_ts") or 0) >= POOL_EVERY
+    pkey = json.dumps(params(cat), sort_keys=True)   # změna vyloučených zemí nemění `sig` (ověřování), pool ano
+    stale = index.get("sig") != csig or index.get("pkey") != pkey or now - int(index.get("pool_ts") or 0) >= POOL_EVERY
     fresh = pool(dash, cat) if stale else None   # síť mimo zámek
     with store.updating(name, {}) as index:
         if index.get("sig") != csig:
@@ -392,6 +412,7 @@ def refresh(engine, store, dash, cid, size=1, verify=True, should_stop=None):
         if fresh is not None:
             merge_pool(index, fresh, now)
             index["pool_ts"] = now
+            index["pkey"] = pkey
         batch = next_batch(index, now, size, first=_foreign_ok(index)) if verify else []
     done = 0
     for mid in batch:
