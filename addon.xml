@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="11.4.2" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="11.5.2" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -48,7 +48,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>11.4.2 – Pokračovat ve sledování se zobrazí i na zařízení, kterému dochází vlákna. Stahování titulků už nepřeruší přehrávání při zahozeném spojení a doplněk nepadá na Androidu bez modulu pro datum. U vlastního katalogu je vysvětlené řazení.
+    <news>11.5.2 – Kodi by se mělo méně zasekávat po výběru dílu nebo filmu: doplněk po sobě počká na rozběhnutou práci na pozadí.
+11.4.2 – Pokračovat ve sledování se zobrazí i na zařízení, kterému dochází vlákna. Stahování titulků už nepřeruší přehrávání při zahozeném spojení a doplněk nepadá na Androidu bez modulu pro datum. U vlastního katalogu je vysvětlené řazení.
 11.4.1 – Kodi by už nemělo zamrzat a padat při procházení doplňku a po zrušeném hledání.
 11.4.0 – Zhlédnuté filmy a díly samy zmizí z Hlídaných. Z hlídaného dílu i seriálu se kontextovou nabídkou dostaneš na seznam dílů nebo všechny série.
 11.3.1 – Po spuštění přehrávání už doplněk na pozadí nedočítá údaje o ostatních streamech – Kodi se při přehrávání méně zasekává a další klik do doplňku hned funguje.

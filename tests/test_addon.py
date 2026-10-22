@@ -3620,6 +3620,24 @@ class TestPreruseniPriKonciKodi(unittest.TestCase):
             default.main("action=favourites")
         cancel.assert_called_once_with()
 
+    def test_konec_pluginu_pocka_na_zbyla_vlakna(self):
+        """Dopozdilé zdroje běžící po návratu pluginu Kodi zabíjí po 5 s i s interpretem
+        (SIGSEGV / zamrzlé GUI, obývák 2026-10-22) — plugin je nechá doběhnout a zbytek zaloguje."""
+        done = threading.Event()
+        kratke = threading.Thread(target=lambda: time.sleep(0.2), name="kratke")
+        kratke.start()
+        self.assertEqual(default.drain_threads(2.0), 0)
+        self.assertFalse(kratke.is_alive())
+        dlouhe = threading.Thread(target=done.wait, name="dlouhe-vlakno", daemon=True)
+        dlouhe.start()
+        try:
+            with mock.patch.object(default.xbmc, "log") as log:
+                self.assertEqual(default.drain_threads(0.3), 1)
+            self.assertIn("dlouhe-vlakno", log.call_args[0][0])
+        finally:
+            done.set()
+            dlouhe.join()
+
     def test_router_zavre_prehrani_titulu_jako_prehrani(self):
         """`action=title` s handle ≥ 0 je Přehrát v detailu — Kodi čeká `setResolvedUrl`,
         ne `endOfDirectory`, a to i po přerušení."""

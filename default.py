@@ -8621,6 +8621,35 @@ def main(query):
         # a čtení se během přehrávání pere o linku a CPU (obývák 2026-10-19: přes 100 s
         # „waiting on thread", pak zamrzlé Kodi). Rozběhnuté doběhnou na vlastní timeout.
         cancel_background()
+        drain_threads()
+
+
+DRAIN_LIMIT = 3.0   # s – Kodi po doběhnutí skriptu čeká na vlákna jen 5 s, pak interpret zabije
+
+
+def drain_threads(limit=None):
+    """Krátce počká na vlákna, která po sobě plugin nechal (dopozdilé zdroje, hlavičky), a
+    zaloguje, která to jsou. Kodi po návratu skriptu čeká na každé vlákno interpretu
+    („waiting on thread"), po 5 s skript zabije („script didn't stop in 5 seconds") a zabití
+    interpretu s běžícími vlákny je SIGSEGV v `PyDict_SetItem` nebo GUI zaseklé na busy dialogu
+    (obývák 2026-10-15 až 22: 9 pádů, naposledy zamrznutí po 25 spuštěních `streams` za minutu).
+    Čekání nic neprodlužuje: Kodi by čekalo stejně. Co nedoběhne, se jen zapíše do logu."""
+    end = time.monotonic() + (DRAIN_LIMIT if limit is None else limit)
+    me = threading.current_thread()
+    for t in threading.enumerate():
+        if t is not me and t is not threading.main_thread() and t.is_alive():
+            t.join(max(0.0, end - time.monotonic()))
+    left = [t for t in threading.enumerate() if t is not me and t is not threading.main_thread() and t.is_alive()]
+    if not left:
+        return 0
+    frames = sys._current_frames()
+    names = []
+    for t in left:
+        frame = frames.get(t.ident)
+        where = f"{os.path.basename(frame.f_code.co_filename)}:{frame.f_lineno}" if frame else "?"
+        names.append(f"{t.name}{'*' if t.daemon else ''}@{where}")
+    xbmc.log(f"[{ADDON_ID}] po konci pluginu běží {len(left)} vláken: {', '.join(names[:8])}", xbmc.LOGWARNING)
+    return len(left)
 
 
 if __name__ == "__main__":
