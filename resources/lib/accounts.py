@@ -21,7 +21,9 @@ protože právě opakovanými dotazy si doplněk blokaci dvakrát přivodil (6.0
 se do záznamu zapíše rovnou přes `Engine._note_account()` — zadarmo a čerstvěji
 než jakákoli obnova na pozadí.
 """
+import re
 import time
+from datetime import date
 
 from hellspy_api import blocked_for
 from prehrajto_api import blocked_for as prehrajto_blocked_for
@@ -91,14 +93,20 @@ def _zaznam(level, code, **detail):
     return {"level": level, "code": code, "detail": detail}
 
 
+_DEN_RE = re.compile(r"(\d{4})-(\d{1,2})-(\d{1,2})")
+
+
 def _dny_do(datum):
     """Kolik dní zbývá do data „YYYY-MM-DD" (záporně, když už bylo). None = nedává smysl."""
     text = str(datum or "")[:10]
+    m = _DEN_RE.fullmatch(text)   # ne time.strptime: na Androidu v Kodi 21 chybí `_strptime`
+    if not m:
+        return None
     try:
-        cil = time.mktime(time.strptime(text, "%Y-%m-%d"))
+        cil = time.mktime(date(*map(int, m.groups())).timetuple())
     except (ValueError, OverflowError):
         return None
-    dnes = time.mktime(time.strptime(time.strftime("%Y-%m-%d"), "%Y-%m-%d"))
+    dnes = time.mktime(date.today().timetuple())
     return int(round((cil - dnes) / 86400.0))
 
 

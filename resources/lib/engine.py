@@ -194,11 +194,17 @@ RUNTIME_RE = re.compile(r"(?:(\d+)\s*h)?\s*(?:(\d+)\s*min)?", re.I)
 DEFAULT_RUNTIME_S = 7200    # dvouhodinový film — odhad stopáže, jen když ji titul sám neřekne
 
 
+_DAY_RE = re.compile(r"(\d{4})-(\d{1,2})-(\d{1,2})")
+
+
 def _parse_day(text):
-    """„2026-10-05“ → datetime, jinak ValueError. Ne `datetime.strptime`: v Kodi od druhého
-    spuštění doplňku padá na TypeError 'NoneType' object is not callable (vestavěný Python
-    znovu nenačte `_strptime`), `time.strptime` ne."""
-    return datetime(*time.strptime(text, "%Y-%m-%d")[:3])
+    """„2026-10-05“ → datetime, jinak ValueError. Ne `datetime.strptime` (v Kodi od druhého
+    spuštění doplňku padá na TypeError 'NoneType' object is not callable) ani `time.strptime`
+    (na Androidu v Kodi 21 chybí modul `_strptime`: ModuleNotFoundError) — rozbor je ruční."""
+    m = _DAY_RE.fullmatch(text)
+    if not m:
+        raise ValueError("neplatné datum: %r" % (text,))
+    return datetime(*map(int, m.groups()))
 
 
 def runtime_minutes(text):

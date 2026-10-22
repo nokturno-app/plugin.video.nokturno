@@ -23,6 +23,7 @@ se objeví v Pokračovat ve sledování a Naposledy zhlédnuté.
 import calendar
 import re
 import time
+from datetime import datetime
 
 from favprune import started_since_added
 from store import WATCHED_MAX
@@ -33,10 +34,17 @@ MAX_PAGES = 10           # po 100 záznamech; delší přírůstek dožene dalš
 SAME_POS = 60            # s — rozdíl pozice, který se bere jako ozvěna vlastního scrobble
 
 
+_ISO_RE = re.compile(r"(\d{4})-(\d{1,2})-(\d{1,2})T(\d{1,2}):(\d{1,2}):(\d{1,2})")
+
+
 def _epoch(iso):
+    # ne time.strptime: na Androidu v Kodi 21 chybí modul `_strptime`
+    m = _ISO_RE.fullmatch(str(iso)[:19])
+    if not m:
+        return 0
     try:
-        return calendar.timegm(time.strptime(str(iso)[:19], "%Y-%m-%dT%H:%M:%S"))
-    except (TypeError, ValueError):
+        return calendar.timegm(datetime(*map(int, m.groups())).timetuple())
+    except ValueError:
         return 0
 
 

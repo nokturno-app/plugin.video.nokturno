@@ -35,6 +35,7 @@ token a ten se do logu nedostane (`crash.scrub()` maskuje `Bearer`).
 Bez závislostí na hostiteli — jde zkusit samostatně:
     NOKTURNO_OS_KEY=… python3 opensubtitles_api.py tt0133093 | tt14688458 1 1
 """
+import http.client
 import json
 import logging
 import time
@@ -157,6 +158,9 @@ class OpenSubtitlesApi:
             raise OpenSubtitlesError(str(err.reason)) from err
         except ValueError as err:
             raise OpenSubtitlesError("Odpověď nedává smysl: %s" % err) from err
+        except (OSError, http.client.HTTPException) as err:
+            # RemoteDisconnected, reset spojení, timeout při čtení těla apod.
+            raise OpenSubtitlesError("Spojení s OpenSubtitles selhalo: %s" % (str(err) or type(err).__name__)) from err
 
     # --- přihlášení --------------------------------------------------------
 
