@@ -64,6 +64,7 @@ DISCOVER_PARAMS = {
     "sort_by": re.compile(r"^((popularity|vote_average|primary_release_date)\.desc|primary_release_date\.asc)$"),
     "vote_average_gte": re.compile(r"^[0-9](\.[0-9])?$"),
     "vote_count_gte": re.compile(r"^[0-9]{1,5}$"),
+    "with_release_type": re.compile(r"^[1-6](\|[1-6]){0,5}$"),
 }
 # pseudoparametr jádra (`mycat.params`): položky s některou z těchto zemí původu se vyřadí u klienta; na server ani
 # do TMDB nejde (server by vrátil 400, TMDB discover `without_origin_country` nemá)

@@ -60,6 +60,9 @@ LANG_COUNTRIES = {"cs": ["CZ"], "sk": ["SK"], "cs|sk": ["CZ", "SK"], "sk|cs": ["
 COUNTRY_LANGS = {"CZ": ("cs",), "SK": ("sk",), "XC": ("cs", "sk"), "US": ("en",), "GB": ("en",), "FR": ("fr",),
                  "DE": ("de",), "IT": ("it",), "ES": ("es",), "PL": ("pl",), "HU": ("hu",), "KR": ("ko",),
                  "JP": ("ja",), "DK": ("da",), "SE": ("sv",), "NO": ("no",)}
+# typy vydání TMDB 4|5 = vyšlo digitálně nebo na nosiči: film, který je zatím jen v kině, stream nemá
+RELEASE_TYPES = "4|5"
+NEWEST_MIN_VOTES = "10"   # řazení od nejnovějšího: bez prahu vyhrají neznámé filmy vydané rovnou digitálně
 MAX_VERIFIED = 20            # blob relaye má 128 kB: 20 katalogů × 200 titulů = ~51 kB po gzipu
 
 
@@ -254,6 +257,19 @@ def delete(store, cid):
     store.save(INDEX + cid, {})
 
 
+def released_filter(kind, verify, sort, recent):
+    """Parametry navíc pro ověřovaný filmový katalog nových titulů (řazení od nejnovějšího nebo posledních X let):
+    jen filmy, které už vyšly digitálně nebo na nosiči, a u řazení od nejnovějšího s aspoň pár hlasy. Bez toho dá
+    TMDB stovky neznámých filmů z posledních dnů a katalog s dabingem zůstane skoro prázdný (Office 2026-10-23).
+    Starší tituly filtr nemají, TMDB u nich typy vydání často chybí."""
+    if kind != "movie" or not verify:
+        return {}
+    newest = sort == "primary_release_date.desc"
+    if not (newest or recent):
+        return {}
+    return dict({"with_release_type": RELEASE_TYPES}, **({"vote_count_gte": NEWEST_MIN_VOTES} if newest else {}))
+
+
 def params(cat, today=None):
     """Uložené volby → parametry `DashApi.discover`. `years` (posledních X let) se počítá při každém dotazu.
     `without_origin_country` je pseudoparametr: filtruje až `DashApi.discover` podle `origin_country` položek,
@@ -261,7 +277,8 @@ def params(cat, today=None):
     genres = [str(g) for g in cat.get("genres") or []]
     keywords = [KEYWORDS[k] for k in cat.get("keywords") or [] if k in KEYWORDS][:MAX_KEYWORDS]
     years = cat.get("years")
-    if isinstance(years, int) and not isinstance(years, bool) and 1 <= years <= 50:
+    recent = isinstance(years, int) and not isinstance(years, bool) and 1 <= years <= 50
+    if recent:
         year_from, year_to = str((today or datetime.date.today()).year - years + 1), ""
     else:
         year_from, year_to = cat.get("year_from") or "", cat.get("year_to") or ""
@@ -276,6 +293,8 @@ def params(cat, today=None):
            "with_original_language": "|".join(langs) or cat.get("lang") or "",
            "sort_by": "popularity.desc" if cat.get("sort") == ALPHA else cat.get("sort") or "",
            "year_from": year_from, "year_to": year_to}
+    out.update(released_filter("series" if cat.get("kind") == "series" else "movie", bool(cat.get("verify")),
+                               cat.get("sort"), recent))
     return {k: v for k, v in out.items() if v}
 
 

@@ -239,6 +239,10 @@ class TmdbApi:
         # `mycat.released` stejně vyhodí, a katalog zůstane prázdný (Discord 2026-10-10)
         to = f"{params['year_to']}-12-31" if params.get("year_to") else ""
         query[f"{date_field}.lte"] = min(to or "9999", datetime.date.today().isoformat())
+        if params.get("with_release_type") and kind == "movie":
+            # jen filmy, které tímhle typem už vyšly (4|5 = digitálně nebo na nosiči), jako server
+            query["with_release_type"] = params["with_release_type"]
+            query["release_date.lte"] = datetime.date.today().isoformat()
         if params.get("vote_count_gte"):
             query["vote_count.gte"] = params["vote_count_gte"]
         if params.get("vote_average_gte"):
