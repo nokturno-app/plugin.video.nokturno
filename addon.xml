@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="11.6.0" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="12.1.1" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -48,7 +48,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>11.6.0 – Soubory z vlastního úložiště mají popis a plakát z TMDB. V Mém katalogu jde vyloučit země původu. Společné hledání umí hledat jen v mém úložišti. Přehrání od začátku už nepřepíše místo, kde jsi skončil. Seriál s rozkoukaným dílem má v Pokračovat jeden řádek.
+    <news>12.1.1 – Vlastní katalogy nových filmů s ověřováním streamů berou jen filmy, které už vyšly digitálně nebo na DVD a Blu-ray, takže katalog řazený od nejnovějšího už nezůstane skoro prázdný.
+11.6.0 – Soubory z vlastního úložiště mají popis a plakát z TMDB. V Mém katalogu jde vyloučit země původu. Společné hledání umí hledat jen v mém úložišti. Přehrání od začátku už nepřepíše místo, kde jsi skončil. Seriál s rozkoukaným dílem má v Pokračovat jeden řádek.
 11.5.2 – Kodi by se mělo méně zasekávat po výběru dílu nebo filmu: doplněk po sobě počká na rozběhnutou práci na pozadí.
 11.4.2 – Pokračovat ve sledování se zobrazí i na zařízení, kterému dochází vlákna. Stahování titulků už nepřeruší přehrávání při zahozeném spojení a doplněk nepadá na Androidu bez modulu pro datum. U vlastního katalogu je vysvětlené řazení.
 11.4.1 – Kodi by už nemělo zamrzat a padat při procházení doplňku a po zrušeném hledání.
