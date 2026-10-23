@@ -7240,18 +7240,23 @@ def list_continue(apis):
     # pamatuje podle typu obsahu, takže tyhle seznamy sdílejí nastavení s Filmy.
     set_content("movies")
     rozkoukane = STORE.in_progress()
+    serie_rozkoukane = set()
     for key, _entry in rozkoukane:
         snap = STORE.item(key)
         if not snap or thin_snapshot(snap):
             snap = recover_snapshot(apis, key, (snap or {}).get("type")) or snap
         if snap:
+            if snap.get("season") is not None and snap.get("series"):
+                serie_rozkoukane.add(snap["series"])
             add_snapshot_item(key, snap, [(L(30365, "Odebrat z Pokračovat ve sledování"),
                                           runplugin(action="remove_progress", id=key))])
     seen_series = set()
     snaps = []
     for key, _entry in STORE.recently_watched(40):
         snap = STORE.item(key)
-        if not snap or snap.get("season") is None or snap.get("series") in seen_series:
+        # seriál s rozkoukaným dílem má jeden řádek – „Další díl“ se k němu nepřidává
+        if not snap or snap.get("season") is None or snap.get("series") in seen_series \
+                or snap.get("series") in serie_rozkoukane:
             continue
         seen_series.add(snap.get("series"))
         snaps.append(snap)
