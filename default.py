@@ -7273,7 +7273,7 @@ def list_continue(apis):
         # rozkoukaný další díl už je nahoře mezi rozkoukanými – podruhé jako „Další díl“ ne
         if STORE.playcount(ep_id) or STORE.next_hidden(snap["series"]) == ep_id or ep_id in dict(rozkoukane):
             continue
-        li = xbmcgui.ListItem(label=f"{L(30067)}: {meta.get('_title') or meta.get('name')} – "
+        li = xbmcgui.ListItem(label=f"[COLOR {LANG_COLORS.get('CZ', 'FFFFC94D')}]»[/COLOR] {meta.get('_title') or meta.get('name')} – "
                                     f"{int(video.get('season') or 0)}x{int(video.get('episode') or 0):02d} {video.get('title') or ''}")
         li.setArt(art_for(meta, video))
         fill_info(li, meta, "series", video=video)

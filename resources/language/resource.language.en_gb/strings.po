@@ -186,10 +186,6 @@ msgctxt "#30066"
 msgid "Removed from My list"
 msgstr ""
 
-msgctxt "#30067"
-msgid "Next episode"
-msgstr ""
-
 msgctxt "#30070"
 msgid "Download"
 msgstr ""

@@ -186,10 +186,6 @@ msgctxt "#30066"
 msgid "Removed from My list"
 msgstr "Eltávolítva a Saját listából"
 
-msgctxt "#30067"
-msgid "Next episode"
-msgstr "Következő rész"
-
 msgctxt "#30070"
 msgid "Download"
 msgstr "Letöltés"
