@@ -3732,3 +3732,15 @@ msgstr "Országok kizárása (semmi = nincs)"
 msgctxt "#31119"
 msgid "without {}"
 msgstr "{} nélkül"
+
+msgctxt "#31120"
+msgid "Play the best stream right away"
+msgstr "A legjobb stream azonnali lejátszása"
+
+msgctxt "#31121"
+msgid "Stream selection is skipped for items from Nokturno and TMDBHelper too; the first stream in the sort order is played."
+msgstr "A stream kiválasztása a Nokturno és a TMDBHelper elemeinél is kimarad; a rendezés szerinti első stream indul el."
+
+msgctxt "#31122"
+msgid "The play link is incomplete – the title type or id is missing."
+msgstr "A lejátszási hivatkozás hiányos – hiányzik a cím típusa vagy azonosítója."

@@ -3734,3 +3734,15 @@ msgstr "Vylúčiť krajiny (nič = žiadne)"
 msgctxt "#31119"
 msgid "without {}"
 msgstr "bez {}"
+
+msgctxt "#31120"
+msgid "Play the best stream right away"
+msgstr "Rovno prehrať najlepší stream"
+
+msgctxt "#31121"
+msgid "Stream selection is skipped for items from Nokturno and TMDBHelper too; the first stream in the sort order is played."
+msgstr "Výber streamu sa preskočí aj pri položkách z Nokturna a z TMDBHelpera; prehrá sa prvý stream podľa zoradenia."
+
+msgctxt "#31122"
+msgid "The play link is incomplete – the title type or id is missing."
+msgstr "Odkaz na prehratie je neúplný – chýba typ alebo id titulu."

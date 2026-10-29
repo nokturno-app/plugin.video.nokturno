@@ -15,7 +15,7 @@ import logging
 import os
 import random
 import re
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import as_completed
 import struct
 import sys
 import threading
@@ -86,7 +86,7 @@ import kodi_smb  # noqa: E402 – vedle default.py, SMB vlastního úložiště 
 import mylist  # noqa: E402 – vedle default.py, vlastní seznam z JSON
 import kodi_sources  # noqa: E402 – vedle default.py, sdílený výčet zdrojů do statistik
 from engine import AUDIO_PROBE_MAX, DEFAULT_RUNTIME_S, Engine, NokturnoError, release_probe_pool, runtime_minutes  # noqa: E402
-from abort import Aborted, SparePool, cancel_background, set_host_stop  # noqa: E402
+from abort import Aborted, BackgroundPool, SparePool, cancel_background, set_host_stop  # noqa: E402
 from hedge import first_success  # noqa: E402
 import keepalive  # noqa: E402
 from crash import CrashReporter  # noqa: E402
@@ -2710,7 +2710,7 @@ def local_subtitles(apis, refs):
             xbmc.log(f"[{ADDON_ID}] titulky {ref} se nestáhly, předám odkaz: {e}", xbmc.LOGINFO)
             return link, ""
 
-    pool = ThreadPoolExecutor(max_workers=min(len(refs), 4))
+    pool = BackgroundPool(max_workers=min(len(refs), 4))
     futures = [pool.submit(fetch, ref) for ref in refs]
     wait_futures(futures, timeout=SUBS_BUDGET_S)
     pool.shutdown(wait=False)
@@ -4193,7 +4193,7 @@ def test_sources():
         "TMDB": (lambda: tmdb._get("/configuration") and None) if tmdb else None,
     }
     lines = []
-    with ThreadPoolExecutor(max_workers=5) as pool:
+    with SparePool(max_workers=5) as pool:
         futures = {name: pool.submit(fn) for name, fn in checks.items() if fn}
         for name in checks:
             if name not in futures:
@@ -6521,7 +6521,7 @@ def search_run(apis, kind, query, offset=0):
         progress = SearchProgress(bar, 2 * sources)
         results = {}
         try:
-            with ThreadPoolExecutor(max_workers=2) as pool:
+            with SparePool(max_workers=2) as pool:
                 futures = {pool.submit(_search_merge, apis, "movie", query, want_year, errors,
                                        progress.tick): "movie",
                           pool.submit(_search_merge, apis, "series", query, want_year, errors,
@@ -6569,9 +6569,11 @@ def search_run(apis, kind, query, offset=0):
                 add_ws_file(f)
         except WebshareError as e:
             errors.append(e)
-    if not merged:
-        # V katalozích nic. WebShare ani HellSpy tituly neznají, jsou to úložiště
-        # souborů — soubor pojmenovaný stejně tam ale být může a starší nebo
+    # S Lunou se soubory z WebShare nevypisují rovnou (má je Luna: Search u titulu) — fulltext
+    # WebShare a HellSpy je tak jedinou cestou k souboru, který Luna nenašla, i když se titul našel.
+    if not merged or (apis.get("luna") and not luna_down):
+        # V katalozích nic (nebo je Luna a titul se našel). WebShare ani HellSpy tituly neznají,
+        # jsou to úložiště souborů — soubor pojmenovaný stejně tam ale být může a starší nebo
         # okrajové věci bývají jen tam. Nabídne se to až tady, do rozcestníku
         # fulltext nepatří a běžné hledání by jen zdržoval.
         if apis.get("ws"):
@@ -7547,7 +7549,7 @@ def random_by_language(apis, ctype, candidates, pref):
             return False
 
     from concurrent.futures import FIRST_COMPLETED, wait as wait_futures
-    pool = ThreadPoolExecutor(max_workers=RANDOM_WORKERS)
+    pool = BackgroundPool(max_workers=RANDOM_WORKERS)
     futures = {pool.submit(check, c): c for c in cands}
     pending = set(futures)
     deadline = time.time() + RANDOM_BUDGET_S
@@ -7962,7 +7964,7 @@ def play(apis, ctype, item_id, series_id=None, url=None, alt=None, subs="", pref
             return
         remembered = preferred_stream(streams, STORE.stream_pref(pref_key)) if pref_key else None
         chosen = remembered or streams[0]
-        if ask and not sw:
+        if ask and not sw and not on("play_best_stream", "false"):
             picked = choose_stream(streams, remembered, expand=lambda: expand_streams(apis, streams, meta, video),
                                    refresh=engine_of(apis).refresh_media)
             if picked is None:
@@ -8591,6 +8593,10 @@ def router(query):
             list_mylist(apis, p.get("path", ""), mylist_slot(p.get("slot")))
         elif action == "mylist_play":
             mylist_play(apis, p.get("refs", ""), p.get("name", ""))
+        elif action == "play" and not (p.get("type") and p.get("id")):
+            # ruční URL z HA / starý odkaz bez titulu: srozumitelná hláška místo KeyError a hlášení pádu
+            xbmc.log(f"[{ADDON_ID}] play: v odkazu chybí type nebo id (parametry: {sorted(p)})", xbmc.LOGWARNING)
+            _fail(action, L(31122, "Odkaz na přehrání je neúplný – chybí typ nebo id titulu."))
         elif action == "play":
             play(apis, p["type"], p["id"], p.get("series"), url=p.get("url"), alt=p.get("alt"), subs=p.get("subs", ""),
                  pref=p.get("pref", ""), ask=p.get("ask", ""), alts=p.get("alts", ""), sw=p.get("sw", ""))

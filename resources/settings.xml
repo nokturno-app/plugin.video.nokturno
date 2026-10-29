@@ -1056,6 +1056,11 @@
           <default>false</default>
           <control type="toggle"/>
         </setting>
+        <setting id="play_best_stream" type="boolean" label="31120" help="31121">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
       </group>
     </category>
     <category id="sync" label="30180">

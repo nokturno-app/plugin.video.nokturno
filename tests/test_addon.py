@@ -1523,6 +1523,19 @@ class TestRouter(unittest.TestCase):
         self.assertTrue(xbmcplugin.ended[-1]["succeeded"])
         self.assertFalse(xbmcgui.notifications)
 
+    def test_prehrani_bez_typu_nebo_id_zavre_handle_s_hlaskou(self):
+        """`?action=play` bez type/id (ruční URL z HA, starý odkaz) = srozumitelná hláška a zavřený
+        handle, ne KeyError s hlášením pádu."""
+        for url in ("action=play", "action=play&type=movie", "action=play&id=tt1"):
+            reset_kodi()
+            with mock.patch.object(default, "report_crash") as crash, mock.patch.object(default, "play") as hraj:
+                default.router(url)
+            hraj.assert_not_called()
+            crash.assert_not_called()
+            self.assertEqual([r[1] for r in xbmcplugin.resolved], [False], url)
+            self.assertEqual(xbmcgui.notifications[-1][2], xbmcgui.NOTIFICATION_ERROR)
+            self.assertIn("neúplný", xbmcgui.notifications[-1][1])
+
     def test_hlavni_menu_se_zdroji(self):
         default.router("")
         akce = [params_of(u).get("action") for u in xbmcplugin.urls()]
@@ -2729,7 +2742,7 @@ class TestNastavitZMobilu(unittest.TestCase):
         jen = default.remote_setup_schema("streamlist")
         self.assertEqual([s["id"] for s in jen], ["streamlist"])
         self.assertTrue(jen[0]["open"])
-        self.assertEqual([f["id"] for f in jen[0]["fields"]], ["stream_layout", "stream_filter_last"])
+        self.assertEqual([f["id"] for f in jen[0]["fields"]], ["stream_layout", "stream_filter_last", "play_best_stream"])
         storage = next(s for s in schema if s["id"] == "storage")
         headings = [f["label"] for f in storage["fields"] if f.get("type") == "heading"]
         self.assertEqual(headings, ["Úložiště 1", "Úložiště 2", "Úložiště 3"])
@@ -6046,7 +6059,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 140)   # +1 fav_drop_watched (zhlédnuté pryč z Mého seznamu), +2 menu_edit_action, menu_reset_action (hlavní menu), +1 sync_concerts (10.3.0), +1 tmdb_check, +3 mylist1–3_enabled, +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs, +2 hide_dv, hide_hdr (DV/HDR filtr), +2 hide_dv_only, hide_av1
+        self.assertEqual(len(volby), 141)   # +1 fav_drop_watched (zhlédnuté pryč z Mého seznamu), +2 menu_edit_action, menu_reset_action (hlavní menu), +1 sync_concerts (10.3.0), +1 tmdb_check, +3 mylist1–3_enabled, +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs, +2 hide_dv, hide_hdr (DV/HDR filtr), +2 hide_dv_only, hide_av1, +1 play_best_stream
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):
