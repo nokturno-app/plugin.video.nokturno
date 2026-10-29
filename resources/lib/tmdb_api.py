@@ -4,7 +4,7 @@ Potřebuje vlastní (zdarma) API klíč uživatele — viz nápověda u nastaven
 
 Výsledky `catalog()`/`search()` mají rovnou `tt…` (IMDb) id — TMDB samo dává
 jen svoje číselné id, tt… se dotáhne přes `external_ids` souběžně pro všechny
-nalezené položky (`ThreadPoolExecutor`, stejný vzor jako `_fill_audio()` v
+nalezené položky (`SparePool`, stejný vzor jako `_fill_audio()` v
 engine.py), aby zbytek doplňku (streamy, oblíbené, sync) fungoval beze změny.
 Položka bez tt… id (vzácné – TMDB titul bez napojení na IMDb) se ze seznamu
 vynechá, se zbytkem doplňku by stejně nešla spárovat.
@@ -21,7 +21,7 @@ import urllib.request
 
 _IMDB_RE = re.compile(r"^tt\d{1,12}$")
 _TMDB_ID_RE = re.compile(r"^tmdb:(\d{1,10})$")
-from concurrent.futures import ThreadPoolExecutor
+from abort import SparePool
 from keepalive import urlopen as pooled_urlopen
 
 BASE = "https://api.themoviedb.org/3"
@@ -219,7 +219,7 @@ class TmdbApi:
                 if genre in by_name:
                     params["with_genres"] = by_name[genre]
             raw = self._get(f"/discover/{kind}", **params).get("results") or []
-        with ThreadPoolExecutor(max_workers=WORKERS) as pool:
+        with SparePool(max_workers=WORKERS) as pool:
             items = list(pool.map(lambda r: self._item(ctype, r, genre_map, own_ids=bool(search)), raw))
         return [i for i in items if i]
 
@@ -256,7 +256,7 @@ class TmdbApi:
         data = self._get(f"/discover/{kind}", **query)
         genre_map = self._genres(ctype)
         raw = [r for r in data.get("results") or [] if r.get("id")]
-        with ThreadPoolExecutor(max_workers=WORKERS) as pool:
+        with SparePool(max_workers=WORKERS) as pool:
             items = [i for i in pool.map(lambda r: self._item(ctype, r, genre_map), raw) if i]
         return {"items": items, "pages": int(data.get("total_pages") or 1)}
 
@@ -284,7 +284,7 @@ class TmdbApi:
 
         raw = self._cached(f"tmdb:similar:{kind}:{imdb_id}", SEARCH_TTL * 14, load)
         genre_map = self._genres(ctype)
-        with ThreadPoolExecutor(max_workers=WORKERS) as pool:
+        with SparePool(max_workers=WORKERS) as pool:
             items = list(pool.map(lambda r: self._item(ctype, r, genre_map), raw))
         return [i for i in items if i and i["id"] != imdb_id]
 
@@ -397,7 +397,7 @@ class TmdbApi:
                     except TmdbError:
                         return sn, {}
                 # sezóny souběžně — seriál s 20 sezónami dřív znamenal 20 dotazů za sebou
-                with ThreadPoolExecutor(max_workers=WORKERS) as pool:
+                with SparePool(max_workers=WORKERS) as pool:
                     seasons = list(pool.map(season, numbers))
                 for sn, sdata in seasons:
                     for ep in sdata.get("episodes") or []:

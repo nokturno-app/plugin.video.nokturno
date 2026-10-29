@@ -17,17 +17,16 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 
-from abort import Aborted, BackgroundPool, check as check_stop, gather, never
+from abort import Aborted, BackgroundPool, SparePool, check as check_stop, gather, never
 import accounts as accounts_lib
 import deadhost
 from const import (CONF_CZ_ENABLED, CONF_HS_ENABLED, CONF_PT_ENABLED, DEFAULT_SORT, LANGS,
                         SORT_ORDERS)
 from cinemeta_api import CinemetaApi, CinemetaError
 from enrich import DEAD_IMAGES, _capped, _cinemeta, _fetch, _fetch_title, enrich, enrich_one
-from luna_api import LunaApi, LunaError, clean_label, parse_base_url, parse_token
+from luna_api import LunaApi, LunaError, clean_label, parse_base_url, parse_token, subtitle_urls
 from tmdb_api import TmdbApi, TmdbError
 from sosac_api import SosacError, names_match
 from sosac_api import is_sosac_id as _is_legacy_sosac_id
@@ -1052,7 +1051,7 @@ class Engine:
         if not checks:
             return self.accounts()
         vysledky = {}
-        with ThreadPoolExecutor(max_workers=max(1, min(workers, len(checks)))) as pool:
+        with SparePool(max_workers=max(1, min(workers, len(checks)))) as pool:
             futures = {name: pool.submit(fn) for name, fn in checks.items()}
             for name, future in futures.items():
                 try:
@@ -1744,8 +1743,7 @@ class Engine:
             "tags": video_tags(stream),
             "url": stream.get("url") or "",
             # Luna posílá titulky ve tvaru Stremia (`{"url", "lang"}`), klienti chtějí odkazy
-            "subtitles": [s if isinstance(s, str) else s.get("url") for s in stream.get("subtitles") or []
-                          if isinstance(s, str) or (isinstance(s, dict) and s.get("url"))],
+            "subtitles": subtitle_urls(stream.get("subtitles")),
         }
 
     def original_titles(self, meta, ctype, alt=None):

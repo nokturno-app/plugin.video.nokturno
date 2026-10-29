@@ -14,6 +14,8 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+from abort import SparePool
+
 
 def _imdb(metas):
     """Hodnocení ze Stremio metadat (Cinemeta, Luna) je IMDb — značka pro klienty,
@@ -56,6 +58,13 @@ def parse_base_url(value, fallback):
     """Když uživatel vloží celou manifest URL, vezmeme z ní i adresu serveru."""
     m = re.match(r"(https?://[^/]+)", (value or "").strip())
     return m.group(1) if m else fallback
+
+
+def subtitle_urls(subs):
+    """Titulky jako seznam odkazů. Luna je posílá ve tvaru Stremia (`{"url", "lang"}`),
+    ostatní zdroje jako řetězce; klienti (`"|".join(...)`, `startswith`) čekají řetězce."""
+    return [s if isinstance(s, str) else s.get("url") for s in subs or []
+            if (isinstance(s, str) and s) or (isinstance(s, dict) and s.get("url"))]
 
 
 def clean_label(text):
@@ -242,6 +251,7 @@ class LunaApi:
                     continue
                 seen.add(url)
                 s["source"] = "search" if prefix else "main"
+                s["subtitles"] = subtitle_urls(s.get("subtitles"))
                 s["label"] = clean_label(s.get("name") or "")
                 s["detail"] = " | ".join(
                     clean_label(line) for line in (s.get("title") or s.get("description") or "").split("\n")
@@ -414,7 +424,7 @@ def discover(port=LUNA_PORT, subnet=None, on_progress=None, should_stop=None,
     kterýkoli web, co na tom portu náhodou poslouchá.
     """
     import socket
-    from concurrent.futures import ThreadPoolExecutor, as_completed
+    from concurrent.futures import as_completed
 
     subnet = subnet or local_subnet()
     if not subnet:
@@ -441,7 +451,7 @@ def discover(port=LUNA_PORT, subnet=None, on_progress=None, should_stop=None,
         found.append({"host": host, "url": f"http://{host}:{port}",
                       "version": info["version"], "name": info["name"]})
 
-    with ThreadPoolExecutor(max_workers=workers) as pool:
+    with SparePool(max_workers=workers) as pool:
         futures = [pool.submit(probe, h) for h in hosts]
         for hotovo, _ in enumerate(as_completed(futures), 1):
             if on_progress:

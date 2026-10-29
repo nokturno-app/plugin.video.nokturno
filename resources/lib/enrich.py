@@ -242,7 +242,8 @@ def _pool():
     global _POOL
     with _POOL_LOCK:
         if _POOL is None:
-            _POOL = SparePool(max_workers=WORKERS, thread_name_prefix="nokturno-enrich")
+            # inline=False: dotazy hlídá `deadline`, bez vlákna se druhé hodnocení raději vynechá
+            _POOL = SparePool(max_workers=WORKERS, thread_name_prefix="nokturno-enrich", inline=False)
         return _POOL
 
 

@@ -49,9 +49,13 @@ def first_success(urls, resolve, group=1, after=HEDGE_AFTER, errors=Exception, o
 
     def start():
         nonlocal started, running
-        threading.Thread(target=attempt, args=(started,), daemon=True, name="nokturno-hedge").start()
-        started += 1
+        i, started = started, started + 1
         running += 1
+        try:
+            threading.Thread(target=attempt, args=(i,), daemon=True, name="nokturno-hedge").start()
+        except RuntimeError:
+            # „can't start new thread" (Android): souběh nejde, zkouší se po sobě ve volajícím vlákně
+            attempt(i)
     start()
     while running:
         hedge = started < min(group, len(urls))

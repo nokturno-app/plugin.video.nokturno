@@ -36,10 +36,9 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
-from concurrent.futures import ThreadPoolExecutor
 from html.parser import HTMLParser
 
-from abort import check as check_stop, gather
+from abort import BackgroundPool, check as check_stop, gather
 from safe_redirect import OPENER as SAFE_OPENER
 from smbfs import PysmbBackend, SmbAuthError, SmbFile
 
@@ -331,7 +330,7 @@ class StorageApi:
             dirs += len(batch)
             # ne `pool.map()` ve `with`: to čeká na celou vrstvu (klidně stovky složek),
             # i když hostitel končí — `gather()` se ptá `should_stop()` a nezačaté zruší
-            pool = ThreadPoolExecutor(max_workers=CRAWL_WORKERS)
+            pool = BackgroundPool(max_workers=CRAWL_WORKERS)
             futures = [pool.submit(self._list_dir_safe, rel) for rel in batch]
             results = [f.result() for f in gather(pool, futures, self.should_stop)]
             next_level = []
