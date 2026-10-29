@@ -7876,9 +7876,14 @@ def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, d
             return
     pref_key = (series_id or split_episode_id(item_id)[0]) if video else None
     remembered = preferred_stream(streams, STORE.stream_pref(pref_key)) if pref_key else None
-    picked = choose_stream(streams, remembered, relax=strict and has_fulltext_source,
-                           expand=lambda: expand_streams(apis, streams, meta, video),
-                           refresh=engine_of(apis).refresh_media)
+    if on("play_best_stream", "false") and not (download or fresh or fulltext):
+        # „Rovnou přehrát nejlepší stream“: klik ve výpisu bez dialogu; „Vybrat stream“ v kontextovém
+        # menu (fresh) a uvolněné hledání (fulltext, nejistá shoda) dialog ukážou dál
+        picked = remembered or streams[0]
+    else:
+        picked = choose_stream(streams, remembered, relax=strict and has_fulltext_source,
+                               expand=lambda: expand_streams(apis, streams, meta, video),
+                               refresh=engine_of(apis).refresh_media)
     if picked == FULLTEXT:
         pick_title(apis, ctype, item_id, series_id, alt, fulltext=True, download=download, fresh=fresh)
         return
