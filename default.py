@@ -86,7 +86,7 @@ import kodi_smb  # noqa: E402 – vedle default.py, SMB vlastního úložiště 
 import mylist  # noqa: E402 – vedle default.py, vlastní seznam z JSON
 import kodi_sources  # noqa: E402 – vedle default.py, sdílený výčet zdrojů do statistik
 from engine import AUDIO_PROBE_MAX, DEFAULT_RUNTIME_S, Engine, NokturnoError, release_probe_pool, runtime_minutes  # noqa: E402
-from abort import Aborted, BackgroundPool, SparePool, cancel_background, set_host_stop  # noqa: E402
+from abort import Aborted, BackgroundPool, SparePool, cancel_background, close_pools, set_host_stop  # noqa: E402
 from hedge import first_success  # noqa: E402
 import keepalive  # noqa: E402
 from crash import CrashReporter  # noqa: E402
@@ -8689,6 +8689,7 @@ set_host_stop(should_stop)   # úlohy na pozadí v jádru se po žádosti o kone
 
 
 def main(query):
+    close_pools(False)   # další běh ve stejném interpretu (reuse invoker, testy)
     try:
         # zrušená volba střediska „HA i dashboard"; patří sem, ne do `migrate_on_start`
         # — ta běží na úrovni modulu, tedy dřív, než je tahle funkce definovaná
@@ -8719,6 +8720,10 @@ def main(query):
         # a čtení se během přehrávání pere o linku a CPU (obývák 2026-10-19: přes 100 s
         # „waiting on thread", pak zamrzlé Kodi). Rozběhnuté doběhnou na vlastní timeout.
         cancel_background()
+        # fondy, které si opozdilá úloha po konci založí znovu (hlavičky, popisy), už nikdo
+        # nezavře a Kodi na jejich nečinná vlákna čeká navždy (obývák 2026-11-01: 17 h, pak
+        # došla vlákna a Kodi spadlo) — po konci se nové vlákno fondu už nezaloží
+        close_pools()
         drain_threads()
 
 

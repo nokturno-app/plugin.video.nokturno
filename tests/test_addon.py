@@ -66,6 +66,21 @@ LANG_DIR = ROOT / "resources" / "language"
 default.STORE.save("terms_accepted", default.TERMS_VERSION)
 xbmcaddon.settings["terms_ok"] = "true"
 
+# `main()` na konci zavře fondy vláken (`abort.close_pools`) — na TV skončí s ním celý
+# interpret, tady by se zavřené fondy přenesly do dalších testů a úlohy by běžely inline
+import abort as _abort_mod                    # noqa: E402
+_main = default.main
+
+
+def _main_then_reopen(query):
+    try:
+        return _main(query)
+    finally:
+        _abort_mod.close_pools(False)
+
+
+default.main = _main_then_reopen
+
 
 def tearDownModule():
     shutil.rmtree(_PROFILE, ignore_errors=True)
@@ -3764,6 +3779,14 @@ class TestPreruseniPriKonciKodi(unittest.TestCase):
                 mock.patch.object(default, "cancel_background") as cancel:
             default.main("action=favourites")
         cancel.assert_called_once_with()
+
+    def test_konec_pluginu_zavre_fondy_vlaken(self):
+        """Fond, který si opozdilá úloha po konci znovu založí, nikdo nezavřel a Kodi na jeho
+        nečinná vlákna čekalo navždy (obývák 2026-11-01: po 17 h došla vlákna, Kodi spadlo)."""
+        with mock.patch.object(default, "router"), mock.patch.object(default, "release_enrich"), \
+                mock.patch.object(default, "close_pools") as close:
+            default.main("action=favourites")
+        self.assertEqual(close.call_args_list, [mock.call(False), mock.call()])
 
     def test_konec_pluginu_pocka_na_zbyla_vlakna(self):
         """Dopozdilé zdroje běžící po návratu pluginu Kodi zabíjí po 5 s i s interpretem
