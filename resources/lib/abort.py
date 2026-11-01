@@ -19,6 +19,7 @@ se nikdy necachuje — výjimka projde i `Store.cached_if()` dřív, než zapí�
 import queue
 import threading
 import time
+import weakref
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 
 STOP_POLL = 1.0   # s – jak často se při čekání na vlákna ptát should_stop()
@@ -44,6 +45,7 @@ class SparePool(ThreadPoolExecutor):
     def __init__(self, *args, inline=True, **kwargs):
         super().__init__(*args, **kwargs)
         self._inline = inline
+        _POOLS.add(self)
 
     def _adjust_thread_count(self):
         # úloha už je ve frontě (stdlib 3.8 i 3.12 volá tohle až po `put`); běžet ve volajícím
@@ -55,7 +57,14 @@ class SparePool(ThreadPoolExecutor):
                 raise
 
     def submit(self, fn, *args, **kwargs):
-        future = super().submit(fn, *args, **kwargs)
+        if _CLOSED[0]:
+            return self._after_close(fn, args, kwargs)
+        try:
+            future = super().submit(fn, *args, **kwargs)
+        except RuntimeError:
+            if not _CLOSED[0]:   # `close_pools()` fond zavřel mezi kontrolou a `submit`
+                raise
+            return self._after_close(fn, args, kwargs)
         # bez jediného vlákna by úloha ve frontě visela navždy; `get_nowait()` bere každou
         # úlohu jen jednou, takže se nic nespustí dvakrát
         while self._inline and not self._threads:
@@ -65,6 +74,17 @@ class SparePool(ThreadPoolExecutor):
                 break
             if item is not None:
                 item.run()
+        return future
+
+    def _after_close(self, fn, args, kwargs):
+        # po `close_pools()` nové vlákno nevznikne – nikdo by ho už nezavřel
+        if not self._inline:
+            raise RuntimeError("fondy jsou po konci hostitele zavřené")
+        future = Future()
+        try:
+            future.set_result(fn(*args, **kwargs))
+        except BaseException as e:  # noqa: BLE001 – jako ve vlákně: chyba patří do future
+            future.set_exception(e)
         return future
 
 
@@ -102,6 +122,8 @@ class BackgroundPool(SparePool):
 _LOCK = threading.Lock()
 _HOST_STOP = [None]   # `should_stop` hostitele pro úlohy na pozadí — `set_host_stop()`
 _PENDING = set()   # nedokončené úlohy všech `BackgroundPool` v procesu
+_POOLS = weakref.WeakSet()   # živé `SparePool` v procesu — `close_pools()`
+_CLOSED = [False]   # hostitel skončil: `submit()` už nezakládá vlákna
 
 
 def _forget(future):
@@ -119,6 +141,22 @@ def cancel_background():
     with _LOCK:
         pending = list(_PENDING)
     return sum(1 for f in pending if f.cancel())
+
+
+def close_pools(closed=True):
+    """Hostitel skončil (Kodi: konec `main()` pluginu). Zavře všechny fondy v procesu
+    (`shutdown(wait=False)`: rozběhnuté a čekající úlohy doběhnou, nečinná vlákna skončí)
+    a další `submit()` už vlákno nezaloží – úloha se udělá ve volajícím vlákně, u `inline=False`
+    vyhodí `RuntimeError` (volající ji vynechá). Bez toho si opozdilá úloha na pozadí
+    sdílený fond (hlavičky, popisy) po konci založila znovu, nikdo ho nezavřel a Kodi
+    na jeho nečinná vlákna čekalo navždy (obývák 2026-11-01: pád po 17 h, došla vlákna).
+    HA ani Stremio to nevolají, jejich proces běží dál. `closed=False` fondy zase otevře
+    (začátek dalšího běhu ve stejném interpretu: Kodi s reuse invoker, testy)."""
+    _CLOSED[0] = bool(closed)
+    if not closed:
+        return
+    for pool in list(_POOLS):
+        pool.shutdown(wait=False)
 
 
 def never():
