@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 jobs:
   testy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # Ubuntu 26.04 (ubuntu-latest) už nemá Python 3.8
     strategy:
       matrix:
         python: ["3.8", "3.12"]   # 3.8 = Kodi 20 na Androidu a Windows
