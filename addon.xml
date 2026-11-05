@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="12.4.2" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="12.5.0" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -48,7 +48,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>12.4.2 – Kodi po mnoha hodinách běhu už nespadne kvůli vláknům, která po doplňku zůstávala viset.
+    <news>12.5.0 – Nové nastavení Ověřování na pozadí ulehčí slabým TV boxům s vlastními katalogy. Služba nepadá u stop s neobvyklými znaky v názvu.
+12.4.2 – Kodi po mnoha hodinách běhu už nespadne kvůli vláknům, která po doplňku zůstávala viset.
 12.4.0 – Nové nastavení Rovnou přehrát nejlepší stream pustí titul bez výběru streamu. Hledání se zapnutou Lunou nabízí i hledání na WebShare a HellSpy. Doplněk nepadá u titulků z Luny, na zařízení, kterému dochází vlákna, ani u neúplného odkazu na přehrání.
 12.3.1 – V Pokračovat ve sledování je před dalším dílem místo textu „Další díl:“ šipka », takže se vejde víc z názvu seriálu.
 12.1.1 – Vlastní katalogy nových filmů s ověřováním streamů berou jen filmy, které už vyšly digitálně nebo na DVD a Blu-ray, takže katalog řazený od nejnovějšího už nezůstane skoro prázdný.
