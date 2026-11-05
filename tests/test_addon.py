@@ -6082,7 +6082,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 141)   # +1 fav_drop_watched (zhlédnuté pryč z Mého seznamu), +2 menu_edit_action, menu_reset_action (hlavní menu), +1 sync_concerts (10.3.0), +1 tmdb_check, +3 mylist1–3_enabled, +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs, +2 hide_dv, hide_hdr (DV/HDR filtr), +2 hide_dv_only, hide_av1, +1 play_best_stream
+        self.assertEqual(len(volby), 142)   # +1 verify_mode (šetrné ověřování na pozadí), +1 fav_drop_watched (zhlédnuté pryč z Mého seznamu), +2 menu_edit_action, menu_reset_action (hlavní menu), +1 sync_concerts (10.3.0), +1 tmdb_check, +3 mylist1–3_enabled, +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs, +2 hide_dv, hide_hdr (DV/HDR filtr), +2 hide_dv_only, hide_av1, +1 play_best_stream
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):
@@ -7035,8 +7035,11 @@ class TestAktualizaceDoplnku(unittest.TestCase):
                 self.events.append(event)
                 return True
 
-            def _save(self):
-                pass
+            def set_flag(self, key, value=None):
+                if value is None:
+                    self.data.pop(key, None)
+                else:
+                    self.data[key] = value
 
         stats = S()
         service.QUITTING.set()
@@ -7053,6 +7056,20 @@ class TestAktualizaceDoplnku(unittest.TestCase):
             service.service_started(stats)
         self.assertEqual(stats.events, ["stop", "start"])
         self.assertNotIn("stopped", stats.data)
+
+
+class TestOvereniNaPozadi(unittest.TestCase):
+    """Volba `verify_mode`: Normální / Šetrné (slabé boxy) / Vypnuto."""
+
+    def test_rezimy(self):
+        for val, cekam in (("", (service.VERIFY_EVERY, service.mycat.AUTO_BATCH)),
+                           ("0", (service.VERIFY_EVERY, service.mycat.AUTO_BATCH)),
+                           ("1", (service.VERIFY_EVERY * 3, 3)),
+                           ("2", (service.VERIFY_EVERY, 0)),
+                           ("9", (service.VERIFY_EVERY, service.mycat.AUTO_BATCH))):
+            addon = type("A", (), {"getSetting": lambda self, k, v=val: v})()
+            with mock.patch.object(service, "fresh_addon", lambda a=addon: a):
+                self.assertEqual(service.verify_mode(), cekam, val)
 
 
 class TestKvalitaDoStatistik(unittest.TestCase):

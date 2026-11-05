@@ -1371,6 +1371,18 @@
           <data>RunPlugin(plugin://plugin.video.nokturno/?action=log_send)</data>
           <control format="action" type="button"/>
         </setting>
+        <setting id="verify_mode" type="integer" label="31123" help="31124">
+          <level>0</level>
+          <default>0</default>
+          <constraints>
+            <options>
+              <option label="31125">0</option>
+              <option label="31126">1</option>
+              <option label="31127">2</option>
+            </options>
+          </constraints>
+          <control format="string" type="spinner"/>
+        </setting>
       </group>
       <group id="info1" label="30690">
         <setting id="info_web" type="action" label="30692">

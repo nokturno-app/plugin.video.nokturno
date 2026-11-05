@@ -3746,3 +3746,23 @@ msgstr "Výber streamu sa preskočí aj pri položkách z Nokturna a z TMDBHelpe
 msgctxt "#31122"
 msgid "The play link is incomplete – the title type or id is missing."
 msgstr "Odkaz na prehratie je neúplný – chýba typ alebo id titulu."
+
+msgctxt "#31123"
+msgid "Background verification"
+msgstr "Overovanie na pozadí"
+
+msgctxt "#31124"
+msgid "How often titles in custom catalogues and concerts are verified in the background. Gentle verifies fewer titles less often – good for weak TV boxes. Off verifies only manually and when an empty list is opened."
+msgstr "Ako často sa na pozadí overujú tituly vo vlastných katalógoch a koncertoch. Šetrné overuje menej a zriedka – hodí sa pre slabé TV boxy. Vypnuté overuje len ručne a pri otvorení prázdneho zoznamu."
+
+msgctxt "#31125"
+msgid "Normal"
+msgstr "Normálne"
+
+msgctxt "#31126"
+msgid "Gentle"
+msgstr "Šetrné"
+
+msgctxt "#31127"
+msgid "Off"
+msgstr "Vypnuté"

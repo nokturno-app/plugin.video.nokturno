@@ -3746,3 +3746,23 @@ msgstr ""
 msgctxt "#31122"
 msgid "The play link is incomplete – the title type or id is missing."
 msgstr ""
+
+msgctxt "#31123"
+msgid "Background verification"
+msgstr ""
+
+msgctxt "#31124"
+msgid "How often titles in custom catalogues and concerts are verified in the background. Gentle verifies fewer titles less often – good for weak TV boxes. Off verifies only manually and when an empty list is opened."
+msgstr ""
+
+msgctxt "#31125"
+msgid "Normal"
+msgstr ""
+
+msgctxt "#31126"
+msgid "Gentle"
+msgstr ""
+
+msgctxt "#31127"
+msgid "Off"
+msgstr ""

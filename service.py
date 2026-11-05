@@ -115,6 +115,10 @@ WARM_RETRY = 10 * 60      # když se zrovna přehrává, zahřívání počká
 VERIFY_TRIGGER_PROP = "nokturno.verify.trigger"   # stejný literál jako v default.py; hodnota = id katalogu
 VERIFY_MANUAL_PROP = "nokturno.verify.manual"     # stejný literál jako v default.py; „cíl:počet“
 VERIFY_EVERY = 600            # automatická dávka ověřování (vlastní katalogy, koncerty) po 10 minutách
+# Volba „Ověřování na pozadí“ (`verify_mode`): (násobek VERIFY_EVERY, titulů v dávce). Šetrné pro slabé boxy
+# (x96max se s Hlídanými zpomaloval), Vypnout = jen ruční dávka a první dávka prázdného seznamu.
+VERIFY_MODES = ((1, None), (3, 3), (0, 0))
+WATCH_BUSY = threading.Event()   # běží kontrola Hlídaných – automatické ověřování to kolo vynechá
 VERIFY_START_DELAY = 120     # první dávka brzy po startu – boxy se vypínají, mobil má síť jen v popředí
 FORYOU_SEEN_KEY = "foryou_seen"      # stejný literál jako v default.py (note_foryou_open)
 FORYOU_SEEN_DAYS = 14                # a stejná lhůta jako v default.py
@@ -1043,12 +1047,14 @@ class WatchChecker:
             return
 
         def run():
+            WATCH_BUSY.set()
             try:
                 url = "plugin://plugin.video.nokturno/?action=watch_check"
                 rpc_directory(url + ("&force=1" if trigger == "force" else ""))
             except Exception as e:  # noqa: BLE001 – kontrola nesmí shodit službu
                 log(f"kontrola Hlídaných: {e}", xbmc.LOGWARNING)
             finally:
+                WATCH_BUSY.clear()
                 self.lock.release()
             self.announce()
 
@@ -1516,6 +1522,17 @@ def _verify_run(monitor, target, count, progress):
     return done, matched, total
 
 
+def verify_mode():
+    """(interval v sekundách, titulů v dávce) podle volby `verify_mode`; dávka 0 = automaticky neověřovat."""
+    addon = fresh_addon()
+    try:
+        mode = int(addon.getSetting("verify_mode") or 0) if addon else 0
+    except ValueError:
+        mode = 0
+    times, batch = VERIFY_MODES[mode] if 0 <= mode < len(VERIFY_MODES) else VERIFY_MODES[0]
+    return VERIFY_EVERY * max(times, 1), mycat.AUTO_BATCH if batch is None else batch
+
+
 def verify_worker(monitor):
     """Vlákno: průběžně ověřuje vlastní katalogy po dávkách (po jednom titulu, viz
     `_verify_run`), vždy jeden cíl na kolo, dokud je síť; při přehrávání automaticky jen 1 titul za kolo. Ruční dávku zadá vlastnost okna
@@ -1530,6 +1547,9 @@ def verify_worker(monitor):
         manual = win.getProperty(VERIFY_MANUAL_PROP)
         trigger = win.getProperty(VERIFY_TRIGGER_PROP)
         if waited < VERIFY_EVERY and not trigger and not manual:
+            continue
+        every, batch = verify_mode()
+        if not trigger and not manual and (waited < every or not batch or WATCH_BUSY.is_set()):
             continue
         try:
             if QUITTING.is_set() or not terms_ok():
@@ -1559,7 +1579,7 @@ def verify_worker(monitor):
                 target, turn = targets[turn % len(targets)], turn + 1
             if target in targets:
                 waited = 0
-                _verify_run(monitor, target, 1 if playing and not trigger else mycat.AUTO_BATCH, False)
+                _verify_run(monitor, target, 1 if playing and not trigger else (batch or mycat.AUTO_BATCH), False)
         except Exception as e:  # noqa: BLE001 – vlákno nesmí spadnout
             log(f"verify_worker: {e}", xbmc.LOGDEBUG)   # výpadek zdroje = šum v logu
 
@@ -1656,8 +1676,7 @@ def service_started(stats):
 
     def run():
         if stats.send_event(COLLECT_URL, "start", ADDON.getAddonInfo("version"), "kodi"):
-            stats.data.pop("stopped", None)
-            stats._save()
+            stats.set_flag("stopped")
     start_thread(run)
 
 
@@ -1667,8 +1686,7 @@ def service_stopped(stats):
     neozve, je vidět jako odinstalovaná. Kodi na službu čeká jen pár sekund."""
     if QUITTING.is_set():
         return
-    stats.data["stopped"] = True
-    stats._save()
+    stats.set_flag("stopped", True)
     stats.send_event(COLLECT_URL, "stop", ADDON.getAddonInfo("version"), "kodi")
 
 

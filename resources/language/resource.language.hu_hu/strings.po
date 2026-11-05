@@ -3744,3 +3744,23 @@ msgstr "A stream kiválasztása a Nokturno és a TMDBHelper elemeinél is kimara
 msgctxt "#31122"
 msgid "The play link is incomplete – the title type or id is missing."
 msgstr "A lejátszási hivatkozás hiányos – hiányzik a cím típusa vagy azonosítója."
+
+msgctxt "#31123"
+msgid "Background verification"
+msgstr "Ellenőrzés a háttérben"
+
+msgctxt "#31124"
+msgid "How often titles in custom catalogues and concerts are verified in the background. Gentle verifies fewer titles less often – good for weak TV boxes. Off verifies only manually and when an empty list is opened."
+msgstr "Milyen gyakran ellenőrzi a háttérben a saját katalógusok és koncertek címeit. A Kímélő ritkábban és kevesebbet ellenőriz – gyenge TV-boxokhoz ajánlott. Kikapcsolva csak kézzel és üres lista megnyitásakor ellenőriz."
+
+msgctxt "#31125"
+msgid "Normal"
+msgstr "Normál"
+
+msgctxt "#31126"
+msgid "Gentle"
+msgstr "Kímélő"
+
+msgctxt "#31127"
+msgid "Off"
+msgstr "Kikapcsolva"
