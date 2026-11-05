@@ -228,6 +228,17 @@ class Stats:
             return False
 
     def _failed(self, why):
-        self.data["next_try"] = int(time.time()) + RETRY_EVERY
-        self._save()
+        with self._lock:
+            self.data["next_try"] = int(time.time()) + RETRY_EVERY
+            self._save()
         return False, why
+
+    def set_flag(self, key, value=None):
+        """Změna příznaku z jiného vlákna (služba Kodi) pod zámkem; `None` příznak smaže.
+        Bez zámku `json.dump` v `_save` padal na „dictionary changed size during iteration"."""
+        with self._lock:
+            if value is None:
+                self.data.pop(key, None)
+            else:
+                self.data[key] = value
+            self._save()

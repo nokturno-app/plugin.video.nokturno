@@ -234,8 +234,14 @@ class Store:
             path = self._path(name)
             tmp = self._tmp(path)
             try:
-                with open(tmp, "w", encoding="utf-8") as f:
-                    json.dump(data, f, ensure_ascii=False)
+                try:
+                    with open(tmp, "w", encoding="utf-8") as f:
+                        json.dump(data, f, ensure_ascii=False)
+                except UnicodeEncodeError:
+                    # Osamělý surrogát (`\udce8` z bajtu cp1250 v názvu stopy či souboru) do UTF-8
+                    # nejde; s `ensure_ascii` se zapíše jako escape a načte se zpět beze změny.
+                    with open(tmp, "w", encoding="utf-8") as f:
+                        json.dump(data, f, ensure_ascii=True)
                 try:
                     # `trakt.json`, `cztor_session.json` a spol. nesou přístupové tokeny;
                     # výchozí práva bývají 0644, tedy čitelné pro kohokoli na stroji.
