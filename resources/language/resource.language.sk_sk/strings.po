@@ -3766,3 +3766,11 @@ msgstr "Šetrné"
 msgctxt "#31127"
 msgid "Off"
 msgstr "Vypnuté"
+
+msgctxt "#31128"
+msgid "Download subtitles automatically"
+msgstr "Sťahovať titulky automaticky"
+
+msgctxt "#31129"
+msgid "Downloads subtitles from the source, WebShare and OpenSubtitles before playback. Never when the stream already has audio or built-in subtitles in your language. Off: only subtitles in the file and the ones you pick in the Kodi subtitles dialog."
+msgstr "Pred prehratím stiahne titulky zo zdroja, z WebShare a z OpenSubtitles. Nikdy, keď má stream zvuk alebo vložené titulky v tvojom jazyku. Vypnuté: len titulky v súbore a tie, ktoré vyberieš v dialógu titulkov Kodi."

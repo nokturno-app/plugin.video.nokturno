@@ -10,6 +10,7 @@ Do profilu doplňku se ukládá historie hledání, zhlédnuto/rozkoukáno (zapi
 `service.py`), Můj seznam, snímky titulů pro Pokračovat a fronta stahování.
 """
 import base64
+import importlib
 import json
 import logging
 import os
@@ -99,20 +100,33 @@ ADDON_ID = ADDON.getAddonInfo("id")
 # s `sealbox` kryptografii — dohromady jde o nejtěžší část importů a potřebují je jen
 # tři obrazovky nastavení, ne menu, výpisy ani přehrání. `import` uvnitř funkce je po
 # prvním volání jen vyhledání v `sys.modules`, takže se to nevyplatí obcházet cachí.
+def _lazy_import(name):
+    """Líný import modulu z `resources/lib`. Když selže (složka doplňku se za běhu
+    vyměnila, Python si ji zapamatoval jako nedostupnou), zahodí cache hledání cest
+    a zkusí to jednou znovu – pád b9a7106a46c5."""
+    try:
+        return importlib.import_module(name)
+    except ModuleNotFoundError as e:
+        if e.name != name:
+            raise
+        if _LIB not in sys.path:
+            sys.path.insert(0, _LIB)
+        sys.path_importer_cache.pop(_LIB, None)
+        importlib.invalidate_caches()
+        return importlib.import_module(name)
+
+
 def _qr():
-    import qr
-    return qr
+    return _lazy_import("qr")
 
 
 def _remote_setup():
-    import remote_setup
-    return remote_setup
+    return _lazy_import("remote_setup")
 
 
 def _transfer_core():
     # jmenuje se takhle, aby se `transfer_*` funkce níž nepotkaly jménem s modulem
-    import transfer
-    return transfer
+    return _lazy_import("transfer")
 
 
 class _KodiLogHandler(logging.Handler):
@@ -2500,10 +2514,18 @@ _OLD_SHOW = {"size": "show_size", "length": "show_length", "source": "show_sourc
 def stream_layout():
     """(horní řádek, dolní řádek) jako seznamy klíčů. Neplatná hodnota → výchozí pořadí.
     Výchozí hodnota u instalace, která dřív vypnula některý přepínač `show_*`, ho vynechá."""
+    try:
+        parse_order = _remote_setup().parse_order
+    except ImportError as e:
+        xbmc.log(f"[{ADDON_ID}] rozložení streamů: {e}, použije se výchozí", xbmc.LOGWARNING)
+        parse_order = None
     raw = setting("stream_layout", STREAM_LAYOUT_DEFAULT).strip()
-    rows = _remote_setup().parse_order(raw, set(STREAM_PARTS)) if raw else None
-    if rows is None:
-        rows = _remote_setup().parse_order(STREAM_LAYOUT_DEFAULT, set(STREAM_PARTS))
+    if parse_order is None:
+        rows = [part.split(",") for part in STREAM_LAYOUT_DEFAULT.split("|")]
+    else:
+        rows = parse_order(raw, set(STREAM_PARTS)) if raw else None
+        if rows is None:
+            rows = parse_order(STREAM_LAYOUT_DEFAULT, set(STREAM_PARTS))
     if raw in ("", STREAM_LAYOUT_DEFAULT):
         off = {key for key, old in _OLD_SHOW.items() if setting(old, "true") == "false"}
         rows = [[k for k in row if k not in off] for row in rows]
@@ -2568,6 +2590,18 @@ SUBS_KEEP_S = 2 * 86400
 # na titulky se před přehráním čeká nejvýš tolik — WebShare u nedostupného souboru odpovídá
 # „temporarily unavailable“ až po 5–13 s (Office 2026-09-16) a přehrání by stálo
 SUBS_BUDGET_S = 4.0
+
+
+def subs_wanted(chosen):
+    """Stahovat k tomuhle streamu titulky? Ne, když je uživatel vypnul, nebo když
+    stream má zvuk či vložené titulky v jazyce, který by titulky jinak doplnily
+    (`SUBTITLE_FALLBACK` podle předvolby zvuku, bez ní CZ a SK)."""
+    if not on("subs_download"):
+        return False
+    pref = PREF_LANGS[int(setting("pref_lang", "0"))]
+    chci = set(SUBTITLE_FALLBACK.get(pref) or ("CZ", "SK"))
+    mam = set(chosen.get("langs") or []) | set(chosen.get("subs") or [])
+    return not (mam & chci)
 
 
 def subtitle_refs(apis, chosen, resolved_path, video=None, ctype="movie"):
@@ -8007,7 +8041,8 @@ def play(apis, ctype, item_id, series_id=None, url=None, alt=None, subs="", pref
             tag.setResumePoint(resume, total)
         except Exception:  # noqa: BLE001 – Kodi < 20
             pass
-    subtitles = local_subtitles(apis, subtitle_refs(apis, chosen, resolved_path, video, ctype))
+    subtitles = (local_subtitles(apis, subtitle_refs(apis, chosen, resolved_path, video, ctype))
+                 if subs_wanted(chosen) else [])
     if subtitles:
         li.setSubtitles(subtitles)
     STORE.remember_item(item_id, snapshot(meta, ctype, video, series_id, alt))

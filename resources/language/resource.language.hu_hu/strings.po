@@ -3764,3 +3764,11 @@ msgstr "Kímélő"
 msgctxt "#31127"
 msgid "Off"
 msgstr "Kikapcsolva"
+
+msgctxt "#31128"
+msgid "Download subtitles automatically"
+msgstr "Feliratok automatikus letöltése"
+
+msgctxt "#31129"
+msgid "Downloads subtitles from the source, WebShare and OpenSubtitles before playback. Never when the stream already has audio or built-in subtitles in your language. Off: only subtitles in the file and the ones you pick in the Kodi subtitles dialog."
+msgstr "Lejátszás előtt letölti a feliratokat a forrásból, a WebShare-ről és az OpenSubtitles-ről. Soha, ha a stream hangja vagy beépített felirata már a te nyelveden van. Kikapcsolva: csak a fájlban lévő és a Kodi feliratablakában választott feliratok."

@@ -917,6 +917,11 @@
           </constraints>
           <control format="string" type="spinner"/>
         </setting>
+        <setting id="subs_download" type="boolean" label="31128" help="31129">
+          <level>0</level>
+          <default>true</default>
+          <control type="toggle"/>
+        </setting>
         <setting id="hide_sd" type="boolean" label="30115" help="30315">
           <level>0</level>
           <default>false</default>
