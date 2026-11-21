@@ -6896,16 +6896,21 @@ class TestHlidane(unittest.TestCase):
 
     def test_pozadavky_dialog_ulozi_vyber(self):
         default.watch_lib.want(default.STORE, "tt8", {"title": "Film", "type": "movie"})
-        # řádek Obraz -> 2K a lepší, řádek Zvuk -> 5.1 a víc, zpět
-        with mock.patch.object(xbmcgui.Dialog, "select", side_effect=[0, 2, 1, 1, -1]):
+        # řádek Obraz -> 2K a lepší, řádek Zvuk -> 5.1 a víc, Uložit
+        with mock.patch.object(xbmcgui.Dialog, "select", side_effect=[1, 2, 2, 1, 0]):
             default.watch_requirements("tt8")
         item = default.watch_lib.wanted(default.STORE)["tt8"]
         self.assertEqual(default.watch_lib.requirements(item), (3.5, True, "", ""))
+        # Zrušit po změně nic neuloží
+        with mock.patch.object(xbmcgui.Dialog, "select", side_effect=[1, 0, -1]):
+            default.watch_requirements("tt8")
+        self.assertEqual(default.watch_lib.requirements(default.watch_lib.wanted(default.STORE)["tt8"]),
+                         (3.5, True, "", ""))
 
     def test_pozadavky_u_serialu(self):
         default.watch_lib.watch_series(default.STORE, "tt9", {"title": "Seriál"})
-        # řádek Dabing -> CZ, zpět
-        with mock.patch.object(xbmcgui.Dialog, "select", side_effect=[2, 1, -1]):
+        # řádek Dabing -> CZ, Uložit
+        with mock.patch.object(xbmcgui.Dialog, "select", side_effect=[3, 1, 0]):
             default.watch_requirements("tt9")
         self.assertEqual(default.watch_lib.requirements(default.watch_lib.series(default.STORE)["tt9"]),
                          (0, False, "CZ", ""))
@@ -6915,9 +6920,9 @@ class TestHlidane(unittest.TestCase):
         self.assertIn(default.L(31130, "Požadavky na stream…"), [c[0] for c in serial.context])
 
     def test_pridani_hned_nabidne_pozadavky(self):
-        # řádek Obraz -> 4K, zpět
+        # řádek Obraz -> 4K, Uložit
         with mock.patch.object(default, "watch_info", return_value={"title": "Film"}), \
-                mock.patch.object(xbmcgui.Dialog, "select", side_effect=[0, 3, -1]):
+                mock.patch.object(xbmcgui.Dialog, "select", side_effect=[1, 3, 0]):
             default.toggle_want(None, "tt6")
         self.assertEqual(default.watch_lib.requirements(default.watch_lib.wanted(default.STORE)["tt6"]),
                          (4, False, "", ""))

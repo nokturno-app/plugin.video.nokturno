@@ -7012,7 +7012,8 @@ def watch_requirements_summary(rec):
 def watch_requirements(wid):
     """„Požadavky na stream…“ u vlastního hlídaného titulu nebo sledovaného seriálu:
     obraz, zvuk, dabing, titulky. Změna uloží požadavky, vynuluje výsledek kontroly a požádá o novou.
-    Otevře se i hned po přidání do Hlídaných; Zpět bez změny = vše Nerozhoduje."""
+    Otevře se i hned po přidání do Hlídaných. Kodi tlačítko „Zrušit“ přejmenovat neumí, proto je
+    nahoře řádek „Uložit“; Zrušit/Zpět změny zahodí (u nového titulu = vše Nerozhoduje)."""
     item = watch_lib.wanted(STORE).get(wid) or watch_lib.series(STORE).get(wid)
     if item is None:
         return
@@ -7026,10 +7027,13 @@ def watch_requirements(wid):
 
     while True:
         idx = xbmcgui.Dialog().select(L(31130, "Požadavky na stream…").rstrip("…"),
-                                      [f"{name}: {label(opts, cur[key])}" for key, name, opts in rows])
+                                      [f"[B]{L(31140, 'Uložit')}[/B]"]
+                                      + [f"{name}: {label(opts, cur[key])}" for key, name, opts in rows])
         if idx < 0:
+            return
+        if idx == 0:
             break
-        key, name, opts = rows[idx]
+        key, name, opts = rows[idx - 1]
         pick = xbmcgui.Dialog().select(name, [L(sid, fb) if sid else fb for _v, sid, fb in opts],
                                        preselect=next((i for i, o in enumerate(opts) if o[0] == cur[key]), -1))
         if pick >= 0:

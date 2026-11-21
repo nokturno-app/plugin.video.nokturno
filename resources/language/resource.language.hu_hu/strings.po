@@ -3812,3 +3812,7 @@ msgstr "A stream követelmények elmentve"
 msgctxt "#31139"
 msgid "does not meet requirements"
 msgstr "nem felel meg a követelményeknek"
+
+msgctxt "#31140"
+msgid "Save"
+msgstr "Mentés"
