@@ -3774,3 +3774,43 @@ msgstr "Stahovat titulky automaticky"
 msgctxt "#31129"
 msgid "Downloads subtitles from the source, WebShare and OpenSubtitles before playback. Never when the stream already has audio or built-in subtitles in your language. Off: only subtitles in the file and the ones you pick in the Kodi subtitles dialog."
 msgstr "Před přehráním stáhne titulky ze zdroje, z WebShare a z OpenSubtitles. Nikdy, když má stream zvuk nebo vložené titulky ve tvém jazyce. Vypnuto: jen titulky v souboru a ty, které vybereš v dialogu titulků Kodi."
+
+msgctxt "#31130"
+msgid "Stream requirements…"
+msgstr "Požadavky na stream…"
+
+msgctxt "#31131"
+msgid "Picture"
+msgstr "Obraz"
+
+msgctxt "#31132"
+msgid "Sound"
+msgstr "Zvuk"
+
+msgctxt "#31133"
+msgid "Dubbing"
+msgstr "Dabing"
+
+msgctxt "#31134"
+msgid "Subtitles"
+msgstr "Titulky"
+
+msgctxt "#31135"
+msgid "Doesn't matter"
+msgstr "Nerozhoduje"
+
+msgctxt "#31136"
+msgid "Full HD or better"
+msgstr "Full HD a lepší"
+
+msgctxt "#31137"
+msgid "2K or better"
+msgstr "2K a lepší"
+
+msgctxt "#31138"
+msgid "Stream requirements saved"
+msgstr "Požadavky na stream uloženy"
+
+msgctxt "#31139"
+msgid "does not meet requirements"
+msgstr "nevyhovuje požadavkům"

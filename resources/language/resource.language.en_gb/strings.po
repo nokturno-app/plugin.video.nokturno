@@ -3774,3 +3774,43 @@ msgstr ""
 msgctxt "#31129"
 msgid "Downloads subtitles from the source, WebShare and OpenSubtitles before playback. Never when the stream already has audio or built-in subtitles in your language. Off: only subtitles in the file and the ones you pick in the Kodi subtitles dialog."
 msgstr ""
+
+msgctxt "#31130"
+msgid "Stream requirements…"
+msgstr ""
+
+msgctxt "#31131"
+msgid "Picture"
+msgstr ""
+
+msgctxt "#31132"
+msgid "Sound"
+msgstr ""
+
+msgctxt "#31133"
+msgid "Dubbing"
+msgstr ""
+
+msgctxt "#31134"
+msgid "Subtitles"
+msgstr ""
+
+msgctxt "#31135"
+msgid "Doesn't matter"
+msgstr ""
+
+msgctxt "#31136"
+msgid "Full HD or better"
+msgstr ""
+
+msgctxt "#31137"
+msgid "2K or better"
+msgstr ""
+
+msgctxt "#31138"
+msgid "Stream requirements saved"
+msgstr ""
+
+msgctxt "#31139"
+msgid "does not meet requirements"
+msgstr ""

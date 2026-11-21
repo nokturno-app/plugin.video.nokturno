@@ -6980,6 +6980,63 @@ def watch_flag(wid):
     xbmc.executebuiltin("Container.Refresh")
 
 
+WATCH_REQ_QUALITY = ((0, 31135, "Nerozhoduje"), (3, 31136, "Full HD a lepší"), (3.5, 31137, "2K a lepší"),
+                     (4, 0, "4K"))
+WATCH_REQ_SOUND = ((False, 31135, "Nerozhoduje"), (True, 30888, "5.1 a víc"))
+WATCH_REQ_TRACKS = tuple((v, 31135 if not v else sid, "Nerozhoduje" if not v else fb)
+                         for v, sid, fb in MYCAT_TRACK_LABELS)
+
+
+def watch_requirements_summary(rec):
+    """Šedé shrnutí požadavků na stream do popisku řádku („2K+ · CZ dabing · 5.1“), prázdné = nic."""
+    req = watch_lib.requirements(rec)
+    if not req:
+        return ""
+    q, surround, audio, subs = req
+    parts = []
+    if q:
+        parts.append({3: "Full HD+", 3.5: "2K+"}.get(q, "4K"))
+    if audio:
+        parts.append(f"{audio.replace('|', '/')} {L(31133, 'Dabing').lower()}")
+    if surround:
+        parts.append(L(30293, "5.1"))
+    if subs:
+        parts.append(f"{subs.replace('|', '/')} {L(31134, 'Titulky').lower()}")
+    return f"[COLOR {GREY}]{' · '.join(parts)}[/COLOR]"
+
+
+def watch_requirements(wid):
+    """„Požadavky na stream…“ u vlastního hlídaného titulu: obraz, zvuk, dabing, titulky.
+    Změna uloží požadavky, vynuluje výsledek kontroly a požádá o novou."""
+    if not watch_lib.is_wanted(STORE, wid):
+        return
+    old = watch_lib.requirements(watch_lib.wanted(STORE).get(wid)) or (0, False, "", "")
+    cur = dict(zip(watch_lib.REQ_FIELDS, old))
+    rows = (("q", L(31131, "Obraz"), WATCH_REQ_QUALITY), ("surround", L(31132, "Zvuk"), WATCH_REQ_SOUND),
+            ("audio", L(31133, "Dabing"), WATCH_REQ_TRACKS), ("subs", L(31134, "Titulky"), WATCH_REQ_TRACKS))
+
+    def label(options, value):
+        return next((L(sid, fb) if sid else fb for v, sid, fb in options if v == value), "")
+
+    while True:
+        idx = xbmcgui.Dialog().select(L(31130, "Požadavky na stream…").rstrip("…"),
+                                      [f"{name}: {label(opts, cur[key])}" for key, name, opts in rows])
+        if idx < 0:
+            break
+        key, name, opts = rows[idx]
+        pick = xbmcgui.Dialog().select(name, [L(sid, fb) if sid else fb for _v, sid, fb in opts],
+                                       preselect=next((i for i, o in enumerate(opts) if o[0] == cur[key]), -1))
+        if pick >= 0:
+            cur[key] = opts[pick][0]
+    if tuple(cur.values()) == old:
+        return
+    watch_lib.set_requirements(STORE, wid, cur)
+    request_sync()
+    request_watch_check()
+    notify(L(31138, "Požadavky na stream uloženy"))
+    xbmc.executebuiltin("Container.Refresh")
+
+
 def watch_episode_context(sid, ep_id, alt=None):
     """„Kontrolovat dál“ u dílu: díl má streamy, ale ne takové, jaké uživatel chce
     (třeba bez CZ titulků) — hlídá se jako titul a ozve se, až streamů přibude."""
@@ -7028,6 +7085,8 @@ def watch_status(rec, flagged):
         return f"[COLOR {WATCH_OK}]{L(30909, 'lze pustit')}[/COLOR]"
     if not rec.get("checked"):
         return ""
+    if rec.get("total"):
+        return f"[COLOR {GREY}]{L(31139, 'nevyhovuje požadavkům')}[/COLOR]"
     return f"[COLOR {GREY}]{L(30911, 'hlídá se') if rec.get('pending') else L(30910, 'zatím ne')}[/COLOR]"
 
 
@@ -7119,12 +7178,16 @@ def list_watch():
         status = watch_status(rec, wid in flags)
         if status:
             label += " · " + status
+        summary = watch_requirements_summary(rec)
+        if summary:
+            label += " · " + summary
         own = watch_lib.is_wanted(STORE, wid)
         ctx = []
         if rec.get("streams"):
             ctx.append((L(30906, "Nekontrolovat dál") if wid in flags else L(30905, "Kontrolovat dál"),
                         runplugin(action="watch_flag", id=wid)))
         if own:
+            ctx.append((L(31130, "Požadavky na stream…"), runplugin(action="watch_req", id=wid)))
             ctx.append((L(30904, "Přestat hlídat"), runplugin(action="want", id=wid, type=rec.get("type"))))
         ctx.append(check_now)
         target = rec.get("found_id") or wid
@@ -8430,6 +8493,7 @@ def router(query):
         "favourites": list_favourites,
         "watchlist": list_watch,
         "watch_flag": lambda: watch_flag(p["id"]),
+        "watch_req": lambda: watch_requirements(p["id"]),
         "watch_seen": lambda: watch_seen(p.get("id")),
         "watch_check_now": lambda: _tlacitko(lambda: request_watch_check(force=True)),
         "recent": list_recent,
@@ -8705,7 +8769,7 @@ MARKS_SKIP = frozenset((
     "sync_create", "sync_join", "sync_leave", "mycats", "mycat_artist", "lastfm_check", "tmdb_check", "mycat_new", "mycat_edit", "mycat_delete", "mycat_menu", "home_pick",
     "mycat_remote", "concerts", "concerts_recent", "concerts_tags", "concerts_tag", "concerts_letters",
     "concerts_letter", "concerts_artist", "concerts_setup", "concerts_find", "concerts_add",
-    "watch_series", "want", "watch_episode", "watch_flag", "watch_seen", "watch_check", "watch_check_now",
+    "watch_series", "want", "watch_episode", "watch_flag", "watch_req", "watch_seen", "watch_check", "watch_check_now",
     "whats_new", "ha_files", "settings", "transfer_send", "transfer_receive",
     "transfer_file_save", "transfer_file_load", "menu_move", "menu_hide", "menu_edit", "menu_reset",
 ))

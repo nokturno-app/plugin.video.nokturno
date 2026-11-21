@@ -6881,6 +6881,27 @@ class TestHlidane(unittest.TestCase):
         dil = next(li for _h, u, li, _f in xbmcplugin.items if "tt3%3A1%3A1" in u or "tt3:1:1" in u)
         self.assertIn(default.L(30979, "Seznam dílů"), [c[0] for c in dil.context])
 
+    def test_pozadavky_na_stream_v_menu_a_popisku(self):
+        default.watch_lib.want(default.STORE, "tt7", {"title": "Film", "type": "movie"})
+        default.watch_lib.set_requirements(default.STORE, "tt7", {"q": 3.5, "audio": "CZ", "surround": True})
+        default.STORE.save("trakt_list", {"tt7": {"id": "tt7", "title": "Film", "type": "movie", "streams": 0,
+                                                   "total": 4, "checked": "x", "q": 3.5, "audio": "CZ",
+                                                   "surround": True}})
+        default.list_watch()
+        film = next(li for _h, u, li, _f in xbmcplugin.items if "tt7" in u)
+        self.assertIn("2K+ · CZ dabing · 5.1", film.label)
+        self.assertIn(default.L(31139, "nevyhovuje požadavkům"), film.label)
+        self.assertIn(default.L(31130, "Požadavky na stream…"), [c[0] for c in film.context])
+        self.assertIn("watch_req", default.MARKS_SKIP)
+
+    def test_pozadavky_dialog_ulozi_vyber(self):
+        default.watch_lib.want(default.STORE, "tt8", {"title": "Film", "type": "movie"})
+        # řádek Obraz -> 2K a lepší, řádek Zvuk -> 5.1 a víc, zpět
+        with mock.patch.object(xbmcgui.Dialog, "select", side_effect=[0, 2, 1, 1, -1]):
+            default.watch_requirements("tt8")
+        item = default.watch_lib.wanted(default.STORE)["tt8"]
+        self.assertEqual(default.watch_lib.requirements(item), (3.5, True, "", ""))
+
     def test_akce_nectou_videodatabazi(self):
         for action in ("watch_series", "want", "watch_episode", "watch_flag", "watch_seen", "watch_check", "watch_check_now"):
             self.assertIn(action, default.MARKS_SKIP)
