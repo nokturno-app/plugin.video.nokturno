@@ -6914,6 +6914,18 @@ class TestHlidane(unittest.TestCase):
         self.assertIn("CZ dabing", serial.label)
         self.assertIn(default.L(31130, "Požadavky na stream…"), [c[0] for c in serial.context])
 
+    def test_pridani_hned_nabidne_pozadavky(self):
+        # řádek Obraz -> 4K, zpět
+        with mock.patch.object(default, "watch_info", return_value={"title": "Film"}), \
+                mock.patch.object(xbmcgui.Dialog, "select", side_effect=[0, 3, -1]):
+            default.toggle_want(None, "tt6")
+        self.assertEqual(default.watch_lib.requirements(default.watch_lib.wanted(default.STORE)["tt6"]),
+                         (4, False, "", ""))
+        with mock.patch.object(default, "watch_info", return_value={"title": "Seriál"}), \
+                mock.patch.object(xbmcgui.Dialog, "select", side_effect=[-1]):
+            default.toggle_watch_series(None, "tt5")
+        self.assertIsNone(default.watch_lib.requirements(default.watch_lib.series(default.STORE)["tt5"]))
+
     def test_akce_nectou_videodatabazi(self):
         for action in ("watch_series", "want", "watch_episode", "watch_flag", "watch_seen", "watch_check", "watch_check_now"):
             self.assertIn(action, default.MARKS_SKIP)

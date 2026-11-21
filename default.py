@@ -6930,6 +6930,7 @@ def toggle_watch_series(apis, sid, alt=None):
     else:
         watch_lib.watch_series(STORE, sid, watch_info(apis, "series", sid, alt))
         notify(L(30916, "Přidáno do Hlídaných"))
+        watch_requirements(sid)
         request_watch_check()
     request_sync()
     xbmc.executebuiltin("Container.Refresh")
@@ -6942,6 +6943,7 @@ def toggle_want(apis, wid, ctype="movie", alt=None):
     else:
         watch_lib.want(STORE, wid, watch_info(apis, ctype, wid, alt))
         notify(L(30916, "Přidáno do Hlídaných"))
+        watch_requirements(wid)
         request_watch_check()
     request_sync()
     xbmc.executebuiltin("Container.Refresh")
@@ -6961,6 +6963,7 @@ def offer_watch(meta, ctype, item_id, video, series_id, alt):
                                                 "poster": meta.get("poster") or "", "alt": alt})
             request_sync()
             notify(L(30916, "Přidáno do Hlídaných"))
+            watch_requirements(sid)
         return
     if watch_lib.is_wanted(STORE, item_id):
         return
@@ -6972,6 +6975,7 @@ def offer_watch(meta, ctype, item_id, video, series_id, alt):
                                         "poster": meta.get("poster") or "", "alt": alt})
         request_sync()
         notify(L(30916, "Přidáno do Hlídaných"))
+        watch_requirements(item_id)
 
 
 def watch_flag(wid):
@@ -7007,7 +7011,8 @@ def watch_requirements_summary(rec):
 
 def watch_requirements(wid):
     """„Požadavky na stream…“ u vlastního hlídaného titulu nebo sledovaného seriálu:
-    obraz, zvuk, dabing, titulky. Změna uloží požadavky, vynuluje výsledek kontroly a požádá o novou."""
+    obraz, zvuk, dabing, titulky. Změna uloží požadavky, vynuluje výsledek kontroly a požádá o novou.
+    Otevře se i hned po přidání do Hlídaných; Zpět bez změny = vše Nerozhoduje."""
     item = watch_lib.wanted(STORE).get(wid) or watch_lib.series(STORE).get(wid)
     if item is None:
         return
@@ -7059,6 +7064,7 @@ def toggle_watch_episode(apis, ep_id, sid, alt=None):
         if not watch_lib.is_flagged(STORE, ep_id):
             watch_lib.toggle_flag(STORE, ep_id)
         notify(L(30916, "Přidáno do Hlídaných"))
+        watch_requirements(ep_id)
         request_watch_check()
     request_sync()
     xbmc.executebuiltin("Container.Refresh")
