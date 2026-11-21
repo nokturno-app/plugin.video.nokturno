@@ -202,7 +202,8 @@ def set_requirements(store, wid, req):
         rec = data.get(wid)
         if rec is not None:
             rec.update({k: item.get(k) for k in REQ_FIELDS})
-            rec = {k: v for k, v in rec.items() if v is not None and k != "gained"}
+            # bez `total`: „nevyhovuje požadavkům“ až podle nové kontroly, ne podle staré
+            rec = {k: v for k, v in rec.items() if v is not None and k not in ("gained", "total")}
             rec.update(streams=0, best="", checked_ts=0)
             data[wid] = rec
     _touch(store, "w:" + wid, True)
