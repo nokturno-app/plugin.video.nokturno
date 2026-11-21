@@ -34,6 +34,8 @@ import logging
 import re
 import time
 
+from mycat import definition as mycat_definition
+
 _LOGGER = logging.getLogger(__name__)
 
 SERIES = "watchlist"
@@ -63,6 +65,10 @@ STREAM_KEYS = ("src1:",)
 
 SERIES_FIELDS = ("title", "alt", "poster")
 WANTED_FIELDS = ("type", "title", "year", "alt", "poster", "series", "query")
+# požadavky na stream hlídaného titulu — stejné klíče a hodnoty jako vlastní katalog
+# (`mycat.definition`): q = nejnižší kvalita (0/3/3.5/4), surround = 5.1 a víc,
+# audio/subs = kód jazyka („CZ“, „CZ|SK“…). Chybějící klíč = nerozhoduje.
+REQ_FIELDS = ("q", "surround", "audio", "subs")
 
 
 @contextlib.contextmanager
@@ -164,6 +170,41 @@ def want(store, wid, info=None):
         if item.get("query"):
             item.setdefault("title", item["query"])
         data[wid] = item
+    _touch(store, "w:" + wid, True)
+    return item
+
+
+def requirements(item):
+    """(min_quality, 5.1, dabing, titulky) pro `Engine.quality_match`, nebo None = nerozhoduje nic."""
+    req = mycat_definition(item or {})
+    return req if any(req) else None
+
+
+def set_requirements(store, wid, req):
+    """Uloží požadavky na stream (`REQ_FIELDS`, prázdná hodnota = nerozhoduje).
+    Výsledek kontroly se vynuluje, ať se titul hned zkontroluje podle nových požadavků
+    a ozve se, jakmile vyhovující stream je (i když ho má už teď)."""
+    with store.updating(WANTED, {}) as data:
+        item = data.get(wid)
+        if item is None:
+            return None
+        for key in REQ_FIELDS:
+            item.pop(key, None)
+        item.update({k: v for k, v in (req or {}).items() if k in REQ_FIELDS})
+        q, surround, audio, subs = requirements(item) or (0, False, "", "")
+        for key, value in (("q", q), ("surround", surround), ("audio", audio), ("subs", subs)):
+            if value:
+                item[key] = value
+            else:
+                item.pop(key, None)
+        data[wid] = item
+    with store.updating(RESULTS, {}) as data:
+        rec = data.get(wid)
+        if rec is not None:
+            rec.update({k: item.get(k) for k in REQ_FIELDS})
+            rec = {k: v for k, v in rec.items() if v is not None and k != "gained"}
+            rec.update(streams=0, best="", checked_ts=0)
+            data[wid] = rec
     _touch(store, "w:" + wid, True)
     return item
 
@@ -402,18 +443,28 @@ def check_one_wanted(engine, item, before=None):
         target, alt = hit["id"], hit.get("alt")
         item = {**item, "title": hit.get("title") or item.get("title"), "year": hit.get("year") or item.get("year"),
                 "poster": hit.get("poster") or item.get("poster"), "found_id": hit["id"], "alt": alt}
+    req = requirements(item)
     try:
-        streams = engine.streams(item.get("type", "movie"), target, alt, item.get("series")) or []
+        if req:
+            # s požadavky se počítají jen vyhovující streamy; popisek jen u nejlepšího z nich
+            streams = engine.raw_streams(item.get("type", "movie"), target, alt, item.get("series")) or []
+        else:
+            streams = engine.streams(item.get("type", "movie"), target, alt, item.get("series")) or []
     except Exception as err:  # noqa: BLE001
         _LOGGER.debug("hlídání streamy %s: %s", item["id"], err)
         streams = []
-    if not streams and before.get("streams"):
+    if not streams and before.get("total", before.get("streams")):
         # streamy nezmizí přes noc — spíš výpadek sítě (Kodi na mobilu na pozadí). Nulou by se
         # přepsal dobrý výsledek a příští kontrola by pak hlásila „už je k dispozici“ znovu.
         return {**before, "checked": _iso(now), "checked_ts": now}
-    record = {**item, "type": item.get("type", "movie"), "streams": len(streams),
-              "best": streams[0].get("label", "") if streams else "",
-              "checked": _iso(now), "checked_ts": now}
+    total = len(streams)
+    if req:
+        streams = [s for s in streams if engine.quality_match(s, *req)]
+        best = engine._describe(streams[0], 0).get("label", "") if streams else ""
+    else:
+        best = streams[0].get("label", "") if streams else ""
+    record = {**item, "type": item.get("type", "movie"), "streams": len(streams), "total": total,
+              "best": best, "checked": _iso(now), "checked_ts": now}
     record.pop("gained", None)
     prev = int(before.get("streams") or 0)
     # hlásí se i nárůst u titulu, který streamy už měl — nová kvalita, jazyk nebo
