@@ -180,24 +180,42 @@ def requirements(item):
     return req if any(req) else None
 
 
+def _put_requirements(item, req):
+    """Přepíše v položce požadavky (`REQ_FIELDS`) normalizovanými hodnotami, prázdné smaže."""
+    for key in REQ_FIELDS:
+        item.pop(key, None)
+    item.update({k: v for k, v in (req or {}).items() if k in REQ_FIELDS})
+    values = requirements(item) or (0, False, "", "")
+    for key, value in zip(REQ_FIELDS, values):
+        if value:
+            item[key] = value
+        else:
+            item.pop(key, None)
+
+
 def set_requirements(store, wid, req):
-    """Uloží požadavky na stream (`REQ_FIELDS`, prázdná hodnota = nerozhoduje).
-    Výsledek kontroly se vynuluje, ať se titul hned zkontroluje podle nových požadavků
-    a ozve se, jakmile vyhovující stream je (i když ho má už teď)."""
+    """Uloží požadavky na stream (`REQ_FIELDS`, prázdná hodnota = nerozhoduje) hlídanému
+    titulu nebo sledovanému seriálu.
+    Titul: výsledek kontroly se vynuluje, ať se hned zkontroluje podle nových požadavků
+    a ozve se, jakmile vyhovující stream je (i když ho má už teď).
+    Seriál: zapomene, který díl je k dispozici, a příští kontrola si ho podle nových
+    požadavků jen tiše zapamatuje (jako při zařazení) – ohlásí až další vyhovující díl."""
     with store.updating(WANTED, {}) as data:
         item = data.get(wid)
-        if item is None:
-            return None
-        for key in REQ_FIELDS:
-            item.pop(key, None)
-        item.update({k: v for k, v in (req or {}).items() if k in REQ_FIELDS})
-        q, surround, audio, subs = requirements(item) or (0, False, "", "")
-        for key, value in (("q", q), ("surround", surround), ("audio", audio), ("subs", subs)):
-            if value:
-                item[key] = value
-            else:
+        if item is not None:
+            _put_requirements(item, req)
+            data[wid] = item
+    if item is None:
+        with store.updating(SERIES, {}) as data:
+            item = data.get(wid)
+            if item is None:
+                return None
+            _put_requirements(item, req)
+            for key in ("available", "new", "checked", "checked_ts"):
                 item.pop(key, None)
-        data[wid] = item
+            data[wid] = item
+        _touch(store, "s:" + wid, True)
+        return item
     with store.updating(RESULTS, {}) as data:
         rec = data.get(wid)
         if rec is not None:
@@ -331,13 +349,17 @@ def check_one_series(engine, sid, item, today=None):
     known = item.get("available") or {}
     known_key = (known.get("season", 0), known.get("episode", 0))
     budget = [BUDGET]
+    req = requirements(item)
 
     def options(ep):
-        """Čím se dá díl pustit — streamy."""
+        """Čím se dá díl pustit — streamy (s požadavky jen ty, které jim vyhoví)."""
         if budget[0] <= 0:
             return []
         budget[0] -= 1
         try:
+            if req:
+                found = engine.raw_streams("series", ep["id"], item.get("alt"), sid) or []
+                return [s for s in found if engine.quality_match(s, *req)]
             return engine.streams("series", ep["id"], item.get("alt"), sid) or []
         except Exception as err:  # noqa: BLE001
             _LOGGER.debug("hlídání streamy %s: %s", ep["id"], err)

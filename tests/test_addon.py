@@ -6902,6 +6902,18 @@ class TestHlidane(unittest.TestCase):
         item = default.watch_lib.wanted(default.STORE)["tt8"]
         self.assertEqual(default.watch_lib.requirements(item), (3.5, True, "", ""))
 
+    def test_pozadavky_u_serialu(self):
+        default.watch_lib.watch_series(default.STORE, "tt9", {"title": "Seriál"})
+        # řádek Dabing -> CZ, zpět
+        with mock.patch.object(xbmcgui.Dialog, "select", side_effect=[2, 1, -1]):
+            default.watch_requirements("tt9")
+        self.assertEqual(default.watch_lib.requirements(default.watch_lib.series(default.STORE)["tt9"]),
+                         (0, False, "CZ", ""))
+        default.list_watch()
+        serial = next(li for _h, u, li, _f in xbmcplugin.items if "tt9" in u)
+        self.assertIn("CZ dabing", serial.label)
+        self.assertIn(default.L(31130, "Požadavky na stream…"), [c[0] for c in serial.context])
+
     def test_akce_nectou_videodatabazi(self):
         for action in ("watch_series", "want", "watch_episode", "watch_flag", "watch_seen", "watch_check", "watch_check_now"):
             self.assertIn(action, default.MARKS_SKIP)

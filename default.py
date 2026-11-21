@@ -7006,11 +7006,12 @@ def watch_requirements_summary(rec):
 
 
 def watch_requirements(wid):
-    """„Požadavky na stream…“ u vlastního hlídaného titulu: obraz, zvuk, dabing, titulky.
-    Změna uloží požadavky, vynuluje výsledek kontroly a požádá o novou."""
-    if not watch_lib.is_wanted(STORE, wid):
+    """„Požadavky na stream…“ u vlastního hlídaného titulu nebo sledovaného seriálu:
+    obraz, zvuk, dabing, titulky. Změna uloží požadavky, vynuluje výsledek kontroly a požádá o novou."""
+    item = watch_lib.wanted(STORE).get(wid) or watch_lib.series(STORE).get(wid)
+    if item is None:
         return
-    old = watch_lib.requirements(watch_lib.wanted(STORE).get(wid)) or (0, False, "", "")
+    old = watch_lib.requirements(item) or (0, False, "", "")
     cur = dict(zip(watch_lib.REQ_FIELDS, old))
     rows = (("q", L(31131, "Obraz"), WATCH_REQ_QUALITY), ("surround", L(31132, "Zvuk"), WATCH_REQ_SOUND),
             ("audio", L(31133, "Dabing"), WATCH_REQ_TRACKS), ("subs", L(31134, "Titulky"), WATCH_REQ_TRACKS))
@@ -7153,12 +7154,16 @@ def list_watch():
             if not avail or avail.get("id") != wid:
                 label += f" · [COLOR {GREY}]{season}x{episode:02d}[/COLOR]"
             label += f" · [COLOR {WATCH_NEW}]{L(30905, 'Kontrolovat dál').lower()}[/COLOR]"
+        summary = watch_requirements_summary(item)
+        if summary:
+            label += " · " + summary
         li = _watch_li(label, sid, item.get("poster"))
         ctx = ([(L(30907, "Označit nový díl jako viděný"), runplugin(action="watch_seen", id=sid))] if new else [])
         if avail and avail.get("id"):
             ctx.append(watch_episode_context(sid, avail["id"], item.get("alt")))
         ctx += episodes_context(sid, (new or avail or item.get("latest") or {}).get("season"), item.get("alt"))
-        li.addContextMenuItems(ctx + [(L(30902, "Přestat hlídat nové díly"),
+        li.addContextMenuItems(ctx + [(L(31130, "Požadavky na stream…"), runplugin(action="watch_req", id=sid)),
+                                      (L(30902, "Přestat hlídat nové díly"),
                                        runplugin(action="watch_series", id=sid)), check_now])
         xbmcplugin.addDirectoryItem(HANDLE, build_url(action="watch_open", id=sid, alt=item.get("alt")), li,
                                     isFolder=True)
