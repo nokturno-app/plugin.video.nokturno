@@ -180,6 +180,23 @@ def requirements(item):
     return req if any(req) else None
 
 
+# výslovná značka dabingu v názvu souboru („CZ dabing“, „CZdab“, „dabováno“)
+DUB_RE = re.compile(r"(?<![a-z])(?:cz|sk)?dab(?:ing|ovano)?(?![a-z])")
+
+
+def matches(engine, stream, req):
+    """Vyhoví stream požadavkům? Jako `Engine.quality_match`, jen zvuk odhadnutý z názvu
+    souboru (`_langs_from_name`) se počítá, jen když název výslovně říká dabing.
+    Holé „CZ“ u kinoripu bývají titulky a hlavička jazyk zvuku často neuvádí
+    (2026-11-24, Já, Rocky: „Já Rocky (2026) 1080p CZ“ ohlášen jako dabing)."""
+    if not engine.quality_match(stream, *req):
+        return False
+    if not req[2] or not stream.get("_langs_from_name"):
+        return True
+    name = stream.get("label") if stream.get("_direct") else (stream.get("_ws_name") or stream.get("label"))
+    return bool(DUB_RE.search(_fold(name or "")))
+
+
 def _put_requirements(item, req):
     """Přepíše v položce požadavky (`REQ_FIELDS`) normalizovanými hodnotami, prázdné smaže."""
     for key in REQ_FIELDS:
@@ -359,7 +376,7 @@ def check_one_series(engine, sid, item, today=None):
         try:
             if req:
                 found = engine.raw_streams("series", ep["id"], item.get("alt"), sid) or []
-                return [s for s in found if engine.quality_match(s, *req)]
+                return [s for s in found if matches(engine, s, req)]
             return engine.streams("series", ep["id"], item.get("alt"), sid) or []
         except Exception as err:  # noqa: BLE001
             _LOGGER.debug("hlídání streamy %s: %s", ep["id"], err)
@@ -482,7 +499,7 @@ def check_one_wanted(engine, item, before=None):
         return {**before, "checked": _iso(now), "checked_ts": now}
     total = len(streams)
     if req:
-        streams = [s for s in streams if engine.quality_match(s, *req)]
+        streams = [s for s in streams if matches(engine, s, req)]
         best = engine._describe(streams[0], 0).get("label", "") if streams else ""
     else:
         best = streams[0].get("label", "") if streams else ""
