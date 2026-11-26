@@ -22,6 +22,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="dav1_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
           </control>
         </setting>
@@ -31,6 +34,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="dav1_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
           </control>
         </setting>
@@ -40,6 +46,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="dav1_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
             <hidden>true</hidden>
           </control>
@@ -50,6 +59,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="dav1_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
           </control>
         </setting>
@@ -66,6 +78,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="dav2_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
           </control>
         </setting>
@@ -75,6 +90,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="dav2_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
           </control>
         </setting>
@@ -84,6 +102,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="dav2_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
             <hidden>true</hidden>
           </control>
@@ -94,6 +115,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="dav2_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
           </control>
         </setting>
@@ -110,6 +134,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="dav3_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
           </control>
         </setting>
@@ -119,6 +146,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="dav3_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
           </control>
         </setting>
@@ -128,6 +158,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="dav3_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
             <hidden>true</hidden>
           </control>
@@ -138,6 +171,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="dav3_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
           </control>
         </setting>
@@ -637,6 +673,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="mylist_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string"/>
         </setting>
         <setting id="mylist_icon" type="integer" label="30864" help="30865">
@@ -658,6 +697,9 @@
               <option label="30881">11</option>
             </options>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="mylist_enabled">true</dependency>
+          </dependencies>
           <control format="string" type="spinner"/>
         </setting>
         <setting id="mylist_pos" type="integer" label="30866" help="30867">
@@ -671,6 +713,9 @@
               <option label="30871">3</option>
             </options>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="mylist_enabled">true</dependency>
+          </dependencies>
           <control format="string" type="spinner"/>
         </setting>
         <setting id="mylist_header1" type="string" label="30983" help="30988">
@@ -679,6 +724,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="mylist_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
             <hidden>true</hidden>
           </control>
@@ -689,6 +737,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="mylist_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
             <hidden>true</hidden>
           </control>
@@ -706,6 +757,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="mylist2_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string"/>
         </setting>
         <setting id="mylist2_icon" type="integer" label="30864" help="30865">
@@ -727,6 +781,9 @@
               <option label="30881">11</option>
             </options>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="mylist2_enabled">true</dependency>
+          </dependencies>
           <control format="string" type="spinner"/>
         </setting>
         <setting id="mylist2_pos" type="integer" label="30866" help="30867">
@@ -740,6 +797,9 @@
               <option label="30871">3</option>
             </options>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="mylist2_enabled">true</dependency>
+          </dependencies>
           <control format="string" type="spinner"/>
         </setting>
         <setting id="mylist2_header1" type="string" label="30983" help="30988">
@@ -748,6 +808,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="mylist2_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
             <hidden>true</hidden>
           </control>
@@ -758,6 +821,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="mylist2_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
             <hidden>true</hidden>
           </control>
@@ -775,6 +841,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="mylist3_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string"/>
         </setting>
         <setting id="mylist3_icon" type="integer" label="30864" help="30865">
@@ -796,6 +865,9 @@
               <option label="30881">11</option>
             </options>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="mylist3_enabled">true</dependency>
+          </dependencies>
           <control format="string" type="spinner"/>
         </setting>
         <setting id="mylist3_pos" type="integer" label="30866" help="30867">
@@ -809,6 +881,9 @@
               <option label="30871">3</option>
             </options>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="mylist3_enabled">true</dependency>
+          </dependencies>
           <control format="string" type="spinner"/>
         </setting>
         <setting id="mylist3_header1" type="string" label="30983" help="30988">
@@ -817,6 +892,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="mylist3_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
             <hidden>true</hidden>
           </control>
@@ -827,6 +905,9 @@
           <constraints>
             <allowempty>true</allowempty>
           </constraints>
+          <dependencies>
+            <dependency type="enable" setting="mylist3_enabled">true</dependency>
+          </dependencies>
           <control type="edit" format="string">
             <hidden>true</hidden>
           </control>
