@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addon id="plugin.video.nokturno" name="Nokturno" version="12.9.3" provider-name="Nokturno">
+<addon id="plugin.video.nokturno" name="Nokturno" version="12.10.0" provider-name="Nokturno">
   <requires>
     <import addon="xbmc.python" version="3.0.1"/>
   </requires>
@@ -48,7 +48,8 @@
       <screenshot>resources/screenshots/03-vyber-streamu.jpg</screenshot>
       <screenshot>resources/screenshots/04-nastaveni.jpg</screenshot>
     </assets>
-    <news>12.9.3 – Hlídané s požadavkem na dabing už neohlásí soubor, který má v názvu jen „CZ“ bez dabingu – u kinoripů to bývají titulky.
+    <news>12.10.0 – Nová volba Při pokračování vždy nabídnout výběr streamu. Ve výběru streamu je v nadpisu název, rok a hodnocení. Když zdroj stahování nepovoluje, hned se to dozvíš.
+12.9.3 – Hlídané s požadavkem na dabing už neohlásí soubor, který má v názvu jen „CZ“ bez dabingu – u kinoripů to bývají titulky.
 12.9.2 – V okně Požadavky na stream je nahoře řádek Uložit, Zrušit změny zahodí.
 12.9.1 – Požadavky na stream se nabídnou hned po přidání do Hlídaných.
 12.9.0 – Požadavky na stream si nastavíš i u sledovaného seriálu. Nový díl ohlásíme, až bude v požadované kvalitě, se zvukem, dabingem a titulky podle tvého výběru.
