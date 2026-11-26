@@ -5544,9 +5544,9 @@ MYCAT_TRACK_LABELS = (("", 30762, "Libovolné"), ("CZ", 30112, "Čeština"), ("S
 MYCAT_SHOW_LABELS = (("found", 30765, "Nově nalezené"), ("pool", 30764, "Stejně jako výběr"),
                      ("released", 30766, "Nejnovější vydání"))
 # vysvětlení řazení u výběru (dialog na TV, nápověda ve formuláři v prohlížeči)
-MYCAT_SHOW_HELP = {"pool": (31113, "Tituly v pořadí, v jakém je vrátil výběr katalogu."),
-                   "found": (31114, "Nejnovější nálezy nahoře – podle toho, kdy titul našla kontrola dostupnosti."),
-                   "released": (31115, "Nejnovější vydání nahoře – podle data vydání titulu.")}
+MYCAT_SHOW_HELP = {"pool": (31113, "Tituly v pořadí podle volby „Řadit podle“ (oblíbenost, hodnocení, datum…), tak jak je vrátil výběr katalogu."),
+                   "found": (31114, "Nahoře tituly, které ověřování dostupnosti našlo naposledy – hned vidíš, co v katalogu přibylo."),
+                   "released": (31115, "Nahoře tituly s nejnovějším datem vydání, bez ohledu na to, kdy je ověřování našlo.")}
 # země původu (`mycat.COUNTRIES`, filtr TMDB `with_origin_country`) – jiná věc než jazyk dabingu
 MYCAT_COUNTRIES = (("CZ", 30262, "Česko"), ("SK", 30263, "Slovensko"), ("XC", 31048, "Československo"),
                    ("US", 30264, "USA"),

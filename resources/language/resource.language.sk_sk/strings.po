@@ -3708,16 +3708,16 @@ msgid "A movie leaves My list once you finish it. A TV show only after you have 
 msgstr "Film z Môjho zoznamu zmizne, keď ho dopozeráš. Seriál až po pozretí všetkých doteraz vydaných dielov – nový diel ho späť nepridá."
 
 msgctxt "#31113"
-msgid "Titles in the order the catalog selection returned them."
-msgstr "Tituly v poradí, v akom ich vrátil výber katalógu."
+msgid "Titles in the order of the „Sort by“ option (popularity, rating, date…), as the catalog selection returned them."
+msgstr "Tituly v poradí podľa voľby „Radiť podľa“ (obľúbenosť, hodnotenie, dátum…), tak ako ich vrátil výber katalógu."
 
 msgctxt "#31114"
-msgid "Newest finds first – by when the availability check found the title."
-msgstr "Najnovšie nálezy hore – podľa toho, kedy titul našla kontrola dostupnosti."
+msgid "Titles the availability check found most recently on top – you see right away what is new in the catalog."
+msgstr "Hore tituly, ktoré overovanie dostupnosti našlo naposledy – hneď vidíš, čo v katalógu pribudlo."
 
 msgctxt "#31115"
-msgid "Newest releases first – by the title's release date."
-msgstr "Najnovšie vydania hore – podľa dátumu vydania titulu."
+msgid "Titles with the newest release date on top, regardless of when the check found them."
+msgstr "Hore tituly s najnovším dátumom vydania, bez ohľadu na to, kedy ich overovanie našlo."
 
 msgctxt "#31116"
 msgid "Only my storage"

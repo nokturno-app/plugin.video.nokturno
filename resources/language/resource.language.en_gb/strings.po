@@ -3708,15 +3708,15 @@ msgid "A movie leaves My list once you finish it. A TV show only after you have 
 msgstr ""
 
 msgctxt "#31113"
-msgid "Titles in the order the catalog selection returned them."
+msgid "Titles in the order of the „Sort by“ option (popularity, rating, date…), as the catalog selection returned them."
 msgstr ""
 
 msgctxt "#31114"
-msgid "Newest finds first – by when the availability check found the title."
+msgid "Titles the availability check found most recently on top – you see right away what is new in the catalog."
 msgstr ""
 
 msgctxt "#31115"
-msgid "Newest releases first – by the title's release date."
+msgid "Titles with the newest release date on top, regardless of when the check found them."
 msgstr ""
 
 msgctxt "#31116"

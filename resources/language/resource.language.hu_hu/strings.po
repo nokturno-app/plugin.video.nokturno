@@ -3706,16 +3706,16 @@ msgid "A movie leaves My list once you finish it. A TV show only after you have 
 msgstr "A film lekerül a Saját listáról, amint végignézed. A sorozat csak akkor, ha minden eddig megjelent részt megnéztél – egy új rész nem teszi vissza."
 
 msgctxt "#31113"
-msgid "Titles in the order the catalog selection returned them."
-msgstr "A címek abban a sorrendben, ahogy a katalógus kiválasztása visszaadta őket."
+msgid "Titles in the order of the „Sort by“ option (popularity, rating, date…), as the catalog selection returned them."
+msgstr "A címek a „Rendezés“ beállítás szerinti sorrendben (népszerűség, értékelés, dátum…), ahogy a katalógus kiválasztása visszaadta őket."
 
 msgctxt "#31114"
-msgid "Newest finds first – by when the availability check found the title."
-msgstr "Legújabb találatok elöl – aszerint, hogy az elérhetőség-ellenőrzés mikor találta meg a címet."
+msgid "Titles the availability check found most recently on top – you see right away what is new in the catalog."
+msgstr "Felül azok a címek vannak, amelyeket az elérhetőség-ellenőrzés legutóbb talált meg – rögtön látod, mi került új a katalógusba."
 
 msgctxt "#31115"
-msgid "Newest releases first – by the title's release date."
-msgstr "Legújabb megjelenések elöl – a cím megjelenési dátuma szerint."
+msgid "Titles with the newest release date on top, regardless of when the check found them."
+msgstr "Felül a legfrissebb megjelenési dátumú címek vannak, függetlenül attól, hogy az ellenőrzés mikor találta meg őket."
 
 msgctxt "#31116"
 msgid "Only my storage"
