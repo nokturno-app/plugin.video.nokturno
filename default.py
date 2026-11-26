@@ -2268,7 +2268,32 @@ def reading_progress(count, total):
     return close
 
 
-def choose_stream(streams, preferred=None, relax=False, expand=None, refresh=None):
+def stream_heading(meta, video=None):
+    """Nadpis výběru streamu: `Název (rok) – díl · ★ 7,4`. Rok se přidá jen když v názvu není,
+    hodnocení a rok se bez dat vynechají. Při jakékoli chybě None — dialog pak nese obecné „Vyber stream“."""
+    try:
+        name = display_name(meta or {})
+        if not name:
+            return None
+        year = str(meta.get("year") or meta.get("releaseInfo") or "")[:4]
+        if year.isdigit() and year not in name:
+            name = f"{name} ({year})"
+        if video:
+            ep = str(video.get("title") or "").strip()
+            if not ep or _EPISODE_PLACEHOLDER_RE.match(ep):
+                ep = "S%02dE%02d" % (int(video.get("season") or 0), int(video.get("episode") or 0))
+            name = f"{name} – {ep}"
+        # hodnocení jako v `fill_info`: hlavní `imdbRating`, jinak první z dalších zdrojů
+        rating = meta.get("imdbRating") or next(iter((meta.get("ratings") or {}).values()), None)
+        value = float(rating) if rating else 0
+        if value > 0:
+            name = f"{name} · ★ {value:.1f}".replace(".", ",")
+        return name
+    except (AttributeError, TypeError, ValueError):
+        return None
+
+
+def choose_stream(streams, preferred=None, relax=False, expand=None, refresh=None, heading=None):
     """Výběr streamu v dialogu na dva řádky — jediný způsob výběru od `5.2.14~beta2` (klik ve výpisu,
     Přehrát v detailu, widget, TMDb Helper), od `beta4` i jediné místo (výpis streamů jako složka zrušen).
     Nahoře Filtr streamů, Zrušit filtr, Použít poslední filtr. `preferred` (zapamatovaná volba
@@ -2277,6 +2302,7 @@ def choose_stream(streams, preferred=None, relax=False, expand=None, refresh=Non
     nabízí se jako „Zobrazit všechny streamy“ před fulltextem, jen když je co rozbalit.
     `refresh(streams)` (`Engine.refresh_media`) doplní hlavičky dočtené po `PROBE_DEADLINE`
     a vrátí, na kolik streamů se ještě čeká — dokud nějaké, je nahoře „Obnovit – dočteno N/M“.
+    `heading` = nadpis dialogu (`stream_heading`), bez něj „Vyber stream“.
     Vrací stream, `FULLTEXT`, nebo None."""
     active = {}
     if setting("stream_filter_last") == "true":
@@ -2333,7 +2359,7 @@ def choose_stream(streams, preferred=None, relax=False, expand=None, refresh=Non
         focus = next((i for i, st in enumerate(shown) if st is preferred), None)
         close_bar = reading_progress(lambda: refresh(streams, apply=False), wait_total) if waiting else None
         try:
-            idx = xbmcgui.Dialog().select(L(30024), rows, useDetails=True,
+            idx = xbmcgui.Dialog().select(heading or L(30024), rows, useDetails=True,
                                           preselect=len(entries) + focus if focus is not None else -1)
         finally:
             if close_bar:
@@ -8003,7 +8029,7 @@ def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, d
     else:
         picked = choose_stream(streams, remembered, relax=strict and has_fulltext_source,
                                expand=lambda: expand_streams(apis, streams, meta, video),
-                               refresh=engine_of(apis).refresh_media)
+                               refresh=engine_of(apis).refresh_media, heading=stream_heading(meta, video))
     if picked == FULLTEXT:
         pick_title(apis, ctype, item_id, series_id, alt, fulltext=True, download=download, fresh=fresh)
         return
@@ -8091,7 +8117,7 @@ def play(apis, ctype, item_id, series_id=None, url=None, alt=None, subs="", pref
         chosen = remembered or streams[0]
         if ask and not sw and not on("play_best_stream", "false"):
             picked = choose_stream(streams, remembered, expand=lambda: expand_streams(apis, streams, meta, video),
-                                   refresh=engine_of(apis).refresh_media)
+                                   refresh=engine_of(apis).refresh_media, heading=stream_heading(meta, video))
             if picked is None:
                 xbmcplugin.setResolvedUrl(HANDLE, False, xbmcgui.ListItem())
                 return

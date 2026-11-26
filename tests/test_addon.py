@@ -1414,6 +1414,38 @@ class TestVyberStreamu(unittest.TestCase):
         self.assertIn("(2)", radky[-1][0], "vypnuto = bez filtru jako dřív")
 
 
+class TestNadpisVyberuStreamu(unittest.TestCase):
+    """Nadpis dialogu výběru streamu: název, rok a hodnocení titulu."""
+
+    def test_film_s_rokem_a_hodnocenim(self):
+        self.assertEqual(default.stream_heading({"name": "Film", "year": 2020, "imdbRating": "7.4"}),
+                         "Film (2020) · ★ 7,4")
+
+    def test_bez_hodnoceni_bez_hvezdy_a_rok_jen_jednou(self):
+        self.assertEqual(default.stream_heading({"name": "Film", "year": 2020}), "Film (2020)")
+        self.assertEqual(default.stream_heading({"name": "Film (2020)", "year": 2020}), "Film (2020)")
+
+    def test_dil_seriálu(self):
+        meta = {"name": "Seriál", "year": 2008, "imdbRating": 9}
+        self.assertEqual(default.stream_heading(meta, {"title": "Pilot", "season": 1, "episode": 1}),
+                         "Seriál (2008) – Pilot · ★ 9,0")
+        self.assertEqual(default.stream_heading(meta, {"title": "Episode 2", "season": 1, "episode": 2}),
+                         "Seriál (2008) – S01E02 · ★ 9,0")
+
+    def test_prazdna_meta_a_chyba(self):
+        self.assertIsNone(default.stream_heading({}))
+        self.assertEqual(default.stream_heading({"name": "Film", "imdbRating": "n/a"}), None)
+
+    def test_choose_stream_pouzije_nadpis(self):
+        reset_kodi()
+        streams = [{"url": "ws:1", "label": "Film.2020.mkv", "detail": "2 GB", "source": "ws"}]
+        with mock.patch.object(xbmcgui.Dialog, "select", return_value=-1) as select:
+            default.choose_stream(streams, heading="Film (2020)")
+            default.choose_stream(streams)
+        self.assertEqual(select.call_args_list[0][0][0], "Film (2020)")
+        self.assertNotEqual(select.call_args_list[1][0][0], "Film (2020)")
+
+
 class TestSeznamStreamu(unittest.TestCase):
     def setUp(self):
         reset_kodi()
