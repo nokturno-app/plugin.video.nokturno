@@ -1784,16 +1784,20 @@ def add_playable(li, ctype, item_id, series_id=None, alt=None):
     # nevyprší, `play()` tak může přeskočit hledání napříč zdroji a rovnou pokračovat na
     # stejném streamu (dozná se, jestli mezitím zmizel ze zdroje, a spadne na hledání samo).
     resumed = STORE.resume_stream(item_id)
-    stream_url, stream_subs = resumed if resumed else (None, None)
+    # „Při pokračování vždy nabídnout výběr streamu“: reference se nepředá (hledá se a ukáže dialog),
+    # `ra=1` si `play()`/`pick_title()` odnesou, aby zapamatovaný stream v dialogu předvybraly
+    # a nad „Rovnou přehrát nejlepší stream“ vyhrála tahle volba
+    ra = "1" if resumed and on("resume_ask_stream", "false") else ""
+    stream_url, stream_subs = resumed if resumed and not ra else (None, None)
     if browsing_nokturno() and not stream_url:
-        url = build_url(action="title", type=ctype, id=item_id, series=series_id, alt=alt)
+        url = build_url(action="title", type=ctype, id=item_id, series=series_id, alt=alt, ra=ra)
         xbmcplugin.addDirectoryItem(HANDLE, url, li, isFolder=False)
         return
     li.setProperty("IsPlayable", "true")
     # `ask=1` = dialog; bez `ask` (Up Next, HA) hraje zapamatovaný nebo nejlepší stream bez ptaní.
     # Uplatní se jen v plném hledání (`stream_url` prázdný, nebo se uložená reference nedala přehrát).
     url = build_url(action="play", type=ctype, id=item_id, series=series_id, alt=alt, ask="1",
-                    url=stream_url, subs=stream_subs)
+                    url=stream_url, subs=stream_subs, ra=ra)
     xbmcplugin.addDirectoryItem(HANDLE, url, li, isFolder=False)
 
 
@@ -7951,7 +7955,16 @@ def upnext_notify(meta, video, series_id, alt=None):
         "sender": f"{ADDON_ID}.SIGNAL", "message": "upnext_data", "data": [encoded]}}))
 
 
-def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, download=False, fresh=False):
+def resumed_stream(streams, item_id):
+    """Stream ze `streams`, na kterém se titul naposledy hrál (`STORE.resume_stream`), jinak None —
+    předvýběr v dialogu u „Při pokračování vždy nabídnout výběr streamu“."""
+    resumed = STORE.resume_stream(item_id)
+    if not resumed:
+        return None
+    return next((st for st in streams if resumed[0] in version_urls(st)), None)
+
+
+def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, download=False, fresh=False, ra=""):
     """Klik na titul ve výpisu Nokturna (handle −1, viz `add_playable`) i „Vybrat stream“ v kontextovém
     menu: najít streamy s ukazatelem průběhu v rohu (`DialogProgressBG`), ukázat dialog a vybraný stream
     pustit přes `PlayMedia` s jeho referencí — `play()` ji jen rozklíčuje a zapamatuje volbu u seriálu.
@@ -7961,6 +7974,9 @@ def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, d
 
     Přísný filtr fulltextových zdrojů (`Engine._title_queries`) může skutečnou shodu zahodit kvůli
     neobvyklému názvu souboru: bez výsledku se rovnou zkusí uvolněný, s výsledky ho nabídne dialog.
+
+    `ra=1` (volba `resume_ask_stream`, rozkoukaný titul) = dialog se ukáže i při „Rovnou přehrát nejlepší
+    stream“ a zapamatovaný stream je v něm předvybraný.
 
     `download=True` („Stáhnout“ v kontextovém menu): stejný dialog, vybraný stream jde do fronty
     stahování (`download_stream`) místo přehrání. Bez složky pro stahování se nic nehledá."""
@@ -8022,7 +8038,9 @@ def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, d
             return
     pref_key = (series_id or split_episode_id(item_id)[0]) if video else None
     remembered = preferred_stream(streams, STORE.stream_pref(pref_key)) if pref_key else None
-    if on("play_best_stream", "false") and not (download or fresh or fulltext):
+    if ra and remembered is None:
+        remembered = resumed_stream(streams, item_id)
+    if on("play_best_stream", "false") and not (ra or download or fresh or fulltext):
         # „Rovnou přehrát nejlepší stream“: klik ve výpisu bez dialogu; „Vybrat stream“ v kontextovém
         # menu (fresh) a uvolněné hledání (fulltext, nejistá shoda) dialog ukážou dál
         picked = remembered or streams[0]
@@ -8044,10 +8062,11 @@ def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, d
         subs="|".join(picked.get("subtitles") or []), pref=pref_param(picked), alts=alts_param(picked)))
 
 
-def play(apis, ctype, item_id, series_id=None, url=None, alt=None, subs="", pref="", ask="", alts="", sw=""):
+def play(apis, ctype, item_id, series_id=None, url=None, alt=None, subs="", pref="", ask="", alts="", sw="", ra=""):
     """`ask=1` = Přehrát nad položkou Nokturna (detail, widget) nebo player TMDb Helperu → výběr
     v dialogu (`choose_stream`, zapamatovaný stream předvybraný). Bez `ask` (Up Next, HA) hraje
-    zapamatovaný nebo nejlepší stream bez ptaní."""
+    zapamatovaný nebo nejlepší stream bez ptaní. `ra=1` (volba `resume_ask_stream`) = dialog i při
+    „Rovnou přehrát nejlepší stream“, zapamatovaný stream předvybraný."""
     meta, video = load_meta(apis, ctype, item_id, series_id)
     # u seriálu si pamatujeme, jaký stream si uživatel vybral — další díl (Up Next,
     # Pokračovat, widget) pak jede stejně bez ptaní; klíč je seriál, ne díl
@@ -8114,8 +8133,10 @@ def play(apis, ctype, item_id, series_id=None, url=None, alt=None, subs="", pref
                                                                 series=series_id, alt=alt, fulltext="1"))
             return
         remembered = preferred_stream(streams, STORE.stream_pref(pref_key)) if pref_key else None
+        if ra and remembered is None:
+            remembered = resumed_stream(streams, item_id)
         chosen = remembered or streams[0]
-        if ask and not sw and not on("play_best_stream", "false"):
+        if ask and not sw and (ra or not on("play_best_stream", "false")):
             picked = choose_stream(streams, remembered, expand=lambda: expand_streams(apis, streams, meta, video),
                                    refresh=engine_of(apis).refresh_media, heading=stream_heading(meta, video))
             if picked is None:
@@ -8619,7 +8640,7 @@ def router(query):
             # klik na titul ve výpisu Nokturna: Kodi ne-přehratelnou položku spustí jako skript
             # bez handle → streamy v dialogu na dva řádky (viz add_playable, pick_title)
             pick_title(get_apis(), p.get("type", "movie"), p["id"], p.get("series"), alt=p.get("alt"),
-                       fulltext=bool(p.get("fulltext")), fresh=bool(p.get("fresh")))
+                       fulltext=bool(p.get("fulltext")), fresh=bool(p.get("fresh")), ra=p.get("ra", ""))
             return
         if action in ("streams", "streams_filter"):
             # výpis streamů jako složka zrušen v `5.2.14~beta4` — starý odkaz (oblíbené, widget) nic
@@ -8741,7 +8762,7 @@ def router(query):
         elif action == "title":
             # Přehrát nad titulem v režimu seznamu (Estuary/Arctic Fuse/TMDb Helper/tlačítko Play):
             # Kodi položku rozklíčovává a čeká setResolvedUrl → dialog výběru streamu
-            play(apis, p.get("type", "movie"), p["id"], p.get("series"), alt=p.get("alt"), ask="1")
+            play(apis, p.get("type", "movie"), p["id"], p.get("series"), alt=p.get("alt"), ask="1", ra=p.get("ra", ""))
         elif action == "mylist":
             list_mylist(apis, p.get("path", ""), mylist_slot(p.get("slot")))
         elif action == "mylist_play":
@@ -8752,7 +8773,8 @@ def router(query):
             _fail(action, L(31122, "Odkaz na přehrání je neúplný – chybí typ nebo id titulu."))
         elif action == "play":
             play(apis, p["type"], p["id"], p.get("series"), url=p.get("url"), alt=p.get("alt"), subs=p.get("subs", ""),
-                 pref=p.get("pref", ""), ask=p.get("ask", ""), alts=p.get("alts", ""), sw=p.get("sw", ""))
+                 pref=p.get("pref", ""), ask=p.get("ask", ""), alts=p.get("alts", ""), sw=p.get("sw", ""),
+                 ra=p.get("ra", ""))
         elif action == "play_ws":
             play_ws(apis, p["ident"], p.get("name", ""))
         elif action == "play_hs":

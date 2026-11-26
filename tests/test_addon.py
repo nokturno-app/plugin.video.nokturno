@@ -1187,6 +1187,42 @@ class TestPrehratelnePolozky(unittest.TestCase):
         self.assertEqual((p["action"], p["id"], p.get("url"), p.get("subs")),
                          ("play", "tt_resume_test", "ws:abc", "cz.srt"))
 
+    def test_pokracovani_s_volbou_ptat_se_nevlozi_url_a_vlozi_ra(self):
+        """`resume_ask_stream`: rozkoukaný titul se nepouští na uložené referenci, ale hledá se a ukáže
+        dialog; `ra=1` v adrese (widget i výpis Nokturna) předvybere zapamatovaný stream."""
+        default.STORE.set_resume("tt_ra_test", 452.8, 6106.8, stream_url="ws:abc", stream_subs="cz.srt")
+        xbmcaddon.settings["resume_ask_stream"] = "true"
+        self.addCleanup(xbmcaddon.settings.pop, "resume_ask_stream", None)
+        default.add_meta_item({"id": "tt_ra_test", "name": "Film", "year": 2020}, "movie")
+        p = params_of(xbmcplugin.items[-1][1])
+        self.assertEqual((p["action"], p.get("ra"), p.get("ask")), ("play", "1", "1"))
+        self.assertNotIn("url", p)
+        self.assertNotIn("subs", p)
+        xbmc.cond_visible.add("Window.IsMedia")
+        xbmc.info_labels["Container.PluginName"] = "plugin.video.nokturno"
+        try:
+            default.add_meta_item({"id": "tt_ra_test", "name": "Film", "year": 2020}, "movie")
+        finally:
+            xbmc.cond_visible.clear()
+            xbmc.info_labels.clear()
+        p = params_of(xbmcplugin.items[-1][1])
+        self.assertEqual((p["action"], p.get("ra")), ("title", "1"))
+        # titul bez rozkoukanosti se nemění
+        default.add_meta_item({"id": "tt_ra_jiny", "name": "Jiný", "year": 2020}, "movie")
+        self.assertNotIn("ra", params_of(xbmcplugin.items[-1][1]))
+
+    def test_play_s_ra_ukaze_dialog_i_pri_nejlepsim_streamu_a_predvybere_zapamatovany(self):
+        default.STORE.set_resume("tt_ra_play", 100.0, 6000.0, stream_url="ws:2")
+        xbmcaddon.settings["play_best_stream"] = "true"
+        self.addCleanup(xbmcaddon.settings.pop, "play_best_stream", None)
+        streams = [{"url": "ws:1", "label": "Film.2020.1080p.CZ.mkv", "detail": "2 GB", "source": "ws"},
+                   {"url": "ws:2", "label": "Film.2020.720p.CZ.mkv", "detail": "1 GB", "source": "ws"}]
+        with mock.patch.object(default, "load_meta", return_value=({"name": "Film", "year": 2020}, None)), \
+             mock.patch.object(default, "collect_streams", return_value=streams), \
+             mock.patch.object(xbmcgui.Dialog, "select", return_value=-1) as select:
+            default.play({}, "movie", "tt_ra_play", ask="1", ra="1")
+            self.assertEqual(select.call_args.kwargs["preselect"], 2)   # řádek Filtr streamů + druhý stream
+
     def test_klik_na_titul_ukaze_dialog_a_pusti_vybrany_stream(self):
         """Kodi ne-přehratelnou ne-složku spustí jako skript s handle −1 → `pick_title`:
         dialog na dva řádky, vybraný stream přes PlayMedia s jeho referencí."""
@@ -2798,7 +2834,7 @@ class TestNastavitZMobilu(unittest.TestCase):
         jen = default.remote_setup_schema("streamlist")
         self.assertEqual([s["id"] for s in jen], ["streamlist"])
         self.assertTrue(jen[0]["open"])
-        self.assertEqual([f["id"] for f in jen[0]["fields"]], ["stream_layout", "stream_filter_last", "play_best_stream"])
+        self.assertEqual([f["id"] for f in jen[0]["fields"]], ["stream_layout", "stream_filter_last", "play_best_stream", "resume_ask_stream"])
         storage = next(s for s in schema if s["id"] == "storage")
         headings = [f["label"] for f in storage["fields"] if f.get("type") == "heading"]
         self.assertEqual(headings, ["Úložiště 1", "Úložiště 2", "Úložiště 3"])
@@ -6123,7 +6159,7 @@ class TestOsmKategorii(unittest.TestCase):
         # přeskládání kategorií zůstávají stejná
         root = ET.parse(ROOT / "resources" / "settings.xml").getroot()
         volby = {s.get("id") for s in root.iter("setting")}
-        self.assertEqual(len(volby), 143)   # +1 subs_download (Stahovat titulky automaticky), +1 verify_mode (šetrné ověřování na pozadí), +1 fav_drop_watched (zhlédnuté pryč z Mého seznamu), +2 menu_edit_action, menu_reset_action (hlavní menu), +1 sync_concerts (10.3.0), +1 tmdb_check, +3 mylist1–3_enabled, +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs, +2 hide_dv, hide_hdr (DV/HDR filtr), +2 hide_dv_only, hide_av1, +1 play_best_stream
+        self.assertEqual(len(volby), 144)   # +1 resume_ask_stream (výběr streamu při pokračování), +1 subs_download (Stahovat titulky automaticky), +1 verify_mode (šetrné ověřování na pozadí), +1 fav_drop_watched (zhlédnuté pryč z Mého seznamu), +2 menu_edit_action, menu_reset_action (hlavní menu), +1 sync_concerts (10.3.0), +1 tmdb_check, +3 mylist1–3_enabled, +1 trakt_pull, −5 hq_enabled, hq_min_quality, hq_channels, hq_audio, hq_subs (Filmy ve vysoké kvalitě = předvolba katalogu), +2 lastfm_key, lastfm_check (katalogy koncertů), +1 sync_catalogs (vlastní katalogy), +6 mylist*_icon, mylist*_pos (ikona a místo v menu), +6 mylist2/3_url, _header1–2 (tři vlastní seznamy), −2 info_forum_kodi, info_forum_stremio, −1 info_facebook (9.0.0), +3 mylist_url, mylist_header1–2 (vlastní seznam), −1 info_donate (dary zrušené 2026-09-28), +2 info_discord, info_facebook, +1 hide_3d, +1 fs_provider (Sdilej.cz), +1 sync_watchlist (Hlídané), +2: terms_ok a terms_show_action (souhlas, 2026-09-22), +1 stream_filter_last, +3 dav1–3_enabled, +3 hq_min_quality, hq_surround, hq_audio (Filmy ve vysoké kvalitě), +2: hq_surround → hq_channels, + hq_enabled, hq_subs, +2 hide_dv, hide_hdr (DV/HDR filtr), +2 hide_dv_only, hide_av1, +1 play_best_stream
         for ocekavane in ("ws_enabled", "pt_email", "sosac_enabled", "hs_enabled",
                           "st_enabled", "fs_enabled", "cz_enabled", "luna_url",
                           "os_enabled", "tmdb_api_key", "download_dir"):

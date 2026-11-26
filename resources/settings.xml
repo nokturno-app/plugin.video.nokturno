@@ -1066,6 +1066,11 @@
           <default>false</default>
           <control type="toggle"/>
         </setting>
+        <setting id="resume_ask_stream" type="boolean" label="31141" help="31142">
+          <level>0</level>
+          <default>false</default>
+          <control type="toggle"/>
+        </setting>
       </group>
     </category>
     <category id="sync" label="30180">

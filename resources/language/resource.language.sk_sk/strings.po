@@ -3819,6 +3819,14 @@ msgctxt "#31140"
 msgid "Save"
 msgstr "Uložiť"
 
+msgctxt "#31141"
+msgid "Always offer stream choice when resuming"
+msgstr "Pri pokračovaní vždy ponúknuť výber streamu"
+
+msgctxt "#31142"
+msgid "A started film or episode does not resume straight on the remembered stream – the stream choice opens with the remembered stream preselected. Applies even when „Play the best stream right away“ is on."
+msgstr "Rozpozeraný film alebo diel sa nespustí rovno na zapamätanom streame – ukáže sa výber streamov a zapamätaný stream v ňom bude predvybraný. Platí aj pri zapnutom „Rovno prehrať najlepší stream“."
+
 msgctxt "#31143"
 msgid "This title can only be played – its source does not allow downloading."
 msgstr "Tento titul sa dá len prehrať – jeho zdroj sťahovanie nepovoľuje."

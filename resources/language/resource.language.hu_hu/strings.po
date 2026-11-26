@@ -3817,6 +3817,14 @@ msgctxt "#31140"
 msgid "Save"
 msgstr "Mentés"
 
+msgctxt "#31141"
+msgid "Always offer stream choice when resuming"
+msgstr "Folytatáskor mindig felajánlja a stream kiválasztását"
+
+msgctxt "#31142"
+msgid "A started film or episode does not resume straight on the remembered stream – the stream choice opens with the remembered stream preselected. Applies even when „Play the best stream right away“ is on."
+msgstr "A megkezdett film vagy rész nem a megjegyzett streamen folytatódik – megnyílik a stream választó, benne a megjegyzett stream előre kiválasztva. Akkor is érvényes, ha a „A legjobb stream azonnali lejátszása“ be van kapcsolva."
+
 msgctxt "#31143"
 msgid "This title can only be played – its source does not allow downloading."
 msgstr "Ezt a címet csak lejátszani lehet – a forrása nem engedi a letöltést."
