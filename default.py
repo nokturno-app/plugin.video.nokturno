@@ -2289,9 +2289,12 @@ def stream_heading(meta, video=None):
             name = f"{name} – {ep}"
         # hodnocení jako v `fill_info`: hlavní `imdbRating`, jinak první z dalších zdrojů
         rating = meta.get("imdbRating") or next(iter((meta.get("ratings") or {}).values()), None)
-        value = float(rating) if rating else 0
+        try:
+            value = float(rating) if rating else 0
+        except (TypeError, ValueError):   # „n/a“ apod. – jen bez hvězdy
+            value = 0
         if value > 0:
-            name = f"{name} · ★ {value:.1f}".replace(".", ",")
+            name = f"{name} · ★ " + f"{value:.1f}".replace(".", ",")   # čárka jen v čísle, ne v názvu
         return name
     except (AttributeError, TypeError, ValueError):
         return None

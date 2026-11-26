@@ -1470,7 +1470,10 @@ class TestNadpisVyberuStreamu(unittest.TestCase):
 
     def test_prazdna_meta_a_chyba(self):
         self.assertIsNone(default.stream_heading({}))
-        self.assertEqual(default.stream_heading({"name": "Film", "imdbRating": "n/a"}), None)
+        self.assertEqual(default.stream_heading({"name": "Film", "imdbRating": "n/a"}), "Film")
+
+    def test_tecka_v_nazvu_zustane(self):
+        self.assertEqual(default.stream_heading({"name": "Mr. Robot", "imdbRating": "8.5"}), "Mr. Robot · ★ 8,5")
 
     def test_choose_stream_pouzije_nadpis(self):
         reset_kodi()
