@@ -103,12 +103,12 @@ msgid "Remove from history"
 msgstr "Eltávolítás az előzményekből"
 
 msgctxt "#30043"
-msgid "Mark as watched"
-msgstr "Megjelölés megnézettként"
+msgid "Mark as watched (Nokturno)"
+msgstr "Megjelölés megnézettként (Nokturno)"
 
 msgctxt "#30044"
-msgid "Mark as unwatched"
-msgstr "Megjelölés nem nézettként"
+msgid "Mark as unwatched (Nokturno)"
+msgstr "Megjelölés nem nézettként (Nokturno)"
 
 msgctxt "#30045"
 msgid "Search WebShare"

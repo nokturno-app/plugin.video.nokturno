@@ -103,12 +103,12 @@ msgid "Remove from history"
 msgstr "Odobrať z histórie"
 
 msgctxt "#30043"
-msgid "Mark as watched"
-msgstr "Označiť ako pozreté"
+msgid "Mark as watched (Nokturno)"
+msgstr "Označiť ako pozreté (Nokturno)"
 
 msgctxt "#30044"
-msgid "Mark as unwatched"
-msgstr "Označiť ako nepozreté"
+msgid "Mark as unwatched (Nokturno)"
+msgstr "Označiť ako nepozreté (Nokturno)"
 
 msgctxt "#30045"
 msgid "Search WebShare"

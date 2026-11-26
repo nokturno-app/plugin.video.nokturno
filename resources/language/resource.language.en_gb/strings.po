@@ -103,11 +103,11 @@ msgid "Remove from history"
 msgstr ""
 
 msgctxt "#30043"
-msgid "Mark as watched"
+msgid "Mark as watched (Nokturno)"
 msgstr ""
 
 msgctxt "#30044"
-msgid "Mark as unwatched"
+msgid "Mark as unwatched (Nokturno)"
 msgstr ""
 
 msgctxt "#30045"
