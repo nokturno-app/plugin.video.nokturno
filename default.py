@@ -7944,6 +7944,8 @@ def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, d
     has_fulltext_source = bool(apis.get("ws") or apis.get("hs") or apis.get("st") or apis.get("fs")
                                or apis.get("pt"))
 
+    dropped = [0]   # kolik streamů zahodil zákaz stahování (součet přes všechna hledání)
+
     def collect(strict, meta=meta):
         bar = xbmcgui.DialogProgressBG()   # načítání jen ukazatelem v rohu, modální je až výběr streamu
         bar.create(L(30000, "Nokturno"), L(30238, "Načítám streamy…"))
@@ -7956,7 +7958,9 @@ def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, d
             bar.close()
         if download:
             # CZtor stahování povoluje jen u části streamů (`allow_download`) — ostatní se ke stažení nenabízí
-            found = [s for s in found if not s.get("_no_download")]
+            allowed = [s for s in found if not s.get("_no_download")]
+            dropped[0] += len(found) - len(allowed)
+            found = allowed
         if errors:
             notify(skipped_notice(errors), xbmcgui.NOTIFICATION_WARNING, 7000)
         return found, errors
@@ -7969,6 +7973,10 @@ def pick_title(apis, ctype, item_id, series_id=None, alt=None, fulltext=False, d
     if not streams and strict and has_fulltext_source:
         strict = False
         streams, errors = collect(strict)
+    if not streams and download and dropped[0]:
+        # streamy se našly, jen žádný nejde stáhnout — „nenalezeno“ a hledání jinde by mátlo
+        notify(L(31143))
+        return
     if not streams:
         if not errors:
             notify(L(30102))

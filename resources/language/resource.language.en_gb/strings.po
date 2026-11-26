@@ -3818,3 +3818,7 @@ msgstr ""
 msgctxt "#31140"
 msgid "Save"
 msgstr ""
+
+msgctxt "#31143"
+msgid "This title can only be played – its source does not allow downloading."
+msgstr ""

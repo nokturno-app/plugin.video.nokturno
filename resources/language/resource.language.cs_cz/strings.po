@@ -3818,3 +3818,7 @@ msgstr "nevyhovuje požadavkům"
 msgctxt "#31140"
 msgid "Save"
 msgstr "Uložit"
+
+msgctxt "#31143"
+msgid "This title can only be played – its source does not allow downloading."
+msgstr "Tento titul jde jen přehrát – jeho zdroj stahování nepovoluje."

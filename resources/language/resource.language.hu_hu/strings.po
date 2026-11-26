@@ -3816,3 +3816,7 @@ msgstr "nem felel meg a követelményeknek"
 msgctxt "#31140"
 msgid "Save"
 msgstr "Mentés"
+
+msgctxt "#31143"
+msgid "This title can only be played – its source does not allow downloading."
+msgstr "Ezt a címet csak lejátszani lehet – a forrása nem engedi a letöltést."
