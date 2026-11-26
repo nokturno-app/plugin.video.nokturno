@@ -26,10 +26,14 @@ v adrese (`kodi_url`), Stremio přes proxy doplňku (`request`).
 Adresa `smb://server/sdílení/složka/` vede na `SmbStorage` (`open_storage`): stejné
 procházení i hledání, jen složky čte backend SMB (`lib/smbfs.py`). Kodi přehrává
 `smb://` samo, Stremio a HA mimo Kodi posílají soubor přes proxy (`reader`).
+
+Místní složka (`/media` nebo `file:///media`) vede na `LocalStorage` – stejné jako SMB, jen
+složky čte `LocalBackend` z disku. Jen tam, kde běží aplikace u uživatele (`opener` ji odmítne).
 """
 import base64
 import hashlib
 import http.client
+import os
 import re
 import time
 import urllib.error
@@ -40,7 +44,7 @@ from html.parser import HTMLParser
 
 from abort import BackgroundPool, check as check_stop, gather
 from safe_redirect import OPENER as SAFE_OPENER
-from smbfs import PysmbBackend, SmbAuthError, SmbFile
+from smbfs import LocalBackend, PysmbBackend, SmbAuthError, SmbFile
 
 SLOTS = 3                   # kolik vlastních úložišť jde nastavit
 TIMEOUT = 20
@@ -80,11 +84,17 @@ from streams import fold as _fold, human_size  # noqa: F401
 
 def normalize_url(url):
     """Adresa složky s lomítkem na konci. `dav://`/`davs://` (tvar z Kodi) → http(s).
+    Místní složka (`/cesta`, `file:///cesta`) → `file:///cesta/`.
     Vrací prázdný řetězec, když to adresa úložiště není."""
     url = str(url or "").strip()
     if not url:
         return ""
     low = url.lower()
+    if low.startswith("file://") or url.startswith("/"):
+        cesta = url[7:] if low.startswith("file://") else url
+        if not cesta.startswith("/") or "\x00" in cesta:
+            return ""
+        return "file://" + os.path.normpath(cesta).rstrip("/") + "/"
     if low.startswith("davs://"):
         url = "https://" + url[7:]
     elif low.startswith("dav://"):
@@ -469,12 +479,39 @@ class SmbStorage(StorageApi):
             return {"rev": ""}
 
 
+class LocalStorage(SmbStorage):
+    """Úložiště v místní složce (`/media`, `file:///media`): procházení, hledání i čtení po kusech
+    jako u SMB, složky čte `LocalBackend`. Jen tam, kde aplikace běží u uživatele."""
+
+    def __init__(self, url, username="", password="", name="", slot=1, cache=None, index_ttl=INDEX_TTL,
+                 opener=None, should_stop=None, crawl_deadline=None, max_dirs=MAX_DIRS, timeout=TIMEOUT,
+                 backend=None):
+        if opener is not None:
+            raise StorageError("místní složka jen v aplikaci u tebe")
+        StorageApi.__init__(self, url, username, password, name, slot, cache, index_ttl, None, should_stop,
+                            crawl_deadline, max_dirs, timeout)
+        self.root = ""
+        self._password = ""
+        self._dir = self.base[len("file://"):]   # „/media/filmy/“ (bez dekódování, adresa nese cestu přímo)
+        self.name = str(name or "").strip() or os.path.basename(self._dir.rstrip("/")) or "místní složka"
+        self.backend = (backend or LocalBackend)(self._dir)
+
+    def kodi_url(self, path):
+        """Cesta k souboru na disku – Kodi přehraje místní soubor."""
+        return os.path.join(self._dir, safe_path(path))
+
+
 def open_storage(url, *args, **kwargs):
-    """`StorageApi` pro WebDAV/HTTP, `SmbStorage` pro `smb://` (a `\\\\server\\sdílení`).
+    """`StorageApi` pro WebDAV/HTTP, `SmbStorage` pro `smb://` (a `\\\\server\\sdílení`),
+    `LocalStorage` pro místní složku (`/cesta`, `file://`).
     `backend` (SMB z hostitele, Kodi) se WebDAVu nepředává."""
     backend = kwargs.pop("backend", None)
-    if normalize_url(url).startswith("smb://"):
+    base = normalize_url(url)
+    if base.startswith("smb://"):
         return SmbStorage(url, *args, backend=backend, **kwargs)
+    if base.startswith("file://"):
+        # `backend` od hostitele je SMB (Kodi: `KodiSmbBackend`), místní složka ho nepoužije
+        return LocalStorage(url, *args, **kwargs)
     return StorageApi(url, *args, **kwargs)
 
 

@@ -115,6 +115,39 @@ class PysmbBackend:
         return int(self._call(lambda c: c.getAttributes(self.share, "/" + path, timeout=self.timeout)).file_size)
 
 
+class LocalBackend:
+    """Místní složka (Docker s namapovanou složkou, aplikace u uživatele) se stejným rozhraním jako
+    `PysmbBackend`. Cesty jsou uvnitř `root`; symlink ven z kořene nebo `..` skončí jako `FileNotFoundError`."""
+
+    def __init__(self, root):
+        self.root = os.path.realpath(root)
+
+    def _abs(self, path):
+        real = os.path.realpath(os.path.join(self.root, str(path).strip("/")))
+        if os.path.commonpath([real, self.root]) != self.root:
+            raise FileNotFoundError(path)
+        return real
+
+    def listdir(self, path):
+        out = []
+        with os.scandir(self._abs(path)) as it:
+            for e in it:
+                try:
+                    je_slozka = e.is_dir()
+                    out.append((e.name, je_slozka, 0 if je_slozka else e.stat().st_size))
+                except OSError:   # rozbitý symlink
+                    continue
+        return out
+
+    def read(self, path, offset, length):
+        with open(self._abs(path), "rb") as f:
+            f.seek(offset)
+            return f.read(length)
+
+    def size(self, path):
+        return os.path.getsize(self._abs(path))
+
+
 def _close(conn):
     try:
         conn.close()
